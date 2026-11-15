@@ -14,11 +14,13 @@
 //! * `compare --a <video> --b <video>`: say whether two finished videos show and sound the same.
 //! * `ocr --jobs <file>`: read the text in still pictures, for the frame scan.
 //! * `thumbnail --plan <file> --out <png>`: draw a video's thumbnail.
+//! * `awake`: keep the computer and its screen awake until standard input is closed (for unattended runs).
 //!
 //! The capture engine (Windows Graphics Capture, the MP4 writer, the drawing on frames) is OpenScreen's, copied from
 //! OpenStage Author into `capture/` and used without change.
 
 mod assemble;
+mod awake;
 mod compare;
 mod kokoro;
 mod ocr;
@@ -59,6 +61,7 @@ fn main() -> ExitCode {
         "assemble" => assemble::run(&args),
         "compare" => compare::run(&args),
         "ocr" => ocr::run(&args),
+        "awake" => awake::run(),
         "thumbnail" => thumbnail::run(&args),
         other => Err(format!("\"{other}\" is not something this helper does. Use windows, take, voices, speak, assemble, compare, ocr or thumbnail.")),
     };

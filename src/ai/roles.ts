@@ -51,7 +51,7 @@ export interface PlannedVideo {
 }
 
 const PLANNER = `You plan short tutorial videos from one chapter of a software manual.
-Make one video for each task the chapter teaches with numbered steps. One task per video. Leave out topics that only describe or explain and have no steps.
+Make one video for each task the chapter teaches with numbered steps. One task per video. Leave out topics that only describe or explain and have no steps; a chapter with no such tasks gets an empty list of videos.
 Each video is two to five minutes long when performed: roughly four to twelve steps.
 Put the videos in teaching order, so earlier videos teach what later ones need.
 A title is at most 60 characters and names the task, such as "Make a new lesson". A goal is one sentence saying what the viewer can do after watching, starting with "You can".
@@ -69,7 +69,8 @@ export async function planVideos(a: Answerer, program: ProgramEntry, manualTitle
     const o = v as { playlist?: unknown; videos?: unknown };
     const problems: string[] = [];
     if (!isText(o.playlist)) problems.push('"playlist" must be a name.');
-    if (!Array.isArray(o.videos) || !o.videos.length) problems.push('"videos" must list at least one video.');
+    // An empty list is a fair answer for a chapter that only explains and has no tasks.
+    if (!Array.isArray(o.videos)) problems.push('"videos" must be a list (empty if the chapter has no tasks with steps).');
     const videos: PlannedVideo[] = [];
     const ids = new Set<string>();
     (Array.isArray(o.videos) ? o.videos : []).forEach((x: { title?: unknown; goal?: unknown; covers?: unknown }, i: number) => {
@@ -183,11 +184,12 @@ export function cleanStep(s: unknown): Step {
 
 const REPAIR = `You repair a tutorial script that failed in rehearsal. The player performs the steps in the real program; one step could not be performed.
 You are told the steps, which one failed and why, the controls on screen at that moment, and the text on screen.
-Fix it by replacing a run of steps that ends with the failed step: from step "from" (the failed step, or an earlier one if an earlier step caused the problem) to the failed step.
-Common causes: a menu or dialog was not opened first; a control is only shown after another step; the wrong item was clicked; a value does not match a list's choices.
+Fix it by replacing a run of steps that includes the failed step: from step "from" (the failed step, or an earlier one if an earlier step caused the problem) to step "to" (the failed step, or a later one if later steps have the same problem, such as a renamed control used again).
+Common causes: a menu or dialog was not opened first; a control is only shown after another step; the wrong item was clicked; a value does not match a list's choices; a new version of the program renamed a control.
 ${STEP_RULES}
-Keep the narration's meaning. ${NEVER}
-Answer with JSON only: {"why": "what went wrong, in one sentence", "from": <step number>, "steps": [the new steps that replace steps "from" to the failed step]}`;
+Keep the narration's meaning, and change narration only where the words on screen changed. ${NEVER}
+If an answer comes back with problems, "steps[i]" in them counts from 0 (steps[0] is step 1).
+Answer with JSON only: {"why": "what went wrong, in one sentence", "from": <step number>, "to": <step number>, "steps": [the new steps that replace steps "from" to "to"]}`;
 
 export interface RepairInput {
   program: ProgramEntry;
@@ -202,7 +204,7 @@ export interface RepairInput {
   check: (s: Script) => string[];
 }
 
-export async function repairStep(a: Answerer, r: RepairInput): Promise<{ script: Script; why: string; from: number; rounds: number }> {
+export async function repairStep(a: Answerer, r: RepairInput): Promise<{ script: Script; why: string; from: number; to: number; rounds: number }> {
   const numbered = r.script.steps.map((s, i) => `${i + 1}. ${JSON.stringify(s)}`).join("\n");
   const shown = r.controlsNow.filter((c) => c.shownAtStart).map((c) => `${c.id}: "${c.label.slice(0, 60)}" (${c.role || "control"})`).join("\n");
   const user = [
@@ -213,17 +215,21 @@ export async function repairStep(a: Answerer, r: RepairInput): Promise<{ script:
     `The text on screen when it failed:\n${r.textNow.slice(0, 80).join("\n")}`,
     `Every control the program has:\n${controlLines(r.allControls, r.program)}`,
   ].join("\n\n");
-  const { value, rounds } = await askChecked<{ script: Script; why: string; from: number }>(a, REPAIR, user, (v) => {
-    const o = v as { why?: unknown; from?: unknown; steps?: unknown };
+  const { value, rounds } = await askChecked<{ script: Script; why: string; from: number; to: number }>(a, REPAIR, user, (v) => {
+    const o = v as { why?: unknown; from?: unknown; to?: unknown; steps?: unknown };
     const problems: string[] = [];
     const from = Number(o.from ?? r.failed + 1);
+    const to = Number(o.to ?? r.failed + 1);
+    const n = r.script.steps.length;
     if (!Number.isInteger(from) || from < 1 || from > r.failed + 1) problems.push(`"from" must be a step number from 1 to ${r.failed + 1}.`);
-    if (!Array.isArray(o.steps) || !o.steps.length || o.steps.length > 8) problems.push('"steps" must list one to eight steps.');
+    if (!Number.isInteger(to) || to < r.failed + 1 || to > n) problems.push(`"to" must be a step number from ${r.failed + 1} to ${n}.`);
+    const most = Math.max(8, (Number.isInteger(to) ? to : r.failed + 1) - (Number.isInteger(from) ? from : r.failed + 1) + 4);
+    if (!Array.isArray(o.steps) || !o.steps.length || o.steps.length > most) problems.push(`"steps" must list one to ${most} steps.`);
     if (problems.length) return { problems };
-    const steps = collapseRepeats([...r.script.steps.slice(0, from - 1), ...(o.steps as unknown[]).map(cleanStep), ...r.script.steps.slice(r.failed + 1)]);
+    const steps = collapseRepeats([...r.script.steps.slice(0, from - 1), ...(o.steps as unknown[]).map(cleanStep), ...r.script.steps.slice(to)]);
     const script = { ...r.script, steps };
     problems.push(...r.check(script));
-    return { value: problems.length ? undefined : { script, why: isText(o.why) ? o.why : "", from }, problems };
+    return { value: problems.length ? undefined : { script, why: isText(o.why) ? o.why : "", from, to }, problems };
   }, 3);
   void r.picture;
   return { ...value, rounds };

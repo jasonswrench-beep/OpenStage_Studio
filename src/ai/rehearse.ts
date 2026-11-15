@@ -37,7 +37,11 @@ export interface RehearseOptions {
   answerer?: Answerer;
   maxRepairs?: number;
   allControls: ControlFact[];
+  /** The check every repaired script must pass. */
   check: (s: Script) => string[];
+  /** The check the script as given must pass before it is performed (the same as `check` if left out). The release
+   * check uses the format alone here, so a control a new version lost fails at its own step, which can then be named. */
+  firstCheck?: (s: Script) => string[];
   /** A picture of the program's window now, as PNG, for a service that can see. */
   picture?: () => Promise<Buffer | null>;
   frame: [number, number];
@@ -64,7 +68,7 @@ export async function rehearse(session: ProgramSession, start: Script, o: Rehear
   let runs = 0;
   const end = (passed: boolean): Rehearsal => ({ passed, script, repairs, runs });
   for (;;) {
-    const problems = o.check(script);
+    const problems = (runs === 0 && o.firstCheck ? o.firstCheck : o.check)(script);
     if (problems.length) {
       repairs.push({ step: 0, error: `The script does not pass the check: ${problems.join(" ")}`, unrepaired: "It must be fixed by hand." });
       return end(false);
@@ -112,7 +116,7 @@ export async function rehearse(session: ProgramSession, start: Script, o: Rehear
           ...(picture ? { picture } : {}), check: o.check,
         });
         record.why = fixed.why || "(no reason given)";
-        record.replaced = [fixed.from, e.step + 1];
+        record.replaced = [fixed.from, fixed.to];
         log(`  Repaired: ${record.why}`);
         script = fixed.script;
       } catch (err) {

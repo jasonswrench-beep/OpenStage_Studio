@@ -97,6 +97,11 @@ fn main() {
                 let settings = serde_json::json!({ "endpoint": endpoint, "token": token });
                 builder = builder.initialization_script(format!("window.__OPENSTAGE_DEMO_HOOK__ = {settings};"));
             }
+            // `--sample-version <n>`: run as that version of the practice program (2 renames two controls, for the
+            // release check). A plain whole number only.
+            if let Some(version) = value_after(&args, "--sample-version").and_then(|v| v.parse::<u32>().ok()).filter(|v| (1..=99).contains(v)) {
+                builder = builder.initialization_script(format!("window.__PRACTICE_PLANNER_VERSION__ = {version};"));
+            }
             let window = builder.build()?;
             if let Some(m) = pick_monitor(&window, monitor_number)? {
                 window.set_position(*m.position())?;

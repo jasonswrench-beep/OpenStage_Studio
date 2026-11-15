@@ -8,7 +8,8 @@ Jason first.
 
 Read `docs/HANDOFF.md` first if you are starting a new session. Read `docs/script-format.md` before touching anything
 that reads or writes a tutorial script, `docs/demo-hook.md` before touching the demo-mode hook, `docs/guard.md`
-before touching the guard, the review gate or the publishing package, and `docs/ai.md` before touching the AI roles.
+before touching the guard, the review gate or the publishing package, `docs/ai.md` before touching the AI roles, and
+`docs/batch.md` before touching the queue or the release check.
 
 ## What this is
 
@@ -19,8 +20,8 @@ any AI model or a person can write one. Everything must work by hand with no AI.
 Phase 1 ("One video by hand") is built: script format and validator, demo-mode hook, player, window capture, narration,
 captions, assembly to a 1080p 30fps MP4. Phase 2 ("Guard and package") is built: blocklist, script scan, frame scan,
 review gate, guard report, publishing package (`docs/guard.md`). Phase 3 ("AI planning and scripting") is built: manual
-import, planner, scriptwriter, rehearsal with repair, metadata writer (`docs/ai.md`). Phases 4 and 5 (batch, reach) are
-in the spec.
+import, planner, scriptwriter, rehearsal with repair, metadata writer (`docs/ai.md`). Phase 4 ("Batch and re-record")
+is built: the unattended queue and the release check (`docs/batch.md`). Phase 5 (reach) is in the spec.
 
 ## Not in scope
 
@@ -92,7 +93,10 @@ Use original code, assets and design.
 
 - Optional, and never in the recorded take, and never approves a video. No test or tool approves a review either: only a
   person, in the review screen.
-- Every AI output is a file a person can read and edit before anything is recorded.
+- Every AI output is a file a person can read and edit before anything is recorded. The unattended queue may record an
+  AI-written script a person has not read yet, if it passes rehearsal (Jason, 2026-11-15); the review gate before export
+  is the person's check. A script that exists is never changed by a batch run: AI repairs go beside it as
+  `<name>.repaired.json` and are never recorded.
 - The built-in model (Qwen 3.5 4B, run by llama.cpp's server on this computer only) is downloaded on request and checked
   against `tools/local-ai.json`, the same pins as the documentation tool; never bundle it. Hosted services use the
   person's own key, kept in `%APPDATA%\org.openstage.studio\ai.json` and sent only to that service. Claude goes through

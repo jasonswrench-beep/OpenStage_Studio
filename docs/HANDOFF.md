@@ -1,10 +1,10 @@
 # Handoff
 
-Last updated 2026-11-15, at the end of the phase 3 build session.
+Last updated 2026-11-15, at the end of the phase 4 build session.
 
 ## Where things are
 
-Phases 1 to 3 are built, and their acceptance tests pass on Jason's computer (Windows 11 build 26200, two 1920 by 1080
+Phases 1 to 4 are built, and their acceptance tests pass on Jason's computer (Windows 11 build 26200, two 1920 by 1080
 displays at 100 percent; takes run on the second display).
 
 Phase 1, "One video by hand":
@@ -37,8 +37,21 @@ Phase 3, "AI planning and scripting" (`docs/ai.md`):
   after automatic repair, with no hand edits (the bar is four in five). See "Phase 3 results" below.
 - It also passes with Claude (`claude-opus-5-5`, Jason's own key, 2026-11-15): six videos planned, six scripts written,
   all six passed rehearsal at the first run with no repairs, and on reading, every script does what its task says.
-- 92 TypeScript tests and 19 helper tests pass (`Test Everything.bat`). The licence check passes with phase 3's two
-  packages (Anthropic's SDK and PDF.js, both Apache 2.0, in NOTICE).
+- The licence check passes with phase 3's two packages (Anthropic's SDK and PDF.js, both Apache 2.0, in NOTICE).
+
+Phase 4, "Batch and re-record" (`docs/batch.md`):
+
+- `Check Batch.bat` passes with Claude (2026-11-15). The whole invented Practice Planner manual recorded unattended: the
+  chapter with no tasks was left out, and all six planned videos were planned, written, rehearsed and recorded with
+  nobody at the computer. Then, against Practice Planner version 2 (two controls renamed), the release check named the
+  exact broken step in all seven scripts checked (the six new ones and `examples/plan-a-lesson.json`): three broken, at
+  the steps worked out independently, and four still working.
+- Claude's repaired copies were right on reading: they use the renamed controls, change the narration only where the
+  words on screen changed, and leave every other step as it was. A repair may now reach past the failed step to fix the
+  same problem later in a script (the hand-written example uses one renamed control twice and the other once later).
+- `Check Same Video.bat` still passes after phase 4, with the same frame fingerprint (version 1 of the practice program
+  is unchanged).
+- 100 TypeScript tests and 19 helper tests pass (`Test Everything.bat`). Phase 4 added no packages.
 
 ### Phase 3 results, and what the built-in model gets wrong
 
@@ -106,6 +119,13 @@ Confirmed by Jason:
 13. **Plain grey text smoothing in demo mode** (2026-11-15): Studio starts every program in demo mode with its browser
     engine told not to use coloured (subpixel) smoothing, which could switch for a label beside a control drawn in its own
     layer and made two takes differ. Set at launch (`src/pipeline/programs.ts`), so no program's own code changes.
+14. **The unattended queue records every script that passes rehearsal** (2026-11-15), including AI-written scripts a
+    person has not read; the review gate before export is the person's check.
+15. **The release check reports broken steps only** (2026-11-15), not steps whose pictures merely changed.
+16. **Batch repairs are proposed, never recorded** (2026-11-15): an existing script is never changed; the AI's repair is
+    saved beside it as `<name>.repaired.json` for a person to read.
+17. **An unattended run is started by hand** (2026-11-15), with a double-click; it keeps the computer and screen awake,
+    and carries on where it stopped.
 
 Made by Claude, open to change:
 
@@ -146,16 +166,23 @@ Made by Claude, open to change:
     fallback on a refusal. Keys are kept in `%APPDATA%\org.openstage.studio\ai.json`.
 18. **AI setup is a double-click console script for now** (`Set Up AI.bat`): asked in words, one question at a time, so a
     screen reader can follow it. An AI settings screen in the app comes with moving the player into the app.
+19. **Videos from the queue go into `renders\<series>-<script>\`**, one flat folder each, so `Review Video.bat` and
+    `Export Packages.bat` find them as they find any video. `renders\queue-state.json` remembers which script version each
+    was made from.
+20. **The release check checks a script's format alone before performing it**, so a lost control fails at its own step;
+    a script stops at its first broken step, since later steps depend on it.
+21. **Practice Planner version 2** (`sample-program/versions.ts`) renames two controls, for the acceptance test only;
+    it is started with `--sample-version 2` (Studio: `PRACTICE_PLANNER_VERSION=2`). Version 1 is unchanged.
+22. **A chapter of a documentation project with no numbered steps gets no videos** without asking the AI; the planner
+    may also answer that a chapter has no tasks.
 
 ## Next
 
-- Try phase 3 with a hosted model: Jason adds a key with `Set Up AI.bat`, then `Check AI Scripts.bat`.
-- OpenStage Author: the hook is on Author's branch `studio-demo-hook` (pushed, not merged). The hook copy there now has
-  hook version 3, uncommitted until Jason says yes. Still to do: name the buttons in its panes and dialogs, list its demo
-  projects in `src/pipeline/programs.ts`, write its manual (or import one), and make its videos.
+- OpenStage Author: the hook is on Author's branch `studio-demo-hook` (pushed, not merged). Still to do: name the
+  buttons in its panes and dialogs, list its demo projects in `src/pipeline/programs.ts`, write its manual (or import
+  one), and make its videos.
 - Put the player and AI setup in the app window: open a script, make the video, show progress, play it, go to review.
-- Phase 4: a queue for a whole manual, unattended runs, and a release check that reruns every script and names the steps
-  a new version broke.
+- Phase 5 (reach): the accessibility-tree driver, the connector server, canvas commands, and optional direct upload.
 
 ## Things to know
 

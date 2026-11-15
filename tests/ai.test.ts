@@ -126,6 +126,24 @@ test("numbered controls that appear later count as real", () => {
   assert.match(controlLines(controls, program), /sidebar\.lesson\.\*: lesson number \* in the list/);
 });
 
+test("a repair may reach past the failed step to fix the same problem later on", async () => {
+  const script = { format: "openstage-studio-script", version: 2, title: "T", goal: "G", program: { id: "practice-planner", name: "Practice Planner" }, startState: { demoProject: "demo-lessons-01" },
+    steps: [
+      { action: "click", target: "toolbar.old", narration: "One." },
+      { action: "type", target: "editor.title", value: "Leaves", narration: "Two." },
+      { action: "click", target: "toolbar.old", narration: "Three." },
+      { action: "click", target: "editor.save", narration: "Four." },
+    ] } as unknown as Script;
+  const a = standIn([JSON.stringify({ why: "Renamed.", from: 1, to: 3, steps: [
+    { action: "click", target: "toolbar.lesson.new", narration: "One." },
+    { action: "type", target: "editor.title", value: "Leaves", narration: "Two." },
+    { action: "click", target: "toolbar.lesson.new", narration: "Three." },
+  ] })]);
+  const fixed = await repairStep(a, { program, script, failed: 0, error: "There is no control called \"toolbar.old\" on screen.", controlsNow: controls, textNow: [], allControls: controls, check });
+  assert.deepEqual([fixed.from, fixed.to], [1, 3]);
+  assert.deepEqual(fixed.script.steps.map((s) => s.target), ["toolbar.lesson.new", "editor.title", "toolbar.lesson.new", "editor.save"]);
+});
+
 test("a repair that repeats a step where it joins the script is tidied, not refused", async () => {
   const script = { format: "openstage-studio-script", version: 2, title: "T", goal: "G", program: { id: "practice-planner", name: "Practice Planner" }, startState: { demoProject: "demo-lessons-01" },
     steps: [

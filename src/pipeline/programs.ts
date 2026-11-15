@@ -27,7 +27,9 @@ export const PROGRAMS: ProgramEntry[] = [
     launch(root, endpoint, token, monitor) {
       const exe = resolve(root, "src-tauri/target/release/openstage-studio.exe");
       if (!existsSync(exe)) throw new Error(`OpenStage Studio is not built yet (${exe}). Run "Build Studio.bat" first.`);
-      return { exe, args: ["--sample-program", "--demo-hook", endpoint, "--demo-token", token, "--monitor", String(monitor)] };
+      // PRACTICE_PLANNER_VERSION=2 runs the version with a changed interface, for the release check's acceptance test.
+      const version = /^[0-9]{1,2}$/.test(process.env.PRACTICE_PLANNER_VERSION ?? "") ? ["--sample-version", process.env.PRACTICE_PLANNER_VERSION!] : [];
+      return { exe, args: ["--sample-program", "--demo-hook", endpoint, "--demo-token", token, "--monitor", String(monitor), ...version] };
     },
     windowTitle: "Practice Planner (OpenStage Studio sample program)",
     demos: [

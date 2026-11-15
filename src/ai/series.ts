@@ -40,11 +40,11 @@ export interface Plan {
   videos: (PlannedVideo & { script?: string; rehearsal?: "passed" | "failed" })[];
 }
 
-const readPlan = (folder: string) => JSON.parse(readFileSync(join(folder, "plan.json"), "utf8")) as Plan;
-const savePlan = (folder: string, p: Plan) => writeFileSync(join(folder, "plan.json"), JSON.stringify(p, null, 2) + "\n");
+export const readPlan = (folder: string) => JSON.parse(readFileSync(join(folder, "plan.json"), "utf8")) as Plan;
+export const savePlan = (folder: string, p: Plan) => writeFileSync(join(folder, "plan.json"), JSON.stringify(p, null, 2) + "\n");
 
 /** The program a manual is about: named on the command line, or found from the manual's product name. */
-function programFor(asked: string | undefined, product: string | undefined): ProgramEntry {
+export function programFor(asked: string | undefined, product: string | undefined): ProgramEntry {
   const p = asked ? PROGRAMS.find((x) => x.id === asked) : PROGRAMS.find((x) => product && x.name.toLowerCase() === product.toLowerCase());
   if (!p) throw new Error(`Say which program the manual is about with --program (one of ${PROGRAMS.map((x) => x.id).join(", ")}).`);
   return p;
@@ -57,14 +57,14 @@ function textFor(chapter: Chapter, covers: string[]): string {
   return chapterText(topics.length ? { ...chapter, topics } : chapter);
 }
 
-interface ProgramFacts {
+export interface ProgramFacts {
   /** Controls with the first demo project open (what the writer is shown). */
   controls: ControlFact[];
   /** Every control any demo project has. */
   all: ControlFact[];
 }
 
-async function programFacts(s: ProgramSession): Promise<ProgramFacts> {
+export async function programFacts(s: ProgramSession): Promise<ProgramFacts> {
   const demos = s.program.demos?.map((d) => d.name) ?? [];
   if (!demos.length) throw new Error(`${s.program.name} lists no demo projects in src/pipeline/programs.ts, so a script cannot say where to start.`);
   const byDemo = [];
@@ -76,7 +76,7 @@ async function programFacts(s: ProgramSession): Promise<ProgramFacts> {
 
 /** The check every AI-written script must pass: the format, the program's real controls, its demo projects, and the
  * script scan (no blocked names). */
-function checker(program: ProgramEntry, all: ControlFact[]) {
+export function checker(program: ProgramEntry, all: ControlFact[]) {
   const list = loadBlocklist(ROOT).list;
   const demos = new Set(program.demos?.map((d) => d.name) ?? []);
   const roles = new Map(all.map((c) => [c.id, c.role]));
@@ -103,7 +103,7 @@ function checker(program: ProgramEntry, all: ControlFact[]) {
   };
 }
 
-export async function planSeries(manualFile: string, o: { chapter?: string; program?: string; answerer?: Answerer; log?: (s: string) => void } = {}): Promise<string> {
+export async function planSeries(manualFile: string, o: { chapter?: string; program?: string; answerer?: Answerer; log?: (s: string) => void; seriesRoot?: string } = {}): Promise<string> {
   const log = o.log ?? console.log;
   const manual = await importManual(resolve(manualFile));
   const chapter = findChapter(manual, o.chapter);
@@ -112,7 +112,7 @@ export async function planSeries(manualFile: string, o: { chapter?: string; prog
   try {
     log(`Planning videos for "${chapter.title}" in ${manual.title}, with ${a.name}.`);
     const planned = await planVideos(a, program, manual.title, chapter.title, chapterText(chapter));
-    const folder = join(ROOT, "series", `${program.id}-${slug(chapter.title)}`);
+    const folder = join(o.seriesRoot ?? join(ROOT, "series"), `${program.id}-${slug(chapter.title)}`);
     mkdirSync(folder, { recursive: true });
     const plan: Plan = {
       format: "openstage-studio-plan", version: 1,
@@ -133,12 +133,13 @@ export async function planSeries(manualFile: string, o: { chapter?: string; prog
   }
 }
 
-export async function writeSeries(folder: string, o: { all?: boolean; answerer?: Answerer; session?: ProgramSession; log?: (s: string) => void } = {}): Promise<number> {
+export async function writeSeries(folder: string, o: { all?: boolean; onlyMissing?: boolean; answerer?: Answerer; session?: ProgramSession; log?: (s: string) => void } = {}): Promise<number> {
   const log = o.log ?? console.log;
   const plan = readPlan(folder);
   const program = programFor(plan.program.id, undefined);
   const approved = plan.videos.filter((v) => v.status === "approved");
-  const chosen = approved.length ? approved : o.all ? plan.videos.filter((v) => v.status !== "cut") : [];
+  // onlyMissing: write only videos that have no script yet (the queue carrying on after an interruption).
+  const chosen = (approved.length ? approved : o.all ? plan.videos.filter((v) => v.status !== "cut") : []).filter((v) => !o.onlyMissing || !v.script);
   if (!chosen.length) {
     log("No video in the plan is approved yet. Set a video's \"status\" to \"approved\" in plan.json, or run this with --all to write every proposed video.");
     return 0;
@@ -183,7 +184,7 @@ export interface SeriesRehearsal {
   passed: number;
 }
 
-export async function rehearseSeries(folder: string, o: { answerer?: Answerer | null; session?: ProgramSession; maxRepairs?: number; log?: (s: string) => void } = {}): Promise<SeriesRehearsal> {
+export async function rehearseSeries(folder: string, o: { answerer?: Answerer | null; session?: ProgramSession; maxRepairs?: number; onlyUnrehearsed?: boolean; log?: (s: string) => void } = {}): Promise<SeriesRehearsal> {
   const log = o.log ?? console.log;
   const plan = readPlan(folder);
   const program = programFor(plan.program.id, undefined);
@@ -194,7 +195,8 @@ export async function rehearseSeries(folder: string, o: { answerer?: Answerer | 
   try {
     const facts = await programFacts(session);
     const check = checker(program, facts.all);
-    for (const v of plan.videos.filter((x) => x.script && x.status !== "cut")) {
+    // onlyUnrehearsed: just the scripts written since the last rehearsal (the queue never changes a rehearsed script).
+    for (const v of plan.videos.filter((x) => x.script && x.status !== "cut" && (!o.onlyUnrehearsed || !x.rehearsal))) {
       const file = join(folder, v.script!);
       log(`Rehearsing "${v.title}".`);
       try {

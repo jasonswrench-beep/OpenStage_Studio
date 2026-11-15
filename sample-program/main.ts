@@ -4,6 +4,7 @@
 
 import { startDemoHook } from "../demo-hook/hook.ts";
 import { DEMO_PROJECTS, LENGTHS, SUBJECTS, type Lesson } from "./demos.ts";
+import { programVersion, VERSION_2_CHANGES } from "./versions.ts";
 import "./style.css";
 
 let lessons: Lesson[] = [];
@@ -279,4 +280,13 @@ function reset() {
 
 loadDemo("demo-lessons-01");
 void dirty;
+// Version 2 (for the release check) renames two controls: new stable names and new words, same behaviour.
+if (programVersion(globalThis as unknown as Record<string, unknown>) >= 2) {
+  for (const c of VERSION_2_CHANGES) {
+    const el = document.querySelector<HTMLElement>(`[data-demo-id="${c.was}"]`);
+    if (!el) continue;
+    el.dataset.demoId = c.now;
+    el.textContent = c.label;
+  }
+}
 startDemoHook({ program: "Practice Planner", loadDemo, reset });

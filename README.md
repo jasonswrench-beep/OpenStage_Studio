@@ -23,9 +23,12 @@ documentation project file or a PDF), an AI plans the videos, writes their scrip
 rehearses them and repairs what fails, all as files you read and edit first (`docs/ai.md`). It runs on a built-in model
 on this computer, or on a hosted service with your own key.
 
+Phase 4, "Batch and re-record", is built: a whole manual records unattended overnight, and after a new version of a
+program, a release check names the exact step in each script that no longer works (`docs/batch.md`).
+
 | Built | Not built yet |
 |---|---|
-| The tutorial script format (version 2) and its validator | Batch runs and the release check (phase 4) |
+| The tutorial script format (version 2) and its validator | Scheduling a queue for a set time (start it by hand for now) |
 | The demo-mode hook, in an invented practice program and in OpenStage Author (on a branch) | The accessibility-tree driver and the connector server (phase 5) |
 | The player and the take (window capture with OpenScreen's engine) | Hosted voices, recording your own voice |
 | Narration with Kokoro, a local speech model (or Windows' voices), pronunciation list, clip reuse | Making videos from inside the app window (today: `Make Video.bat`) |
@@ -34,6 +37,7 @@ on this computer, or on a hosted service with your own key.
 | The guard: blocklist, script scan, frame scan, review gate, guard report | |
 | The publishing package: thumbnail, upload details, checklist | |
 | Manual import (documentation project or PDF), AI planning, scriptwriting, rehearsal with repair, publishing details | |
+| The unattended queue for a whole manual, and the release check | |
 
 ## What to do (no typing needed)
 
@@ -49,12 +53,16 @@ on this computer, or on a hosted service with your own key.
    own key). **`Plan Videos.bat`** (drag a manual onto it) plans videos from one chapter into a `series` folder; approve
    them in its `plan.json`. **`Write Scripts.bat`** and **`Rehearse Scripts.bat`** (drag the series folder onto them) write
    and rehearse the scripts.
-8. **`Check Same Video.bat`** is phase 1's acceptance test: it makes the video twice from scratch and checks both are the
+8. Many at once: **`Run Queue.bat`** records unattended (drag a manual onto it to do the whole manual, or series folders
+   and scripts), skipping videos already made. After a new version of a program, **`Release Check.bat`** names the step
+   in each script that no longer works.
+9. **`Check Same Video.bat`** is phase 1's acceptance test: it makes the video twice from scratch and checks both are the
    same. **`Check Guard.bat`** is phase 2's: a blocked name is stopped, a planted path is flagged, export stays shut.
    **`Check AI Scripts.bat`** is phase 3's: from one manual chapter, at least four in five AI scripts pass rehearsal.
-9. **`Run OpenStage Studio.bat`** opens the app, which checks a script against the format and reviews videos.
-10. **`Test Everything.bat`** runs every automated test. **`Check Licences.bat`** checks every package's licence.
-11. **`Make App Icons.bat`** rebuilds the app icons from `OpenStage_Studio_Icon.zip` (or the `branding` folder).
+   **`Check Batch.bat`** is phase 4's: a manual records unattended, and the release check names the exact broken steps.
+10. **`Run OpenStage Studio.bat`** opens the app, which checks a script against the format and reviews videos.
+11. **`Test Everything.bat`** runs every automated test. **`Check Licences.bat`** checks every package's licence.
+12. **`Make App Icons.bat`** rebuilds the app icons from `OpenStage_Studio_Icon.zip` (or the `branding` folder).
 
 You need Node.js (22.13 or newer) and Rust installed. While a take runs, the practice program fills one screen for a minute
 or two (the main one, or the one `local-settings.json` names, such as `{ "monitor": 2 }`); it ignores the mouse and the
@@ -74,6 +82,7 @@ src/package/                  the publishing package: upload details, thumbnail 
 src/review/                   the review screen in the app window
 src/manual/                   reading a manual: a documentation project file or a PDF
 src/ai/                       the AI choice, the built-in model, the four AI roles, rehearsal and the series commands
+src/batch/                    the unattended queue and the release check
 examples/manuals/             an invented manual for the practice program (written by tools/make-practice-manual.ts)
 demo-hook/                    the demo-mode hook a program includes (docs/demo-hook.md)
 sample-program/               Practice Planner, an invented program used for the tests and the example
@@ -83,8 +92,8 @@ src-tauri/                    the app's shell
 ```
 
 Read `docs/script-format.md` to write a script, `docs/demo-hook.md` to add the hook to a program, `docs/guard.md` for
-the guard, the review and the package, `docs/ai.md` for AI planning and scripting, and `docs/HANDOFF.md` for the
-decisions made so far and what comes next.
+the guard, the review and the package, `docs/ai.md` for AI planning and scripting, `docs/batch.md` for the queue and
+the release check, and `docs/HANDOFF.md` for the decisions made so far and what comes next.
 
 ## Licence
 
