@@ -10,7 +10,8 @@ Read `docs/HANDOFF.md` first if you are starting a new session. Read `docs/scrip
 that reads or writes a tutorial script, `docs/demo-hook.md` before touching the demo-mode hook, `docs/guard.md`
 before touching the guard, the review gate or the publishing package, `docs/ai.md` before touching the AI roles, and
 `docs/batch.md` before touching the queue or the release check, `docs/accessibility-driver.md` before touching the
-accessibility driver, and `docs/connector.md` before touching the connector.
+accessibility driver, `docs/connector.md` before touching the connector, and `docs/release.md` before touching the engine,
+the window's pages, `src/paths.ts` or the installer.
 
 ## What this is
 
@@ -24,7 +25,8 @@ review gate, guard report, publishing package (`docs/guard.md`). Phase 3 ("AI pl
 import, planner, scriptwriter, rehearsal with repair, metadata writer (`docs/ai.md`). Phase 4 ("Batch and re-record")
 is built: the unattended queue and the release check (`docs/batch.md`). Phase 5 ("Reach") is built in part: the
 accessibility-tree driver (`docs/accessibility-driver.md`) and the connector server (`docs/connector.md`); canvas commands
-and direct upload wait (Jason, 2026-11-15).
+and direct upload wait (Jason, 2026-11-15). The installer is built (`docs/release.md`): the window does every job, through the
+engine; releases are signed like OpenExplainer's (`docs/code-signing.md`), and none is published yet.
 
 ## Not in scope
 
@@ -85,6 +87,10 @@ and direct upload wait (Jason, 2026-11-15).
   least 40 dB alike); the hook stays the way to pixel-identical videos.
 - The connector (MCP) is off until a person turns it on, works only inside the one folder they name, checks everything
   before changing anything, and never records, approves or exports a video.
+- Installed, every job runs in the engine (`src/engine/main.ts`, bundled by `tools/bundle-engine.mjs`) with the pinned Node.js
+  the installer carries (`tools/node-runtime.json`). The window starts only the engine's named jobs (`src-tauri/src/engine.rs`),
+  and a key reaches the engine on its standard input, never its command line. `src/paths.ts` alone decides where the app's
+  files, a person's work (`DocumentsOpenStage Studio` installed, the repository otherwise) and the downloads are.
 - Every format change bumps the script format version, ships a migration, and updates `docs/script-format.md` in the
   same commit.
 

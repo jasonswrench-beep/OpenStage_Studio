@@ -4,11 +4,13 @@
 // node src/guard/cli.ts latest-review     print the folder of the most recently made video that has a review
 
 import { existsSync, readdirSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { ensureLocalBlocklist } from "./load.ts";
+import { workspace } from "../paths.ts";
+import { isMain } from "../util/is-main.ts";
 
-const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
+/** Where a person's work is: the project folder in the repository, or the workspace when installed (src/paths.ts). */
+const ROOT = workspace();
 
 export function latestReview(root = ROOT): string | null {
   const renders = join(root, "renders");
@@ -20,7 +22,7 @@ export function latestReview(root = ROOT): string | null {
   return found[0]?.folder ?? null;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const what = process.argv[2];
   if (what === "start-blocklist") {
     const { path, made } = ensureLocalBlocklist(ROOT);

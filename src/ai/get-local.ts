@@ -4,10 +4,9 @@
 // node src/ai/get-local.ts [--yes]
 
 import { createInterface } from "node:readline/promises";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { plan, progressText, sizeText } from "../narration/voice-download.ts";
 import { downloadLocalAi, localAiFolder, localAiReady, readLocalManifest } from "./local.ts";
+import { isMain } from "../util/is-main.ts";
 
 export async function getLocalAi(yes: boolean, log: (s: string) => void = console.log): Promise<boolean> {
   const m = readLocalManifest();
@@ -55,7 +54,7 @@ export async function getLocalAi(yes: boolean, log: (s: string) => void = consol
   return true;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   getLocalAi(process.argv.includes("--yes")).then(
     (ok) => process.exit(ok ? 0 : 1),
     (e) => {

@@ -40,8 +40,11 @@ Set `"driver": "accessibility"`. Then:
 
 Agreed with Jason on 2026-11-15: through this driver, the same script must give a video **the same to the eye** (every
 frame at least 40 dB alike, as the comparison judges), not necessarily to the pixel, because nothing holds the program's
-own effects still. `Check Same Video.bat` applies that rule to accessibility scripts and says so. In practice,
-`plan-a-lesson-no-hook.json` gave the same video to the pixel twice (2026-11-15), every one of its 1,643 frames.
+own effects still. `Check Same Video.bat` applies that rule to accessibility scripts and says so: the timing must match
+exactly (every picture, pointer move, click, callout and clip at the same frame), and the pictures need only be alike. In
+practice, `plan-a-lesson-no-hook.json` gave the same video to the pixel twice (2026-11-15), every one of its 1,643
+frames; a later pair differed in one picture by one brightness level on a rounded corner, which the encoded videos did
+not keep.
 
 ## For a new program
 

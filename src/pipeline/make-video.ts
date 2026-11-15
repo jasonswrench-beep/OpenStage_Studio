@@ -19,7 +19,6 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { makeCaptions, makeChapters, makeTranscript, toSrt, toVtt } from "../captions/captions.ts";
 import { clipKey, DEFAULT_VOICE, narrationLines, type Pronunciations, type VoiceSettings } from "../narration/narration.ts";
 import type { Script } from "../script/format.ts";
@@ -32,29 +31,26 @@ import { readManifest } from "./get-voice.ts";
 import { voiceReady, voicesRoot } from "../narration/voice-download.ts";
 import { demoEnvironment, findProgram, type ProgramEntry } from "./programs.ts";
 import { AccessibilityDriver } from "./accessibility.ts";
+import { appRoot, computerSettings, workspace } from "../paths.ts";
 import { describeScriptHit, scanScript, scriptTexts } from "../guard/script-scan.ts";
 import { loadBlocklist, type LoadedBlocklist } from "../guard/load.ts";
 import { scanFrames, type OcrResult } from "../guard/frame-scan.ts";
 import { redactionSpans } from "../guard/redact.ts";
 import { carryDecisions, gate, guardReport, REVIEW_FORMAT, type Review } from "../guard/review.ts";
 import { makeDraft, thumbnailPlan, type ProjectPublishSettings } from "../package/package.ts";
+import { isMain } from "../util/is-main.ts";
 
-export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+/** The project folder in the repository; installed, Studio's workspace. Kept for the tools that name it. */
+export const ROOT = workspace();
 export const FRAME: [number, number] = [1920, 1080];
 export const FPS = 30;
 /** How long a program is given to finish starting before the first step of a take. */
 export const WARM_UP_MS = 5000;
 
-/** Settings for this computer only, kept in local-settings.json beside this project (git ignores it), such as which
- * display takes use: `{ "monitor": 2 }` puts the program being recorded on the second display. */
+/** Settings for this computer only, such as which display takes use: `{ "monitor": 2 }` puts the program being recorded on
+ * the second display. In the repository they are in local-settings.json (git ignores it); installed, in studio.json. */
 export function localSettings(): { monitor?: number } {
-  const file = join(ROOT, "local-settings.json");
-  if (!existsSync(file)) return {};
-  try {
-    return JSON.parse(readFileSync(file, "utf8")) as { monitor?: number };
-  } catch {
-    return {};
-  }
+  return computerSettings();
 }
 
 /** The display takes use: the one asked for, else this computer's setting, else the main display. */
@@ -124,7 +120,7 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   const settings = readProjectSettings(scriptPath);
 
   // The script scan, before anything is recorded.
-  const blocklist = loadBlocklist(ROOT, (options.blocklists ?? []).map((b) => resolve(b)));
+  const blocklist = loadBlocklist(workspace(), (options.blocklists ?? []).map((b) => resolve(b)));
   blocklist.problems.forEach((p) => log(`Note: ${p}`));
   const scriptHits = scanScript(script, blocklist.list);
   if (scriptHits.length) {
@@ -145,7 +141,7 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
     settings.voice = { ...settings.voice, model: m.revision };
   }
   const lines = narrationLines(script, settings.pronunciations);
-  const clipDir = options.clipDir ?? resolve(ROOT, "work/narration");
+  const clipDir = options.clipDir ?? join(workspace(), "work", "narration");
   mkdirSync(clipDir, { recursive: true });
   const clipFile = new Map(lines.map((l) => [l.id, join(clipDir, `${fingerprint(clipKey(l, settings.voice))}.wav`)]));
   const missing = lines.filter((l) => !existsSync(clipFile.get(l.id)!));
@@ -213,7 +209,7 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
     ...(made.review ? { flags: made.review.flags.length, gate: gate(made.review).says } : {}),
   }, null, 2));
   log(`Done: ${video}`);
-  if (made.review) log(`${gate(made.review).says} ${made.review.flags.length ? "Review the flags" : "Approve the video"} in OpenStage Studio (Review Video.bat) before exporting it.`);
+  if (made.review) log(`${gate(made.review).says} ${made.review.flags.length ? "Review the flags" : "Approve the video"} on the Review page in OpenStage Studio (or with Review Video.bat) before exporting it.`);
   return made;
 }
 
@@ -300,7 +296,7 @@ async function recordTake(script: Script, pictureDir: string, helper: string, mo
   if (script.driver === "accessibility") return recordAccessibleTake(script, program, pictureDir, helper, monitor, log);
   const server = new HookServer();
   await server.start();
-  const launch = program.launch(ROOT, server.endpoint, server.token, monitor);
+  const launch = program.launch(appRoot(), server.endpoint, server.token, monitor);
   log(`Starting ${program.name} in demo mode.`);
   const app = spawn(launch.exe, launch.args, { stdio: "ignore", windowsHide: false, env: demoEnvironment() });
   let session: TakeSession | null = null;
@@ -328,7 +324,7 @@ async function recordTake(script: Script, pictureDir: string, helper: string, mo
 
 /** A take through the accessibility driver: the program runs without its hook, started with the script's demo project. */
 async function recordAccessibleTake(script: Script, program: ProgramEntry, pictureDir: string, helper: string, monitor: number, log: (s: string) => void): Promise<TakeLog> {
-  const driver = new AccessibilityDriver(ROOT, program, monitor, log);
+  const driver = new AccessibilityDriver(appRoot(), program, monitor, log);
   let session: TakeSession | null = null;
   try {
     await driver.launch(script.startState.demoProject);
@@ -367,7 +363,7 @@ function makePlan(timeline: Timeline, outFolder: string, clipFile: Map<string, s
 }
 
 // Run from the command line.
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const args = process.argv.slice(2);
   const scriptArg = args.find((a) => !a.startsWith("--"));
   const value = (name: string) => {
@@ -379,7 +375,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exit(2);
   }
   const scriptPath = resolve(scriptArg);
-  const out = resolve(value("--out") ?? join(ROOT, "renders", basename(scriptPath, ".json")));
+  const out = resolve(value("--out") ?? join(workspace(), "renders", basename(scriptPath, ".json")));
   const blocklists = args.flatMap((a, i) => (a === "--blocklist" && args[i + 1] ? [args[i + 1]] : []));
   makeVideo(scriptPath, out, { monitor: takeMonitor(value("--monitor")), blocklists }).catch((e) => {
     console.error(`\nThe video was not made: ${e instanceof Error ? e.message : String(e)}`);

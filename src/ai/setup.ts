@@ -4,12 +4,11 @@
 // node src/ai/setup.ts
 
 import { createInterface, type Interface } from "node:readline/promises";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { openAnswerer } from "./ask.ts";
 import { localAiReady, readLocalManifest } from "./local.ts";
 import { getLocalAi } from "./get-local.ts";
 import { describeChoice, HOSTED_NOTE, missing, PRESETS, readAiSettings, settingsFile, writeAiSettings, type AiSettings } from "./settings.ts";
+import { isMain } from "../util/is-main.ts";
 
 /**
  * Ask for a key without showing it: each character typed or pasted shows as *, Backspace takes one back, Enter ends it.
@@ -125,7 +124,7 @@ export async function setup(): Promise<void> {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   setup().catch((e) => {
     console.error(`\nThe AI was not set up: ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);

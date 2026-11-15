@@ -61,3 +61,17 @@ AI planning, scripting and rehearsal (src/ai/, src/manual/), added 2026-11-15:
   used only when a person chooses Claude with their own key. Its dependencies: standardwebhooks (MIT), json-schema-to-ts
   (MIT) and @opentelemetry/api (Apache-2.0).
 - PDF.js (pdfjs-dist, https://github.com/mozilla/pdf.js), Apache-2.0, for reading the words of a PDF manual.
+
+The installer (tools/build-installer.mjs), added 2026-11-15:
+
+- Node.js v24.22.3 (https://nodejs.org, https://github.com/nodejs/node), MIT. Only node.exe and its LICENSE are carried, in
+  the install folder's node\ folder, to run Studio's engine; the download is checked against its SHA-256 in
+  tools/node-runtime.json. The parts built into node.exe (V8, libuv, OpenSSL, ICU, zlib, brotli, zstd, llhttp, undici,
+  nghttp2, ngtcp2, simdjson, ada, and others) are each under a permissive licence, all set out in node\LICENSE.txt. That
+  file also covers parts of the Node.js download that are not carried (npm, under the Artistic License 2.0) and two ICU
+  build scripts under the GPL with the Autoconf exception, which are not built into node.exe. Audited 2026-11-15.
+- The engine (engine\engine.mjs) is Studio's own code bundled with the packages listed above (the Anthropic SDK and its
+  dependencies, PDF.js and its worker file) by esbuild (https://github.com/evanw/esbuild), MIT, a build tool that is not
+  itself carried.
+- tools/sign_windows.py, the OpenStage suite's shared signing script, Apache-2.0, copied unchanged from OpenExplainer (the
+  same owner). Release tooling on the publisher's computer; it is not part of the app.

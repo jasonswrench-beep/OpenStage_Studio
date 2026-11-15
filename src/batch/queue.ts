@@ -13,8 +13,7 @@
 
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname, extname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { basename, extname, join, relative, resolve } from "node:path";
 import { openAnswerer, type Answerer } from "../ai/ask.ts";
 import { slug } from "../ai/roles.ts";
 import { planSeries, programFacts, programFor, readPlan, rehearseSeries, writeSeries, type ProgramFacts } from "../ai/series.ts";
@@ -26,8 +25,11 @@ import { openProgram } from "../pipeline/program-session.ts";
 import { gate } from "../guard/review.ts";
 import { checkScript, stepWords, type ScriptCheck } from "./check-script.ts";
 import { collectScripts, fileDigest, type ScriptEntry } from "./scripts.ts";
+import { workspace } from "../paths.ts";
+import { isMain } from "../util/is-main.ts";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+/** Where a person's work is: the project folder in the repository, or the workspace when installed (src/paths.ts). */
+const ROOT = workspace();
 
 /** Keep the computer and its screen awake until the returned function is called. */
 export function keepAwake(): () => void {
@@ -227,11 +229,11 @@ export function queueText(items: QueueItem[], chapters: QueueResult["chapters"],
   section("NOT RECORDED", "not recorded", (i) => [i.error ?? ""]);
   section("NOT VALID SCRIPTS", "not valid", (i) => [i.error ?? ""]);
   section("ALREADY MADE FROM THIS VERSION OF THE SCRIPT", "already made", (i) => [`Video: ${relative(ROOT, i.video!)}`]);
-  lines.push("", "Next: review each new video (Review Video.bat, or Review a video in the app), approve it, then Export Packages.bat.");
+  lines.push("", "Next: review each new video on the Review page in OpenStage Studio (or with Review Video.bat), approve it, then export it there (or with Export Packages.bat).");
   return lines.join("\n") + "\n";
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const args = process.argv.slice(2);
   const at = args.indexOf("--program");
   const paths = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--program");

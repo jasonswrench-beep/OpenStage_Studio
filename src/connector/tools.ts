@@ -4,8 +4,7 @@
 // It never records, approves or exports a video.
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { rehearse } from "../ai/rehearse.ts";
 import { checker, programFacts, type ProgramFacts } from "../ai/series.ts";
 import { formatOnly, stepWords } from "../batch/check-script.ts";
@@ -18,8 +17,10 @@ import { SCRIPT_FORMAT, type Driver, type Script } from "../script/format.ts";
 import { validateScript } from "../script/validate.ts";
 import type { ControlInfo, TextOnScreen } from "../../demo-hook/protocol.ts";
 import { fileIn } from "./settings.ts";
+import { workspace } from "../paths.ts";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+/** Where a person's work is: the project folder in the repository, or the workspace when installed (src/paths.ts). */
+const ROOT = workspace();
 
 export interface Tool {
   name: string;

@@ -12,8 +12,7 @@
 // node src/ai/series.ts run <manual> [--chapter ...] [--program ...]      all three in turn (the acceptance test)
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
 import { openAnswerer, type Answerer } from "./ask.ts";
 import { rehearse, type Rehearsal } from "./rehearse.ts";
 import { planVideos, slug, writeMetadata, writeScript, type PlannedVideo } from "./roles.ts";
@@ -27,8 +26,11 @@ import { scanScript, describeScriptHit } from "../guard/script-scan.ts";
 import { loadBlocklist } from "../guard/load.ts";
 import type { Script } from "../script/format.ts";
 import { validateScript } from "../script/validate.ts";
+import { examplesDir, workspace } from "../paths.ts";
+import { isMain } from "../util/is-main.ts";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+/** Where a person's work is: the project folder in the repository, or the workspace when installed (src/paths.ts). */
+const ROOT = workspace();
 
 export interface Plan {
   format: "openstage-studio-plan";
@@ -123,7 +125,7 @@ export async function planSeries(manualFile: string, o: { chapter?: string; prog
       videos: planned.videos,
     };
     savePlan(folder, plan);
-    if (!existsSync(join(folder, "studio-project.json"))) copyFileSync(join(ROOT, "examples", "studio-project.json"), join(folder, "studio-project.json"));
+    if (!existsSync(join(folder, "studio-project.json"))) copyFileSync(join(examplesDir(), "studio-project.json"), join(folder, "studio-project.json"));
     log(`The plan has ${plan.videos.length} videos, in this order:`);
     plan.videos.forEach((v) => log(`  ${v.position}. ${v.title}: ${v.goal}`));
     log(`It is in ${join(folder, "plan.json")}. Read it, then set "status" to "approved" (or "cut") for each video, or merge, split and reword them. Write Scripts.bat writes the approved ones.`);
@@ -269,7 +271,7 @@ export async function runSeries(manualFile: string, o: { chapter?: string; progr
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const [what, target, ...rest] = process.argv.slice(2);
   const value = (name: string) => {
     const i = rest.indexOf(name);

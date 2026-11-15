@@ -2,13 +2,15 @@
 
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { createInterface } from "node:readline";
+import { helperExe } from "../paths.ts";
 
 export type HelperEvent = { event: string; [key: string]: unknown };
 
-export function helperPath(root: string): string {
-  const path = resolve(root, "studio-helper/target/release/studio-helper.exe");
+/** The helper program (beside Studio when installed, or in its build folder in the repository). The argument is kept for
+ * the callers that pass the project folder; where the helper is comes from src/paths.ts. */
+export function helperPath(_root?: string): string {
+  const path = helperExe();
   if (!existsSync(path)) throw new Error(`The helper is not built yet (${path}). Run "Build Studio.bat" first.`);
   return path;
 }

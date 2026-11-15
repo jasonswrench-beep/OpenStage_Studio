@@ -4,15 +4,15 @@
 // node src/pipeline/get-voice.ts [--yes]
 
 import { readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
-import { fileURLToPath } from "node:url";
+import { appRoot } from "../paths.ts";
 import { downloadVoice, plan, progressText, sizeText, voicesRoot, type VoiceManifest } from "../narration/voice-download.ts";
+import { isMain } from "../util/is-main.ts";
 
-const ROOT = resolve(fileURLToPath(import.meta.url), "../../..");
 
 export function readManifest(): VoiceManifest {
-  return JSON.parse(readFileSync(join(ROOT, "tools/kokoro-model.json"), "utf8")) as VoiceManifest;
+  return JSON.parse(readFileSync(join(appRoot(), "tools", "kokoro-model.json"), "utf8")) as VoiceManifest;
 }
 
 async function main() {
@@ -62,7 +62,7 @@ async function main() {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   main().catch((e) => {
     console.error(`\nThe voice was not downloaded: ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);

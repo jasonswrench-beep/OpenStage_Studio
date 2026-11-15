@@ -30,7 +30,7 @@ test("the voice is copied from a packaged app's private copy and checked; the mo
     assert.equal(privateCopies(local).length, 1);
     const lines: string[] = [];
     assert.equal(await copyDownloads(local, (s) => lines.push(s), root), 1);
-    assert.deepEqual(readFileSync(join(local, "OpenStage Studio", "voices", "voice-r", "onnx", "model.onnx")), voiceData);
+    assert.deepEqual(readFileSync(join(local, "org.openstage.studio", "voices", "voice-r", "onnx", "model.onnx")), voiceData, "copied into Studio's data folder, from a private copy under the old name");
     assert.ok(lines.some((l) => /The built-in AI model: no copy was found/.test(l)));
     assert.equal(await copyDownloads(local, () => undefined, root), 0, "a second run has nothing to do");
   } finally {
@@ -42,7 +42,7 @@ test("a copied file that does not match its fingerprint is removed, not used", a
   const { base, root, local } = setup(true);
   try {
     await assert.rejects(copyDownloads(local, () => undefined, root), /did not match its checked copy/);
-    assert.equal(existsSync(join(local, "OpenStage Studio", "voices", "voice-r", "onnx", "model.onnx")), false);
+    assert.equal(existsSync(join(local, "org.openstage.studio", "voices", "voice-r", "onnx", "model.onnx")), false);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

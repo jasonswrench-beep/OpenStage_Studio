@@ -7,6 +7,8 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod engine;
+
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
 fn value_after(args: &[String], name: &str) -> Option<String> {
@@ -44,6 +46,8 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .manage(engine::Runs::default())
+        .invoke_handler(tauri::generate_handler![engine::run_engine, engine::cancel_engine, engine::allow_workspace])
         .setup(move |app| {
             if !sample {
                 let mut builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
@@ -93,6 +97,12 @@ fn main() {
                 .decorations(false)
                 .resizable(false)
                 .visible(false);
+            // Its own browser-engine data folder: the engine is started with the take's settings (grey text smoothing,
+            // src/pipeline/programs.ts), and it refuses to share a data folder with Studio's own window, which runs with the
+            // engine's ordinary settings, so a take started from the window would get a blank program.
+            if let Ok(local) = app.path().app_local_data_dir() {
+                builder = builder.data_directory(local.join("practice-program"));
+            }
             let hooked = hook_settings(&args);
             if let Some((endpoint, token)) = &hooked {
                 let settings = serde_json::json!({ "endpoint": endpoint, "token": token });
@@ -129,6 +139,12 @@ fn main() {
             let _ = app.get_webview_window("sample");
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("OpenStage Studio could not start");
+        .build(tauri::generate_context!())
+        .expect("OpenStage Studio could not start")
+        .run(|app, event| {
+            // Closing the window stops any job still running, with everything it started.
+            if let tauri::RunEvent::Exit = event {
+                engine::stop_all(app);
+            }
+        });
 }

@@ -1,10 +1,15 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "What the main window may do: read scripts and review folders the person opens (or that Review Video.bat names), write a review's decisions and a blurred box into its script, and export a package to a folder the person chooses. The practice program's window gets nothing: its demo-mode hook needs no permissions.",
-  "windows": ["main"],
+  "description": "What the main window may do: start the engine's named jobs (and stop them), read scripts and review folders in the person's work folder or ones they open (or that Review Video.bat names), write a review's decisions and a blurred box into its script, and export a package to a folder the person chooses. The practice program's window gets nothing: its demo-mode hook needs no permissions.",
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
+    "allow-run-engine",
+    "allow-cancel-engine",
+    "allow-allow-workspace",
     "dialog:default",
     "fs:allow-read-text-file",
     "fs:allow-read-file",

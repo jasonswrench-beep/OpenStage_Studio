@@ -64,6 +64,14 @@ const notice = existsSync("NOTICE") ? readFileSync("NOTICE", "utf8") : "";
 const unnamed = [...mpl].filter((name) => !notice.includes(name));
 if (unnamed.length) reviews.push(`Under MPL-2.0 but not named in NOTICE (say where their source is): ${unnamed.join(", ")}`);
 
+// The Node.js the installer carries: its licence file was audited for the pinned version, and NOTICE names that version.
+// A new pin needs a new audit of its LICENSE (anything not on the accepted list is a person's call) and NOTICE updated.
+if (existsSync(join("tools", "node-runtime.json"))) {
+  const node = JSON.parse(readFileSync(join("tools", "node-runtime.json"), "utf8"));
+  count++;
+  if (!notice.includes(`Node.js ${node.version} `)) reviews.push(`Node.js ${node.version} (tools/node-runtime.json) is not the version NOTICE names: audit its LICENSE, then update NOTICE`);
+}
+
 console.log(`Checked ${count} packages.`);
 console.log(`Under MPL-2.0, used unchanged and named in NOTICE: ${[...mpl].filter((n) => !unnamed.includes(n)).sort().join(", ") || "none"}.`);
 if (reviews.length) { console.log("\nNeeds a human look:"); reviews.forEach((r) => console.log("  - " + r)); }

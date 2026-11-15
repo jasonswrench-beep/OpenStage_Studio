@@ -8,12 +8,10 @@ import { randomBytes } from "node:crypto";
 import { availableParallelism } from "node:os";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { basename, dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { basename, join } from "node:path";
 import { downloadVoice, voiceReady, type DownloadOptions, type VoiceManifest } from "../narration/voice-download.ts";
+import { appRoot, downloadsRoot } from "../paths.ts";
 import { matches, readZip, safeName } from "../util/zip.ts";
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 export interface LocalAiManifest extends VoiceManifest {
   model: string;
@@ -21,13 +19,13 @@ export interface LocalAiManifest extends VoiceManifest {
   runtime: { zip: string; keep: string[] };
 }
 
-export function readLocalManifest(root = ROOT): LocalAiManifest {
+export function readLocalManifest(root = appRoot()): LocalAiManifest {
   return JSON.parse(readFileSync(join(root, "tools", "local-ai.json"), "utf8")) as LocalAiManifest;
 }
 
-/** Where the built-in model lives: the user's local app data, one folder per pinned version. */
+/** Where the built-in model lives: Studio's data folder in local AppData, one folder per pinned version. */
 export function localAiFolder(m: LocalAiManifest, env: NodeJS.ProcessEnv = process.env): string {
-  return join(env.LOCALAPPDATA ?? env.HOME ?? ".", "OpenStage Studio", "ai", m.folder);
+  return join(downloadsRoot(env), "ai", m.folder);
 }
 
 const runtimeFolder = (dir: string) => join(dir, "runtime");

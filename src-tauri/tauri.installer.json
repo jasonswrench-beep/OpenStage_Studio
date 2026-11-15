@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "resources": {
+      "engine/engine.mjs": "engine/engine.mjs",
+      "engine/pdf.worker.mjs": "engine/pdf.worker.mjs",
+      "runtime/node/node.exe": "node/node.exe",
+      "runtime/node/LICENSE": "node/LICENSE.txt",
+      "../tools/kokoro-model.json": "tools/kokoro-model.json",
+      "../tools/local-ai.json": "tools/local-ai.json",
+      "../examples/": "examples/"
+    }
+  }
+}

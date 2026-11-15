@@ -31,8 +31,8 @@ export function writeConnector(s: ConnectorSettings, file = connectorFile()): vo
 
 /** Why the connector cannot be used, in words, or null if it can. */
 export function connectorProblem(s: ConnectorSettings): string | null {
-  if (!s.on) return "OpenStage Studio's connector is off. Turn it on with \"Set Up Connector.bat\" in Studio's folder, which also names the folder an assistant may use.";
-  if (!s.folder || !existsSync(s.folder) || !statSync(s.folder).isDirectory()) return "The connector's folder does not exist. Choose it again with \"Set Up Connector.bat\".";
+  if (!s.on) return "OpenStage Studio's connector is off. Turn it on in OpenStage Studio, on its Connector page (or with \"Set Up Connector.bat\" in a copy built from the repository), which also names the folder an assistant may use.";
+  if (!s.folder || !existsSync(s.folder) || !statSync(s.folder).isDirectory()) return "The connector's folder does not exist. Choose it again on Studio's Connector page.";
   return null;
 }
 

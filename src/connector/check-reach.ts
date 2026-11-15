@@ -23,6 +23,7 @@ import { formatOnly } from "../batch/check-script.ts";
 import { FRAME, makeVideo, takeMonitor } from "../pipeline/make-video.ts";
 import { openProgram } from "../pipeline/program-session.ts";
 import { validateScript } from "../script/validate.ts";
+import { isMain } from "../util/is-main.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -153,7 +154,7 @@ export async function checkReach(log: (s: string) => void = console.log): Promis
   return pass;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   checkReach().then(
     (ok) => process.exit(ok ? 0 : 1),
     (e) => {

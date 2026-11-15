@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated 2026-11-15, at the end of the phase 5 build session.
+Last updated 2026-11-15, after the installer was built.
 
 ## Where things are
 
@@ -64,6 +64,31 @@ Phase 5, "Reach", in part (`docs/accessibility-driver.md`, `docs/connector.md`):
   than the agreed "same to the eye"; the hook example's fingerprint is unchanged.
 - 105 TypeScript tests and 20 helper tests pass (`Test Everything.bat`). Phase 5 added no packages.
 
+The installer and the window (`docs/release.md`, `docs/code-signing.md`):
+
+- The window's pages do every job the double-click files do (Home, Make a video, Review, From a manual, Queue, Release
+  check, AI, Connector, Settings), each through the engine (`src/engine/main.ts`). Tried on the second display through
+  Windows' accessibility interface: every page opens by its name, every control has a name, and the example video was
+  made from the window and its review opened.
+- `src/paths.ts` separates the app's own files from a person's work. From the repository nothing changes; installed, the
+  work goes into `DocumentsOpenStage Studio` and the downloads into `%LOCALAPPDATA%org.openstage.studio` (moved there
+  from the old folder the first time).
+- `Check Engine.bat` passes: the bundled engine, run from a folder laid out like the install folder with empty settings,
+  made the example video with the same frames as the repository, and the connector answered through it.
+- `Build Installer.bat` makes `OpenStage-Studio-0.1.0-alpha.1-Setup.exe` (42.5 MB, not signed) and its checks pass.
+  `Test Installed App.bat` passes: installed silently, every page opened by its name with every control named (through
+  UI Automation), the take screen set on Settings, the example video made from the installed window and its review
+  opened, then uninstalled with the work folder (here `OneDrive\Documents\OpenStage Studio`) and the downloads kept.
+- Building the window found that the practice program must keep its own browser-engine data folder (a take started from
+  the window otherwise got a blank program). That fresh folder then showed that the browser engine's move from software
+  drawing to the graphics card happens at a moment that depends on timing, and the two smooth rounded corners one level
+  of brightness apart (48 pixels): one take in five differed. Programs in demo mode now draw in software only. The
+  example's frame fingerprint is now a76c2a692e538f8d (before: cffdaa5f8dc08793), the same in four takes made four ways:
+  twice by `Check Same Video.bat`, once by the bundled engine (`Check Engine.bat`) and once by the installed app's window.
+- `check-repeat.ts` now compares an accessibility take's timeline with the pictures' names set aside: the timing must
+  match, and the pictures need only be the same to the eye (as agreed), which the comparison of the finished videos judges.
+  Before, one picture differing by one brightness level on a corner failed the timeline as well.
+
 ### Phase 3 results, and what the built-in model gets wrong
 
 Rehearsal passing means every step can be performed and none types onto a box's old words. It does not prove each step
@@ -104,6 +129,12 @@ does what its narration says, and the built-in model's scripts still need a pers
 
 Confirmed by Jason:
 
+- **The installer** (2026-11-15): signed the way OpenExplainer is (Azure Artifact Signing with the suite's shared
+  `tools/sign_windows.py`, on Jason's computer only); a person's work in `DocumentsOpenStage Studio`; the first
+  installer's window does all the jobs. Node.js is carried in the installer (pinned in `tools/node-runtime.json`, v24.22.3,
+  the 24 line Studio is developed on); the voice and the model still download on request. First release name
+  `0.1.0-alpha.1`; nothing published yet.
+
 1. **Default voice: Kokoro-82M, run natively in the helper** (2026-11-14). Downloaded once with `Get Voice.bat`
    (340 MB, every file checked), then offline. Voice `af_heart` by default; the Windows voices remain as a second engine.
    Details and the licence audit: `docs/voice-models.md`.
@@ -129,7 +160,10 @@ Confirmed by Jason:
     imports are documentation project files and PDFs.
 13. **Plain grey text smoothing in demo mode** (2026-11-15): Studio starts every program in demo mode with its browser
     engine told not to use coloured (subpixel) smoothing, which could switch for a label beside a control drawn in its own
-    layer and made two takes differ. Set at launch (`src/pipeline/programs.ts`), so no program's own code changes.
+    layer and made two takes differ. Set at launch (`src/pipeline/programs.ts`), so no program's own code changes. Since
+    the installer work (2026-11-15) the engine also draws in software only (`--disable-gpu`): its move from software to the
+    graphics card happened at a moment that depends on timing, and the two smooth rounded corners one brightness level
+    apart.
 14. **The unattended queue records every script that passes rehearsal** (2026-11-15), including AI-written scripts a
     person has not read; the review gate before export is the person's check.
 15. **The release check reports broken steps only** (2026-11-15), not steps whose pictures merely changed.
@@ -208,7 +242,9 @@ Made by Claude, open to change:
 - OpenStage Author: the hook is on Author's branch `studio-demo-hook` (pushed, not merged). Still to do: name the
   buttons in its panes and dialogs, list its demo projects in `src/pipeline/programs.ts`, write its manual (or import
   one), and make its videos.
-- Put the player and AI setup in the app window: open a script, make the video, show progress, play it, go to review.
+- A signed build on Jason's computer (`node tools/build-installer.mjs --sign`), then `Test Installed App.bat` on it; publishing
+  a pre-release is Jason's call each time (`docs/code-signing.md`).
+- A short pass with a real screen reader on the window's new pages.
 - The rest of phase 5: canvas commands for Author's stage (hook commands in Author's repository), and direct upload to a
   video site (always private; the site's current upload rules to be confirmed first).
 - Try the connector from Jason's own assistant: `Set Up Connector.bat`, then add the lines it shows.
@@ -218,14 +254,18 @@ Made by Claude, open to change:
 - **Takes do not depend on the computer's state.** In demo mode the hook rewrites the page's own focus and hover rules to
   follow markers it sets, keeps track of the keyboard focus itself, draws drop-down lists itself, and gives them their own
   layer; the take waits five seconds for a program to finish starting; and the program is started with plain grey text
-  smoothing. If a repeat check ever fails, the take log shows the first picture that differs.
-- The built-in AI model and its runtime live in `%LOCALAPPDATA%\OpenStage Studio\ai\`; writing one script with it takes a
+  smoothing, drawing in software only, and (the practice program) its own browser-engine data folder. If a repeat check ever fails, the take log shows the first picture that differs.
+- The built-in AI model and its runtime live in `%LOCALAPPDATA%\org.openstage.studio\ai\` (the voice beside it in `voices\`); writing one script with it takes a
   minute or two on this computer's processor, and a whole chapter's run about 25 minutes. With Claude a whole chapter's
   run took about 10 minutes, most of it rehearsal.
 - When an AI assistant runs Studio's commands from inside a packaged desktop app, Windows keeps anything it writes under
   AppData in that app's private folder: the AI settings, the voice and the model it downloads there are not the ones
   Studio sees when run by double-click. Studio itself, run normally, is not affected. `Copy Downloads.bat` copies the
   voice and the model from such a private copy to where Studio looks, checking every file against its pinned fingerprint.
+- The window's pages start the engine; from the repository that is `node src/engine/main.ts` (Node.js on the PATH), installed it
+  is the carried `node
+ode.exe` with `engineengine.mjs`. A plain `cargo build --release` in `src-tauri` makes a program that
+  loads its pages from the development server, which also breaks takes; build with `Build Studio.bat`.
 - `local-settings.json` (git ignores it) holds settings for this computer only: `{ "monitor": 2 }` puts takes on the second
   display, which is how Jason's computer is set up. Every double-click script follows it; `--monitor <n>` overrides it.
   The app's own window also takes `--monitor <n>` (used for tests).

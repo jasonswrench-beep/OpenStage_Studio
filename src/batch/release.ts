@@ -6,8 +6,7 @@
 // With nothing named: every series under series\ and every script under examples\.
 
 import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, join, relative } from "node:path";
 import { openAnswerer, type Answerer } from "../ai/ask.ts";
 import { programFacts, type ProgramFacts } from "../ai/series.ts";
 import { describeChoice, readAiSettings } from "../ai/settings.ts";
@@ -15,8 +14,11 @@ import { FRAME, takeMonitor } from "../pipeline/make-video.ts";
 import { openProgram } from "../pipeline/program-session.ts";
 import { checkScript, stepWords, type ScriptCheck } from "./check-script.ts";
 import { collectScripts, type ScriptEntry } from "./scripts.ts";
+import { examplesDir, workspace } from "../paths.ts";
+import { isMain } from "../util/is-main.ts";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+/** Where a person's work is: the project folder in the repository, or the workspace when installed (src/paths.ts). */
+const ROOT = workspace();
 
 export interface ReleaseResult {
   entry: ScriptEntry;
@@ -123,10 +125,10 @@ export function releaseText(results: ReleaseResult[], ai: string): string {
   return lines.join("\n") + "\n";
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const args = process.argv.slice(2);
   const paths = args.filter((a) => !a.startsWith("--"));
-  releaseCheck(paths.length ? paths : [join(ROOT, "series"), join(ROOT, "examples")], { useAi: !args.includes("--no-ai") }).then(
+  releaseCheck(paths.length ? paths : [join(ROOT, "series"), examplesDir()], { useAi: !args.includes("--no-ai") }).then(
     (r) => {
       console.log(`\n${r.text}`);
       console.log(`The report is in ${join(ROOT, "renders", "release-check", "report.txt")}`);

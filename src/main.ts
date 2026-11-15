@@ -1,116 +1,75 @@
-// OpenStage Studio's window: check a tutorial script against the format, and review a finished video (the review gate)
-// before its publishing package is exported. Making the video is done by "Make Video.bat" in this version (see
-// docs/HANDOFF.md); the window gains that button when the player moves into the app.
+// OpenStage Studio's window. A list of pages on the left (Home, Make a video, Review, From a manual, Queue, Release
+// check, AI, Connector, Settings), the page itself, and the job area, which says what is running on every page. Each
+// page's work is done by the engine (src/engine/main.ts), the same code the double-click files run.
+//
+// Keyboard: Tab moves through the page list, then the page, then the job area. Opening a page puts the focus on its
+// heading. Nothing traps the focus, and every state is said in words as well as shown.
 
-import { open } from "@tauri-apps/plugin-dialog";
-import { readTextFile } from "@tauri-apps/plugin-fs";
-import { describeAction } from "./captions/captions.ts";
-import { describeProblems, validateScript } from "./script/validate.ts";
-import { showReview } from "./review/view.ts";
+import { allowWorkspace } from "./app/engine.ts";
+import { fetchLibrary, fetchStatus, type Ctx, type Page } from "./app/context.ts";
+import { jobArea } from "./app/job-area.ts";
+import { el, errorText, heading } from "./app/ui.ts";
+import { home } from "./app/pages/home.ts";
+import { make } from "./app/pages/make.ts";
+import { review } from "./app/pages/review.ts";
+import { manual } from "./app/pages/manual.ts";
+import { queue, release } from "./app/pages/batch.ts";
+import { ai } from "./app/pages/ai.ts";
+import { connector } from "./app/pages/connector.ts";
+import { settings } from "./app/pages/settings.ts";
 import "./style.css";
 
-const app = document.createElement("div");
-app.className = "studio";
-app.innerHTML = `
-<header class="bar">
-  <img src="/studio-icon.svg" alt="" class="logo">
-  <h1>OpenStage Studio</h1>
-  <button type="button" id="open">Check a script</button>
-  <button type="button" id="review">Review a video</button>
-</header>
-<p id="status" class="status" role="status" aria-live="polite"></p>
-<main id="main"></main>`;
-document.body.append(app);
+const PAGES: Page[] = [home, make, review, manual, queue, release, ai, connector, settings];
 
-const main = document.querySelector<HTMLElement>("#main")!;
-const status = document.querySelector<HTMLParagraphElement>("#status")!;
-const announce = (text: string) => {
+const status = el("p", { id: "status", className: "status", role: "status" });
+const say = (text: string) => {
   // Cleared first so the same message said twice is still read out.
   status.textContent = "";
   setTimeout(() => (status.textContent = text), 60);
 };
 
-function showCheck() {
-  main.className = "two";
-  main.innerHTML = `
-  <section aria-labelledby="result-h">
-    <h2 id="result-h">Script check</h2>
-    <p id="summary" tabindex="-1">Open a tutorial script (a .json file) to check it. Nothing is changed by checking.</p>
-    <ul id="problems" class="problems"></ul>
-  </section>
-  <section aria-labelledby="steps-h">
-    <h2 id="steps-h">Steps</h2>
-    <ol id="steps" class="steps"></ol>
-  </section>`;
-}
+const main = el("main", { id: "main", tabIndex: -1 });
+const navButtons = new Map<string, HTMLButtonElement>();
+const nav = el("nav", { "aria-label": "Pages" }, el("ul", {}, ...PAGES.map((p) => {
+  const b = el("button", { type: "button", className: "nav" }, p.name);
+  b.addEventListener("click", () => go(p.id));
+  navButtons.set(p.id, b);
+  return el("li", {}, b);
+})));
 
-function show(fileName: string, text: string) {
-  showCheck();
-  const summary = document.querySelector<HTMLParagraphElement>("#summary")!;
-  const problems = document.querySelector<HTMLUListElement>("#problems")!;
-  const steps = document.querySelector<HTMLOListElement>("#steps")!;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch (e) {
-    summary.textContent = `${fileName} is not valid JSON: ${(e as Error).message}`;
-    summary.focus();
-    return;
-  }
-  const v = validateScript(parsed);
-  summary.textContent = v.ok
-    ? `${fileName} passes the check${v.warnings.length ? `, with ${v.warnings.length} warning${v.warnings.length === 1 ? "" : "s"}` : ""}. ${v.rehearsable ? "Every step says what must be true afterward." : "Some steps do not say what must be true afterward yet, so it cannot count as rehearsed."} The script scan for blocked names runs when the video is made.`
-    : `${fileName} does not pass the check: ${v.errors.length} error${v.errors.length === 1 ? "" : "s"}. The player will not run it until they are fixed.`;
-  for (const line of describeProblems(v)) {
-    const li = document.createElement("li");
-    li.textContent = line;
-    problems.append(li);
-  }
-  if (v.script) {
-    for (const s of v.script.steps) {
-      const li = document.createElement("li");
-      const what = document.createElement("strong");
-      what.textContent = describeAction(s);
-      const said = document.createElement("span");
-      said.textContent = s.silent ? " (silent)" : ` "${s.narration}"`;
-      li.append(what, said);
-      steps.append(li);
-    }
-  }
-  summary.focus();
-}
-
-document.querySelector("#open")!.addEventListener("click", async () => {
-  const path = await open({ multiple: false, filters: [{ name: "Tutorial script", extensions: ["json"] }] });
-  if (typeof path !== "string") return;
-  const name = path.split(/[\\/]/).pop() ?? path;
-  try {
-    show(name, await readTextFile(path));
-  } catch (e) {
-    announce(`${name} could not be read: ${String(e)}`);
-  }
+document.body.append(
+  el("a", { href: "#main", className: "skip" }, "Skip to the page"),
+  el("header", { className: "bar" }, el("img", { src: "/studio-icon.svg", alt: "", className: "logo" }), el("h1", {}, "OpenStage Studio")),
+  status,
+  el("div", { className: "layout" }, nav, el("div", { className: "content" }, main, jobArea())),
+);
+document.querySelector<HTMLAnchorElement>(".skip")!.addEventListener("click", (e) => {
+  e.preventDefault();
+  (main.querySelector<HTMLElement>(".page-h") ?? main).focus();
 });
 
-async function review(folder: string) {
-  main.className = "one";
-  try {
-    await showReview(main, folder, announce);
-  } catch (e) {
-    main.innerHTML = "";
-    const p = document.createElement("p");
-    p.tabIndex = -1;
-    p.textContent = `That folder could not be opened for review: ${e instanceof Error ? e.message : String(e)}. Choose the folder a video was made in (in renders), which holds its review.json.`;
-    main.append(p);
-    p.focus();
+let showing = 0;
+async function go(id: string, arg?: unknown) {
+  const page = PAGES.find((p) => p.id === id) ?? home;
+  const mine = ++showing;
+  for (const [pid, b] of navButtons) {
+    if (pid === page.id) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
   }
+  document.title = `${page.name}: OpenStage Studio`;
+  const host = el("div", { className: "page" });
+  main.replaceChildren(el("p", { className: "muted" }, `Opening ${page.name}...`));
+  const ctx: Ctx = { go: (p, a) => void go(p, a), say, arg, status: fetchStatus, library: fetchLibrary };
+  try {
+    await page.show(host, ctx);
+  } catch (e) {
+    host.replaceChildren(heading(page.name), el("p", {}, `This page could not be opened: ${errorText(e)}`));
+  }
+  if (mine !== showing) return; // Another page was asked for meanwhile.
+  main.replaceChildren(host);
+  host.querySelector<HTMLElement>(".page-h")?.focus();
 }
 
-document.querySelector("#review")!.addEventListener("click", async () => {
-  const folder = await open({ directory: true, recursive: true, title: "Choose the folder a video was made in (in renders)" });
-  if (typeof folder === "string") await review(folder);
-});
-
-// Opened by "Review Video.bat": go straight to that video's review.
+// Opened by "Review Video.bat" (or with --review): go straight to that video's review.
 const asked = (globalThis as { __OPENSTAGE_REVIEW__?: string }).__OPENSTAGE_REVIEW__;
-if (asked) void review(asked);
-else showCheck();
+allowWorkspace().catch((e) => say(`Your work folder could not be opened: ${errorText(e)}`)).finally(() => void (asked ? go("review", { folder: asked }) : go("home")));

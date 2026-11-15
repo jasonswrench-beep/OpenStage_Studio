@@ -5,18 +5,18 @@
 
 import { existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
-import { fileURLToPath } from "node:url";
 import { connectorFile, readConnector, writeConnector } from "./settings.ts";
+import { isMain } from "../util/is-main.ts";
+import { appRoot, installed, workspace } from "../paths.ts";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-
-/** What an assistant needs to start the connector: the command, its arguments, and a settings-file block. */
-export function connectLines(node = process.execPath, root = ROOT) {
-  const server = join(root, "src", "connector", "server.ts");
-  const block = { mcpServers: { "openstage-studio": { command: node, args: [server] } } };
-  return { command: node, args: [server], block: JSON.stringify(block, null, 2) };
+/** What an assistant needs to start the connector: the command, its arguments, and a settings-file block. Installed, the
+ * command is Studio's own copy of Node.js and the engine's connector job; in the repository, the connector's own file. */
+export function connectLines(node = process.execPath, root = appRoot(), env: NodeJS.ProcessEnv = process.env) {
+  const args = installed(env) ? [join(root, "engine", "engine.mjs"), "connector"] : [join(root, "src", "connector", "server.ts")];
+  const block = { mcpServers: { "openstage-studio": { command: node, args } } };
+  return { command: node, args, block: JSON.stringify(block, null, 2) };
 }
 
 async function main() {
@@ -32,7 +32,7 @@ async function main() {
       console.log("The connector is off. An assistant that tries to use it is told how to turn it on.");
       return;
     }
-    const suggested = now.folder ?? join(homedir(), "Documents", "OpenStage Studio", "Connector");
+    const suggested = now.folder ?? join(installed() ? workspace() : join(homedir(), "Documents", "OpenStage Studio"), "Connector");
     const typed = (await rl.question(`The folder it may use (Enter keeps ${suggested}): `)).trim().replace(/^"|"$/g, "");
     const folder = resolve(typed || suggested);
     if (!existsSync(folder)) {
@@ -46,14 +46,14 @@ async function main() {
     console.log(c.block);
     console.log("\nFor an assistant that asks for the command that starts a server:");
     console.log(`  Command: ${c.command}`);
-    console.log(`  Argument: ${c.args[0]}`);
+    console.log(`  Arguments: ${c.args.join(" ")}`);
     console.log("\nTurn it off again here at any time; it takes effect at an assistant's next request.");
   } finally {
     rl.close();
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   main().catch((e) => {
     console.error(`\nThe connector was not set up: ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);

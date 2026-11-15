@@ -69,7 +69,7 @@ Kitten ONNX files contain unseeded random steps, and whether the Rust front end 
   own fallback: joined words are split where the case changes (OpenStage), two known words written as one are found, common
   endings are taken off, and anything left is spelled out letter by letter. Studio's pronunciation list comes first.
 - `tools/kokoro-model.json` pins the model's revision and every file's size and SHA-256 (the model, its vocabulary and the 28
-  English voices: 340 MB). `Get Voice.bat` downloads them into `%LOCALAPPDATA%\OpenStage Studio\voices\`, with
+  English voices: 340 MB). `Get Voice.bat` downloads them into `%LOCALAPPDATA%\org.openstage.studio\voices\` (until 2026-11-15 `...\OpenStage Studio\voices\`, moved across by itself), with
   progress, carrying on after an interruption, and stopping on Ctrl+C; a file that does not match is refused.
 - The default voice is `af_heart` (US English); any of the 28 can be named in `studio-project.json`.
 - The same text gives the same sound every time: checked byte for byte, and in the acceptance test (two full runs from

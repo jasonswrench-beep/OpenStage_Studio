@@ -11,9 +11,9 @@
 
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { helperPath, runHelper } from "./helper.ts";
 import { makeVideo, ROOT, type MadeVideo } from "./make-video.ts";
+import { isMain } from "../util/is-main.ts";
 
 export async function checkRepeat(scriptPath: string, log: (s: string) => void = console.log, monitor?: number): Promise<boolean> {
   const name = basename(scriptPath, ".json");
@@ -38,7 +38,11 @@ export async function checkRepeat(scriptPath: string, log: (s: string) => void =
 
   const pictures = (m: MadeVideo) => JSON.stringify([m.take.start, ...m.take.steps.map((s) => [s.hover, ...s.changes])]);
   check(pictures(a) === pictures(b), `the take's still pictures (${a.take.steps.length} steps)`, !toTheEye);
-  check(JSON.stringify(a.timeline) === JSON.stringify(b.timeline), `the timeline (${a.timeline.frames} and ${b.timeline.frames} frames, ${(a.timeline.durationMs / 1000).toFixed(1)} seconds)`);
+  // The timeline names each picture by its fingerprint. Where the pictures need only be the same to the eye, the timeline
+  // must still put every picture, pointer move, click, callout and clip at the same frame, so it is compared with the
+  // pictures' names set aside; the pictures themselves are judged by the comparison of the finished videos below.
+  const timing = (m: MadeVideo) => JSON.stringify(m.timeline, (k, v) => (toTheEye && k === "picture" ? "(a picture)" : v));
+  check(timing(a) === timing(b), `the timeline (${a.timeline.frames} and ${b.timeline.frames} frames, ${(a.timeline.durationMs / 1000).toFixed(1)} seconds)${toTheEye ? ", every picture at the same frame" : ""}`);
   check(a.frameDigest === b.frameDigest, `every frame given to the encoder (fingerprints ${a.frameDigest} and ${b.frameDigest})`, !toTheEye);
   check(a.soundDigest === b.soundDigest, `the sound given to the encoder (fingerprints ${a.soundDigest} and ${b.soundDigest})`);
   const compared = await runHelper(helperPath(ROOT), ["compare", "--a", a.video, "--b", b.video]);
@@ -53,7 +57,7 @@ export async function checkRepeat(scriptPath: string, log: (s: string) => void =
   return same;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const script = process.argv[2];
   if (!script) {
     console.error("Say which script to check.");

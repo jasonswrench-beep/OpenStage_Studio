@@ -99,3 +99,8 @@ test("the setup gives the command, its argument and a settings-file block", () =
   assert.equal(c.args[0], join("C:\\Studio", "src", "connector", "server.ts"));
   assert.match(c.block, /"openstage-studio": \{\s*"command": "C:\\\\node\\\\node\.exe"/);
 });
+
+test("installed, the setup points an assistant at Studio's own Node.js and the engine's connector job", () => {
+  const c = connectLines("C:\\Studio\\node\\node.exe", "C:\\Studio", { OPENSTAGE_STUDIO_RESOURCES: "C:\\Studio" });
+  assert.deepEqual(c.args, [join("C:\\Studio", "engine", "engine.mjs"), "connector"]);
+});

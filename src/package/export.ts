@@ -8,12 +8,14 @@
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { basename, dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { basename, join, resolve } from "node:path";
 import { gate, guardReport, type Review } from "../guard/review.ts";
 import { checklistText, uploadText, type PublishDraft, type VideoRecord } from "./package.ts";
+import { workspace } from "../paths.ts";
+import { isMain } from "../util/is-main.ts";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+/** Where a person's work is: the project folder in the repository, or the workspace when installed (src/paths.ts). */
+const ROOT = workspace();
 
 /** The files copied from a video's folder into its package, as they are named there. */
 export const PACKAGE_COPIES = ["captions.srt", "captions.vtt", "transcript.txt", "thumbnail.png"] as const;
@@ -90,7 +92,7 @@ export function exportAll(renderFolders: string[], outRoot: string, log: (s: str
   return { exported, refused };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const args = process.argv.slice(2);
   const at = args.indexOf("--out");
   const out = resolve(at >= 0 ? args[at + 1] : join(ROOT, "packages"));

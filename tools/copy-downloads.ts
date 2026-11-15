@@ -20,7 +20,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 interface Item {
   name: string;
   manifest: VoiceManifest;
-  /** Where it lives under "OpenStage Studio" in local AppData. */
+  /** Where it lives in Studio's data folder in local AppData. */
   under: string;
   ready(dir: string): boolean;
   after?(dir: string): void;
@@ -35,13 +35,17 @@ export function items(root = ROOT): Item[] {
   ];
 }
 
-/** Packaged apps' private copies of "OpenStage Studio" in local AppData. */
+/** Studio's data folder in local AppData, and the name it had before 2026-11-15. */
+const DATA = "org.openstage.studio";
+const OLD = "OpenStage Studio";
+
+/** Packaged apps' private copies of Studio's data folder (under either name) in local AppData. */
 export function privateCopies(local: string): string[] {
   const packages = join(local, "Packages");
   if (!existsSync(packages)) return [];
   return readdirSync(packages, { withFileTypes: true })
     .filter((d) => d.isDirectory())
-    .map((d) => join(packages, d.name, "LocalCache", "Local", "OpenStage Studio"))
+    .flatMap((d) => [DATA, OLD].map((name) => join(packages, d.name, "LocalCache", "Local", name)))
     .filter((p) => existsSync(p));
 }
 
@@ -55,7 +59,7 @@ export async function copyDownloads(local: string, log: (s: string) => void = co
   const copies = privateCopies(local);
   let copied = 0;
   for (const it of items(root)) {
-    const dest = join(local, "OpenStage Studio", it.under);
+    const dest = join(local, DATA, it.under);
     // Ready means the files are there and, for the model, unpacked.
     const voiceOnly = (d: string) => voiceReady(d, it.manifest);
     if (it.ready(dest)) {

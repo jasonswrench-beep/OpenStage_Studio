@@ -30,12 +30,15 @@ Phase 5, "Reach", is built in part: an accessibility driver records programs wit
 screen reader reads (`docs/accessibility-driver.md`), and a connector lets an assistant you already use write and
 rehearse scripts (`docs/connector.md`).
 
+There is an installer: one setup file that installs Studio for you, with no administrator rights, and whose window does
+every job the double-click files below do (`docs/release.md`). Installed, your work goes into `DocumentsOpenStage Studio`.
+
 | Built | Not built yet |
 |---|---|
 | The tutorial script format (version 2) and its validator | Scheduling a queue for a set time (start it by hand for now) |
 | The demo-mode hook, in an invented practice program and in OpenStage Author (on a branch) | Canvas commands for Author's stage, and uploading from Studio (phase 5) |
 | The player and the take (window capture with OpenScreen's engine) | Hosted voices, recording your own voice |
-| Narration with Kokoro, a local speech model (or Windows' voices), pronunciation list, clip reuse | Making videos from inside the app window (today: `Make Video.bat`) |
+| Narration with Kokoro, a local speech model (or Windows' voices), pronunciation list, clip reuse | A signed, published release (the installer is built; signing waits for the owner's computer) |
 | Captions (SRT and VTT), transcript, chapter list | Uploading from inside the app (packages are uploaded by hand) |
 | Assembly to MP4 (1920 by 1080, 30 frames a second) with title and end cards | |
 | The guard: blocklist, script scan, frame scan, review gate, guard report | |
@@ -43,6 +46,8 @@ rehearse scripts (`docs/connector.md`).
 | Manual import (documentation project or PDF), AI planning, scriptwriting, rehearsal with repair, publishing details | |
 | The unattended queue for a whole manual, and the release check | |
 | The accessibility driver (no hook needed) and the connector for assistants | |
+| The window: every job from its pages, by keyboard and screen reader (`docs/release.md`) | |
+| A per-user installer that carries everything but the downloads (`docs/release.md`) | |
 
 ## What to do (no typing needed)
 
@@ -68,9 +73,13 @@ rehearse scripts (`docs/connector.md`).
    **`Check Batch.bat`** is phase 4's: a manual records unattended, and the release check names the exact broken steps.
    **`Check Reach.bat`** is phase 5's: a program without the hook records, and Claude writes and rehearses a script
    through the connector.
-10. **`Run OpenStage Studio.bat`** opens the app, which checks a script against the format and reviews videos.
+10. **`Run OpenStage Studio.bat`** opens the app. Its pages do everything above: make a video, review, plan and write
+    from a manual, the queue, the release check, AI, the connector and settings.
 11. **`Test Everything.bat`** runs every automated test. **`Check Licences.bat`** checks every package's licence.
 12. **`Make App Icons.bat`** rebuilds the app icons from `OpenStage_Studio_Icon.zip` (or the `branding` folder).
+13. **`Build Installer.bat`** makes the setup file (not signed, for checking), **`Check Engine.bat`** runs the bundled
+    engine the way the installed app does, and **`Test Installed App.bat`** installs the setup, works the installed window
+    through Windows' accessibility interface, and uninstalls it (`docs/release.md`).
 
 You need Node.js (22.13 or newer) and Rust installed. While a take runs, the practice program fills one screen for a minute
 or two (the main one, or the one `local-settings.json` names, such as `{ "monitor": 2 }`); it ignores the mouse and the
@@ -92,12 +101,16 @@ src/manual/                   reading a manual: a documentation project file or 
 src/ai/                       the AI choice, the built-in model, the four AI roles, rehearsal and the series commands
 src/batch/                    the unattended queue and the release check
 src/connector/                the connector (MCP server) for assistants, its setup and its acceptance test
+src/engine/                   the engine: every job the window starts, by name (bundled into the installer)
+src/app/                      the window's pages and its job area
+src/paths.ts                  where things are: the app's own files, a person's work, the downloads
 examples/manuals/             an invented manual for the practice program (written by tools/make-practice-manual.ts)
 demo-hook/                    the demo-mode hook a program includes (docs/demo-hook.md)
 sample-program/               Practice Planner, an invented program used for the tests and the example
 studio-helper/                the native part (Rust): window pictures, speech, drawing, the MP4, reading text, thumbnails
 capture/                      OpenScreen's capture engine, copied from OpenStage Author (capture/IMPORT-MANIFEST.md)
-src-tauri/                    the app's shell
+src-tauri/                    the app's shell (src-tauri/src/engine.rs runs the engine's jobs for the window)
+tools/build-installer.mjs     the installer build; tools/release-smoke.mjs tests the installed app
 ```
 
 Read `docs/script-format.md` to write a script, `docs/demo-hook.md` to add the hook to a program, `docs/guard.md` for

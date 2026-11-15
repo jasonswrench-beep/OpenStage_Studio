@@ -18,6 +18,7 @@ import type { Script, Step } from "../script/format.ts";
 import { VERSION_2_CHANGES } from "../../sample-program/versions.ts";
 import { runQueue } from "./queue.ts";
 import { releaseCheck } from "./release.ts";
+import { isMain } from "../util/is-main.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
@@ -92,7 +93,7 @@ export async function checkBatch(log: (s: string) => void = console.log): Promis
   return pass;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   checkBatch().then(
     (ok) => process.exit(ok ? 0 : 1),
     (e) => {

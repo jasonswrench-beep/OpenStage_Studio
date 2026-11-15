@@ -10,11 +10,11 @@
 // node src/guard/check-guard.ts [--monitor <n>]
 
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { makeVideo, ROOT, ScriptBlocked, takeMonitor } from "../pipeline/make-video.ts";
 import { exportAll, refusal } from "../package/export.ts";
 import { gate } from "./review.ts";
+import { isMain } from "../util/is-main.ts";
 
 export async function checkGuard(monitor: number, log: (s: string) => void = console.log): Promise<boolean> {
   const base = join(ROOT, "renders", "guard-check");
@@ -67,7 +67,7 @@ export async function checkGuard(monitor: number, log: (s: string) => void = con
   return pass;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const at = process.argv.indexOf("--monitor");
   checkGuard(takeMonitor(at > 0 ? process.argv[at + 1] : undefined)).then(
     (ok) => process.exit(ok ? 0 : 1),

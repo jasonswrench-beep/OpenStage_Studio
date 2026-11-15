@@ -5,6 +5,7 @@
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream, existsSync, mkdirSync, renameSync, rmSync, statSync, statfsSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { downloadsRoot } from "../paths.ts";
 
 export interface VoiceFile {
   path: string;
@@ -30,9 +31,9 @@ export interface Progress {
   file: string;
 }
 
-/** Where downloaded voices live: the user's local app data, one folder per pinned revision. */
+/** Where downloaded voices live: Studio's data folder in local AppData, one folder per pinned revision. */
 export function voicesRoot(env: NodeJS.ProcessEnv = process.env): string {
-  return join(env.LOCALAPPDATA ?? env.HOME ?? ".", "OpenStage Studio", "voices");
+  return join(downloadsRoot(env), "voices");
 }
 
 /** The address of one pinned file. */

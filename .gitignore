@@ -33,3 +33,7 @@ CLAUDE.local.md
 
 # The icon pack as delivered; its contents are kept unpacked in branding/.
 OpenStage_Studio_Icon.zip
+
+# Made by the installer build: the bundled engine and the pinned Node.js runtime (tools/build-installer.mjs).
+src-tauri/engine/
+src-tauri/runtime/

@@ -6,11 +6,10 @@
 // node src/connector/server.ts
 
 import { createInterface } from "node:readline";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { connectorProblem, readConnector } from "./settings.ts";
 import { TOOLS, type Context } from "./tools.ts";
 import type { ProgramFacts } from "../ai/series.ts";
+import { isMain } from "../util/is-main.ts";
 
 const VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -93,6 +92,6 @@ export function startServer(input: NodeJS.ReadableStream = process.stdin, output
   });
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   void startServer().then(() => process.exit(0));
 }
