@@ -1,0 +1,31 @@
+/* OpenStage Studio's window: the suite's navy bar with the Studio pink as its accent. */
+:root {
+  --navy: #102037;
+  --navy-deep: #0b172a;
+  --pink: #ff7bcc;
+  --pink-deep: #f04cad;
+  --ink: #17202c;
+  --muted: #4f5b69;
+  --line: #d5dbe3;
+  --paper: #ffffff;
+  --wash: #f4f6f9;
+  font: 15px/1.5 system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--wash);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --ink: #e8edf3; --muted: #aab4c0; --line: #2c3a4d; --paper: #142338; --wash: #0b172a; }
+}
+body { margin: 0; }
+.bar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--navy); color: #fff; }
+.bar h1 { font-size: 18px; margin: 0; flex: 1; font-weight: 600; }
+.logo { width: 28px; height: 28px; }
+button { font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--pink-deep); background: var(--pink); color: var(--navy-deep); cursor: pointer; font-weight: 600; }
+button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+main { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px; }
+section { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 4px 20px 16px; }
+h2 { font-size: 16px; }
+#summary:focus { outline: 2px solid var(--pink-deep); outline-offset: 4px; }
+.problems li { margin-bottom: 6px; }
+.steps li { margin-bottom: 8px; }
+.steps span { color: var(--muted); }

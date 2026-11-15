@@ -1,0 +1,51 @@
+{
+  "format": "openstage-studio-script",
+  "version": 1,
+  "title": "A first look at the editor",
+  "goal": "Add a text box, show the timeline, and find the list of keyboard keys.",
+  "program": { "id": "openstage-author", "name": "OpenStage Author" },
+  "driver": "hook",
+  "startState": { "demoProject": "minimal", "note": "The smallest example course, first slide" },
+  "playlist": { "name": "OpenStage Author basics", "position": 1 },
+  "intro": "This short video tours three things you use every day in OpenStage Author.",
+  "writtenBy": { "kind": "person", "editedByPerson": true },
+  "steps": [
+    {
+      "action": "click", "target": "menu.insert", "chapter": "Add a text box",
+      "narration": "Open the Insert menu.",
+      "expect": "The Insert menu is open"
+    },
+    {
+      "action": "click", "target": "menu.insert.add-text",
+      "narration": "Choose Text. A new text box appears on the slide.",
+      "expect": "A text box is added to the slide"
+    },
+    {
+      "action": "click", "target": "menu.narration", "chapter": "Show the timeline",
+      "narration": "Now open the Narration menu.",
+      "expect": "The Narration menu is open"
+    },
+    {
+      "action": "click", "target": "menu.narration.timeline",
+      "narration": "Choose Timeline. It shows when each thing on the slide appears and goes.",
+      "hold": 0.5,
+      "expect": "The timeline is shown"
+    },
+    {
+      "action": "click", "target": "menu.help", "chapter": "Find the keys",
+      "narration": "Last, open the Help menu.",
+      "expect": "The Help menu is open"
+    },
+    {
+      "action": "click", "target": "menu.help.keys",
+      "narration": "Choose Keyboard keys to see every shortcut the editor has, in one list.",
+      "hold": 0.5,
+      "expect": "The keyboard keys list is open"
+    },
+    {
+      "action": "key", "value": "Escape",
+      "narration": "Press Escape to close the list.",
+      "expect": "The list is closed"
+    }
+  ]
+}

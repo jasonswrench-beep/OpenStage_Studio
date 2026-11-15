@@ -1,0 +1,28 @@
+OpenStage Studio
+Copyright 2026 Jason S. Wrench and OpenStage Studio contributors
+
+Licensed under the Apache License, Version 2.0.
+
+Third-party code and assets adopted into this project are listed below with attribution.
+
+Code copied from OpenStage Author: OpenScreen's capture engine (2026-11-14), from OpenStage Author
+(https://github.com/jasonswrench-beep/openstage-author, main, commit 3c47a83ab4495e1b9f4a6f0cfaf996d4e4fbb1fc),
+Apache License 2.0, Copyright 2026 Jason S. Wrench, the same owner:
+
+- capture/crates/ (all six crates: openstage-capture, openstage-capture-cli, openstage-capture-project,
+  openstage-capture-protocol, openstage-capture-render, openstage-capture-windows), capture/Cargo.toml,
+  capture/Cargo.lock, capture/rustfmt.toml and capture/THIRD-PARTY.md. The code is unchanged; product names were
+  taken out of a few comments and messages. capture/IMPORT-MANIFEST.md lists every file, its checksum and those changes. Studio uses the window capture, the MP4 writer
+  (Windows' own H.264 and AAC encoders), the frame canvas and Windows' text drawing from it.
+  The Rust crates built into the engine, each under its own permissive licence, are listed in capture/THIRD-PARTY.md.
+
+Rust crates added by OpenStage Studio's own helper (studio-helper/Cargo.toml), beyond those the engine already uses:
+
+- png (https://github.com/image-rs/image-png), MIT OR Apache-2.0, with its own dependencies
+  (fdeflate, flate2, miniz_oxide, crc32fast, adler2, simd-adler32, bitflags), each MIT, Apache-2.0, Zlib or a choice of them.
+
+The app's shell is Tauri (https://tauri.app), MIT OR Apache-2.0, with its dialog and file plugins, under the same licences.
+
+The app icon (branding/ and src-tauri/icons/) is OpenStage Studio's own, made for the OpenStage suite.
+
+No GPL or AGPL code is used. Run "Check Licences.bat" to check every package and crate.

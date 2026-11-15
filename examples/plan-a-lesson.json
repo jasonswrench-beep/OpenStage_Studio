@@ -1,0 +1,137 @@
+{
+  "format": "openstage-studio-script",
+  "version": 1,
+  "title": "Plan a new lesson",
+  "goal": "Make a lesson plan with a title, notes and a checklist, then share and save it.",
+  "program": { "id": "practice-planner", "name": "Practice Planner", "version": "1.0" },
+  "driver": "hook",
+  "startState": { "demoProject": "demo-lessons-01", "note": "The spring term lessons, nothing selected" },
+  "playlist": { "name": "Practice Planner basics", "position": 1 },
+  "intro": "In this video, you plan a new lesson in Practice Planner, from a blank page to a saved and shared plan.",
+  "outro": "That is a complete lesson plan. The next video in the playlist shows how to copy a lesson for another class.",
+  "writtenBy": { "kind": "person", "editedByPerson": true },
+  "steps": [
+    {
+      "action": "click", "target": "toolbar.lesson.new", "chapter": "Start a lesson",
+      "narration": "Select New lesson on the toolbar. A blank lesson opens on the right.",
+      "callout": { "type": "box", "around": "toolbar.lesson.new" },
+      "expect": "A new untitled lesson is selected"
+    },
+    {
+      "action": "type", "target": "editor.title", "value": "Sorting leaves by shape",
+      "narration": "Type a title for the lesson in the Lesson title box.",
+      "expect": "The title reads Sorting leaves by shape"
+    },
+    {
+      "action": "type", "target": "editor.subject", "value": "Science",
+      "narration": "In the Subject list, choose Science.",
+      "expect": "The subject is Science"
+    },
+    {
+      "action": "type", "target": "editor.length", "value": "30 minutes",
+      "narration": "Set the Length to 30 minutes, which suits a short lesson outdoors.",
+      "hold": 0.3,
+      "expect": "The length is 30 minutes"
+    },
+    {
+      "action": "click", "target": "editor.notes", "chapter": "Write the notes",
+      "narration": "Select the Notes box. This is where you write the plan itself.",
+      "expect": "The notes box has the focus"
+    },
+    {
+      "action": "type", "value": "Walk around the school field and collect ten leaves.",
+      "narration": "Type the first line of the plan.",
+      "expect": "The notes hold the first line"
+    },
+    {
+      "action": "click", "target": "toolbar.insert",
+      "narration": "Open the Insert menu on the toolbar.",
+      "callout": { "type": "arrow", "to": "toolbar.insert", "from": "below" },
+      "expect": "The Insert menu is open"
+    },
+    {
+      "action": "click", "target": "menu.insert.objective",
+      "narration": "Choose Learning objective. A new line that starts with Objective appears in the notes.",
+      "expect": "The notes end with Objective:"
+    },
+    {
+      "action": "type", "value": "group leaves by their shape and edge.",
+      "narration": "Finish the objective in your own words.",
+      "expect": "The objective line is complete"
+    },
+    {
+      "action": "click", "target": "toolbar.insert",
+      "narration": "Open the Insert menu again.",
+      "expect": "The Insert menu is open"
+    },
+    {
+      "action": "click", "target": "menu.insert.homework",
+      "narration": "This time, choose Homework line.",
+      "expect": "The notes end with Homework:"
+    },
+    {
+      "action": "type", "value": "bring one leaf from home.",
+      "narration": "Type the homework for the class.",
+      "expect": "The homework line is complete"
+    },
+    {
+      "action": "click", "target": "editor.checklist.add", "chapter": "List what to bring",
+      "narration": "Under Things to bring, select Add item.",
+      "expect": "An empty item is added and has the focus"
+    },
+    {
+      "action": "type", "target": "editor.checklist.item.1", "value": "Paper bags",
+      "narration": "Type the first thing the class needs, paper bags.",
+      "expect": "Item 1 reads Paper bags"
+    },
+    {
+      "action": "click", "target": "editor.checklist.add",
+      "narration": "Select Add item again for a second line.",
+      "expect": "A second empty item has the focus"
+    },
+    {
+      "action": "type", "value": "Magnifying glasses",
+      "narration": "Type magnifying glasses.",
+      "expect": "Item 2 reads Magnifying glasses"
+    },
+    {
+      "action": "click", "target": "toolbar.settings", "chapter": "Share and save",
+      "narration": "Now select Lesson settings on the toolbar.",
+      "expect": "The Lesson settings dialog is open"
+    },
+    {
+      "action": "click", "target": "dialog.settings.share",
+      "narration": "Select Share this lesson with the class page, so your class can see the plan.",
+      "callout": { "type": "box", "around": "dialog.settings.share" },
+      "expect": "Share this lesson is checked"
+    },
+    {
+      "action": "click", "target": "dialog.settings.reminder",
+      "narration": "Select Remind me the day before, as well.",
+      "expect": "Remind me is checked"
+    },
+    {
+      "action": "click", "target": "dialog.settings.ok",
+      "narration": "Select OK to close the settings.",
+      "expect": "The dialog is closed"
+    },
+    {
+      "action": "key", "value": "Ctrl+S",
+      "narration": "Press Control and S to save the lesson. The status bar at the bottom says it is saved.",
+      "hold": 0.5,
+      "expect": "The status bar says the lesson is saved"
+    },
+    {
+      "action": "scroll", "target": "sidebar.list", "value": "down 400",
+      "narration": "Your new lesson is at the end of the list on the left. Scroll down to find it.",
+      "expect": "The last lesson in the list is visible"
+    },
+    {
+      "action": "click", "target": "sidebar.lesson.13",
+      "narration": "Select it any time to open the plan again.",
+      "callout": { "type": "label", "text": "Your new lesson", "near": "sidebar.lesson.13", "side": "right" },
+      "hold": 0.8,
+      "expect": "Sorting leaves by shape is selected"
+    }
+  ]
+}

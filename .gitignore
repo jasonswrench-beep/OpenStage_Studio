@@ -1,0 +1,26 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+studio-helper/target/
+capture/target/
+*.log
+*.part
+.DS_Store
+Thumbs.db
+
+# Everything a run makes: narration clips, still pictures of the take, plans and finished videos.
+work/
+renders/
+
+# Local AI-assistant files and credentials: never commit these
+.claude/
+CLAUDE.local.md
+.env
+.env.*
+*.pem
+*.key
+!.env.example
+
+# The icon pack as delivered; its contents are kept unpacked in branding/.
+OpenStage_Studio_Icon.zip

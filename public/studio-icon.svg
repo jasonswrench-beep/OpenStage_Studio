@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"
+     viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">OpenStage Studio</title>
+  <desc id="description">A pink clapperboard with an open slate and a play triangle, on a rounded navy tile.</desc>
+  <defs>
+    <linearGradient id="navy" x1="0" y1="0" x2="768" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#102037"/>
+      <stop offset="1" stop-color="#0B172A"/>
+    </linearGradient>
+    <linearGradient id="studio-pink" x1="180" y1="160" x2="844" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF7BCC"/>
+      <stop offset="1" stop-color="#F04CAD"/>
+    </linearGradient>
+  </defs>
+  <g id="Tile">
+    <rect width="1024" height="1024" rx="164" fill="url(#navy)"/>
+  </g>
+  <g id="Symbol" fill="none" stroke="url(#studio-pink)" stroke-width="52"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path id="clapper-top" d="M213 422 L184 324 Q172 290 207 281 L766 149 Q802 140 812 174 L836 256 Z"/>
+    <path id="slate-stripes" d="M354 246 L270 408 M535 203 L451 347 M716 160 L633 300"/>
+    <path id="clapper-body" d="M213 422 H782 Q838 422 838 478 V790 Q838 846 782 846 H269 Q213 846 213 790 Z"/>
+    <path id="play-triangle" d="M465 531 L628 631 L465 731 Z"/>
+  </g>
+</svg>
