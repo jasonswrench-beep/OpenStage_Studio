@@ -9,6 +9,7 @@ import { parseKey, parseScroll, type Script, type Step } from "../script/format.
 import type { Rect, TakeLog, TakeStep } from "../timeline/build.ts";
 import type { Command, ControlInfo, Hello, TextOnScreen } from "../../demo-hook/protocol.ts";
 import { toFrame } from "../../demo-hook/protocol.ts";
+import { accessibleScript } from "./targets.ts";
 
 /** Something that sends a command to the program and waits for its answer. */
 export interface Hook {
@@ -41,17 +42,19 @@ export class StepFailed extends Error {
   }
 }
 
-export async function play(script: Script, hook: Hook, camera: Camera, options: PlayOptions): Promise<TakeLog> {
+export async function play(given: Script, hook: Hook, camera: Camera, options: PlayOptions): Promise<TakeLog> {
+  // For the accessibility driver, steps that name a control by role and name get an id to pass along.
+  const script = accessibleScript(given);
   const log = options.log ?? (() => undefined);
   const hello = await hook.send<Hello>({ cmd: "hello" });
-  log(`Connected to ${hello.program}: ${hello.controls} named controls, page ${hello.viewport[0]} by ${hello.viewport[1]}.`);
+  log(`Connected to ${hello.program}: ${hello.controls} controls${hello.hookVersion ? "" : " (through the accessibility driver)"}, page ${hello.viewport[0]} by ${hello.viewport[1]}.`);
 
   const settle = () => hook.send({ cmd: "settle" });
   // The text on screen at each picture, read from the page (the frame scan also reads the pictures themselves). A program
   // with an older hook has no text command; the frame scan then reads the pictures alone.
   const pageText: Record<string, { text: string; rect: Rect }[]> = {};
   let readText = options.readText !== false && hello.hookVersion >= 2;
-  if (options.readText !== false && !readText) log("This program's demo hook cannot report its text; the frame scan will read the pictures only.");
+  if (options.readText !== false && !readText) log(`${hello.hookVersion ? "This program's demo hook cannot" : "The accessibility driver does not"} report the text on screen; the frame scan will read the pictures only.`);
   const shot = async () => {
     await settle();
     const id = await camera.grab();

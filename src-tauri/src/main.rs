@@ -93,14 +93,26 @@ fn main() {
                 .decorations(false)
                 .resizable(false)
                 .visible(false);
-            if let Some((endpoint, token)) = hook_settings(&args) {
+            let hooked = hook_settings(&args);
+            if let Some((endpoint, token)) = &hooked {
                 let settings = serde_json::json!({ "endpoint": endpoint, "token": token });
                 builder = builder.initialization_script(format!("window.__OPENSTAGE_DEMO_HOOK__ = {settings};"));
+            }
+            // Driven without the hook (the accessibility driver): the window never takes the keyboard, so typing meant for
+            // another program cannot land in it during a take. The driver works its controls without the focus.
+            let plain = hooked.is_none() && value_after(&args, "--open-demo").is_some();
+            if plain {
+                builder = builder.focused(false).focusable(false);
             }
             // `--sample-version <n>`: run as that version of the practice program (2 renames two controls, for the
             // release check). A plain whole number only.
             if let Some(version) = value_after(&args, "--sample-version").and_then(|v| v.parse::<u32>().ok()).filter(|v| (1..=99).contains(v)) {
                 builder = builder.initialization_script(format!("window.__PRACTICE_PLANNER_VERSION__ = {version};"));
+            }
+            // `--open-demo <name>`: open that demo project at start (for the accessibility driver, which has no hook to ask
+            // for one). Only a plain demo name: lower case letters, digits and hyphens.
+            if let Some(demo) = value_after(&args, "--open-demo").filter(|d| !d.is_empty() && d.len() <= 63 && d.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')) {
+                builder = builder.initialization_script(format!("window.__PRACTICE_PLANNER_OPEN__ = {};", serde_json::json!(demo)));
             }
             let window = builder.build()?;
             if let Some(m) = pick_monitor(&window, monitor_number)? {
@@ -111,7 +123,9 @@ fn main() {
             }
             window.set_fullscreen(true)?;
             window.show()?;
-            window.set_focus()?;
+            if !plain {
+                window.set_focus()?;
+            }
             let _ = app.get_webview_window("sample");
             Ok(())
         })

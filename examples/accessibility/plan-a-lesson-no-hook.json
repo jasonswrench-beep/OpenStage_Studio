@@ -1,0 +1,70 @@
+{
+  "format": "openstage-studio-script",
+  "version": 2,
+  "title": "Plan a lesson (no hook)",
+  "goal": "Make a lesson plan with a title, notes and a checklist, then share and save it.",
+  "program": { "id": "practice-planner", "name": "Practice Planner", "version": "1.0" },
+  "driver": "accessibility",
+  "startState": { "demoProject": "demo-lessons-01", "note": "Recorded through the accessibility driver: the program runs without its demo-mode hook, and controls are found as a screen reader finds them." },
+  "playlist": { "name": "Practice Planner basics", "position": 1 },
+  "intro": "In this video, you plan a new lesson in Practice Planner, from a blank page to a saved and shared plan.",
+  "outro": "That is a complete lesson plan, made, shared and saved.",
+  "writtenBy": { "kind": "person", "editedByPerson": true },
+  "steps": [
+    {
+      "action": "click", "target": "new", "chapter": "Start a lesson",
+      "narration": "Select New lesson on the toolbar. A blank lesson opens on the right.",
+      "expect": "A new untitled lesson is selected"
+    },
+    {
+      "action": "type", "target": "title", "value": "Sorting leaves by shape",
+      "narration": "Type a title for the lesson in the Lesson title box.",
+      "expect": "The title reads Sorting leaves by shape"
+    },
+    {
+      "action": "type", "target": "subject", "value": "Science",
+      "narration": "In the Subject list, choose Science.",
+      "expect": "The subject is Science"
+    },
+    {
+      "action": "type", "target": "length", "value": "30 minutes",
+      "narration": "Set the Length to 30 minutes.",
+      "expect": "The length is 30 minutes"
+    },
+    {
+      "action": "type", "target": "notes", "value": "Walk around the school field and collect ten leaves.", "chapter": "Write the plan",
+      "narration": "In the Notes box, write what the class will do.",
+      "expect": "The notes say what the class will do"
+    },
+    {
+      "action": "click", "target": "add-item",
+      "narration": "Under Things to bring, select Add item.",
+      "expect": "An empty item is added"
+    },
+    {
+      "action": "type", "fallback": { "role": "textbox", "name": "Item 1" }, "value": "Collecting bags",
+      "narration": "Type the first thing to bring.",
+      "expect": "Item 1 reads Collecting bags"
+    },
+    {
+      "action": "click", "target": "settings", "chapter": "Share and save",
+      "narration": "Now select Lesson settings on the toolbar.",
+      "expect": "The Lesson settings dialog is open"
+    },
+    {
+      "action": "click", "target": "share",
+      "narration": "Select Share this lesson with the class page.",
+      "expect": "Sharing is switched on"
+    },
+    {
+      "action": "click", "target": "ok",
+      "narration": "Select OK to close the dialog.",
+      "expect": "The dialog is closed"
+    },
+    {
+      "action": "click", "target": "save",
+      "narration": "Finally, select Save lesson. The status line confirms it.",
+      "expect": "The status line says the lesson was saved"
+    }
+  ]
+}

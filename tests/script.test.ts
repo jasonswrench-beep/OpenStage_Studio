@@ -128,9 +128,21 @@ test("a newer format version says so plainly", () => {
   assert.match(validateScript(s).errors[0].message, /newer OpenStage Studio/);
 });
 
-test("drivers other than the hook are named but not built yet", () => {
-  const s = { ...good(), driver: "accessibility" };
+test("the position driver is named but not built yet", () => {
+  const s = { ...good(), driver: "position" };
   assert.match(validateScript(s).errors[0].message, /not built yet/);
+});
+
+test("an accessibility script clicks, types and waits, and may find a control by role and name", () => {
+  const base = { ...good(), driver: "accessibility" };
+  assert.equal(validateScript(base).ok, true, describeProblems(validateScript(base)).join("\n"));
+  const byName = { ...base, steps: [{ action: "click", fallback: { role: "button", name: "Weather diary Science · 25 min" }, narration: "Open it." }] };
+  assert.equal(validateScript(byName).ok, true, describeProblems(validateScript(byName)).join("\n"));
+  const keys = { ...base, steps: [{ action: "key", value: "Ctrl+S", narration: "Save." }, { action: "open", value: "demo-empty", narration: "Open." }] };
+  assert.deepEqual(paths(validateScript(keys)), ["steps[0].action", "steps[1].action"]);
+  assert.match(validateScript(keys).errors[0].message, /never uses the real keyboard/);
+  const nothing = { ...base, steps: [{ action: "click", narration: "Click something." }] };
+  assert.deepEqual(paths(validateScript(nothing)), ["steps[0].target"]);
 });
 
 test("keys and scroll amounts are read the same way everywhere", () => {

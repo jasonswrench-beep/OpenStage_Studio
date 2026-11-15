@@ -278,7 +278,9 @@ function reset() {
   (document.activeElement as HTMLElement | null)?.blur();
 }
 
-loadDemo("demo-lessons-01");
+// The shell may name a demo project to open (for the accessibility driver, which has no hook to ask for one).
+const opening = (globalThis as unknown as { __PRACTICE_PLANNER_OPEN__?: string }).__PRACTICE_PLANNER_OPEN__;
+loadDemo(opening && DEMO_PROJECTS.some((d) => d.name === opening) ? opening : "demo-lessons-01");
 void dirty;
 // Version 2 (for the release check) renames two controls: new stable names and new words, same behaviour.
 if (programVersion(globalThis as unknown as Record<string, unknown>) >= 2) {

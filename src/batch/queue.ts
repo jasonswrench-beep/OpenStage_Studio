@@ -141,12 +141,16 @@ export async function runQueue(paths: string[], o: { log?: (s: string) => void; 
     }
     const toRecord: ScriptEntry[] = [];
     const byProgram = new Map<string, ScriptEntry[]>();
-    for (const e of toCheck) byProgram.set(e.script!.program.id, [...(byProgram.get(e.script!.program.id) ?? []), e]);
-    for (const [programId, list] of byProgram) {
+    for (const e of toCheck) {
+      const k = `${e.script!.program.id}|${e.script!.driver ?? "hook"}`;
+      byProgram.set(k, [...(byProgram.get(k) ?? []), e]);
+    }
+    for (const [key, list] of byProgram) {
+      const [programId, driver] = key.split("|") as [string, "hook" | "accessibility"];
       log(`\n=== Rehearsing ${list.length} script(s) for ${programId} ===`);
       let session;
       try {
-        session = await openProgram(ROOT, programId, takeMonitor(), log);
+        session = await openProgram(ROOT, programId, takeMonitor(), log, driver);
       } catch (e) {
         for (const x of list) items.push({ entry: x, outcome: "not recorded", error: `The program could not be started: ${e instanceof Error ? e.message : String(e)}` });
         continue;

@@ -9,7 +9,7 @@
 //
 // node src/pipeline/check-repeat.ts <script.json> [--monitor <n>]
 
-import { rmSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { helperPath, runHelper } from "./helper.ts";
@@ -26,23 +26,26 @@ export async function checkRepeat(scriptPath: string, log: (s: string) => void =
     runs.push(await makeVideo(scriptPath, folder, { log, clipDir: join(folder, "narration"), monitor, frameScan: false }));
   }
   const [a, b] = runs;
-  const lines: string[] = [`Repeat check for ${basename(scriptPath)}`, ""];
+  // Through the accessibility driver the program's own effects are not held still, so the pictures need only be the
+  // same to the eye (every frame at least 40 dB alike, as the comparison judges); the timing and sound must still match.
+  const toTheEye = a.take.steps.length > 0 && JSON.parse(readFileSync(scriptPath, "utf8")).driver === "accessibility";
+  const lines: string[] = [`Repeat check for ${basename(scriptPath)}${toTheEye ? " (accessibility driver: the same to the eye is enough)" : ""}`, ""];
   let same = true;
-  const check = (ok: boolean, what: string) => {
-    same &&= ok;
-    lines.push(`${ok ? "SAME" : "DIFFERENT"}: ${what}`);
+  const check = (ok: boolean, what: string, needed = true) => {
+    if (needed) same &&= ok;
+    lines.push(`${ok ? "SAME" : needed ? "DIFFERENT" : "DIFFERENT (allowed)"}: ${what}`);
   };
 
   const pictures = (m: MadeVideo) => JSON.stringify([m.take.start, ...m.take.steps.map((s) => [s.hover, ...s.changes])]);
-  check(pictures(a) === pictures(b), `the take's still pictures (${a.take.steps.length} steps)`);
+  check(pictures(a) === pictures(b), `the take's still pictures (${a.take.steps.length} steps)`, !toTheEye);
   check(JSON.stringify(a.timeline) === JSON.stringify(b.timeline), `the timeline (${a.timeline.frames} and ${b.timeline.frames} frames, ${(a.timeline.durationMs / 1000).toFixed(1)} seconds)`);
-  check(a.frameDigest === b.frameDigest, `every frame given to the encoder (fingerprints ${a.frameDigest} and ${b.frameDigest})`);
+  check(a.frameDigest === b.frameDigest, `every frame given to the encoder (fingerprints ${a.frameDigest} and ${b.frameDigest})`, !toTheEye);
   check(a.soundDigest === b.soundDigest, `the sound given to the encoder (fingerprints ${a.soundDigest} and ${b.soundDigest})`);
   const compared = await runHelper(helperPath(ROOT), ["compare", "--a", a.video, "--b", b.video]);
   const c = compared.find((e) => e.event === "compared")!;
   check(c.same === true, `the finished videos, read back: ${c.message}`);
 
-  lines.push("", same ? "PASS: running the script twice gave the same video." : "FAIL: the two runs differ (see above).");
+  lines.push("", same ? `PASS: running the script twice gave the same video${toTheEye ? " to the eye" : ""}.` : "FAIL: the two runs differ (see above).");
   const report = lines.join("\n") + "\n";
   writeFileSync(join(base, "repeat-report.txt"), report);
   log(`\n${report}`);

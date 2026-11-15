@@ -30,7 +30,8 @@ import { helperPath, runHelper, TakeSession, wavDurationMs } from "./helper.ts";
 import { play } from "./player.ts";
 import { readManifest } from "./get-voice.ts";
 import { voiceReady, voicesRoot } from "../narration/voice-download.ts";
-import { demoEnvironment, findProgram } from "./programs.ts";
+import { demoEnvironment, findProgram, type ProgramEntry } from "./programs.ts";
+import { AccessibilityDriver } from "./accessibility.ts";
 import { describeScriptHit, scanScript, scriptTexts } from "../guard/script-scan.ts";
 import { loadBlocklist, type LoadedBlocklist } from "../guard/load.ts";
 import { scanFrames, type OcrResult } from "../guard/frame-scan.ts";
@@ -296,6 +297,7 @@ async function makeThumbnail(script: Script, take: TakeLog, timeline: Timeline, 
 
 async function recordTake(script: Script, pictureDir: string, helper: string, monitor: number, log: (s: string) => void): Promise<TakeLog> {
   const program = findProgram(script.program.id);
+  if (script.driver === "accessibility") return recordAccessibleTake(script, program, pictureDir, helper, monitor, log);
   const server = new HookServer();
   await server.start();
   const launch = program.launch(ROOT, server.endpoint, server.token, monitor);
@@ -321,6 +323,25 @@ async function recordTake(script: Script, pictureDir: string, helper: string, mo
     await session?.stop().catch(() => session?.kill());
     await server.close();
     app.kill();
+  }
+}
+
+/** A take through the accessibility driver: the program runs without its hook, started with the script's demo project. */
+async function recordAccessibleTake(script: Script, program: ProgramEntry, pictureDir: string, helper: string, monitor: number, log: (s: string) => void): Promise<TakeLog> {
+  const driver = new AccessibilityDriver(ROOT, program, monitor, log);
+  let session: TakeSession | null = null;
+  try {
+    await driver.launch(script.startState.demoProject);
+    session = new TakeSession(helper, program.windowTitle, FRAME);
+    const ready = await session.ready();
+    log(`Recording the window "${ready.window}" (${ready.windowWidth} by ${ready.windowHeight}) through the accessibility driver.`);
+    log("Letting the program finish starting.");
+    await new Promise((r) => setTimeout(r, WARM_UP_MS));
+    const s = session;
+    return await play(script, driver, { grab: async () => (await s.grab(pictureDir)).hash }, { frame: FRAME, log });
+  } finally {
+    await session?.stop().catch(() => session?.kill());
+    await driver.close();
   }
 }
 

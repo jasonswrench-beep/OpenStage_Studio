@@ -26,10 +26,14 @@ on this computer, or on a hosted service with your own key.
 Phase 4, "Batch and re-record", is built: a whole manual records unattended overnight, and after a new version of a
 program, a release check names the exact step in each script that no longer works (`docs/batch.md`).
 
+Phase 5, "Reach", is built in part: an accessibility driver records programs without the demo hook, through the names a
+screen reader reads (`docs/accessibility-driver.md`), and a connector lets an assistant you already use write and
+rehearse scripts (`docs/connector.md`).
+
 | Built | Not built yet |
 |---|---|
 | The tutorial script format (version 2) and its validator | Scheduling a queue for a set time (start it by hand for now) |
-| The demo-mode hook, in an invented practice program and in OpenStage Author (on a branch) | The accessibility-tree driver and the connector server (phase 5) |
+| The demo-mode hook, in an invented practice program and in OpenStage Author (on a branch) | Canvas commands for Author's stage, and uploading from Studio (phase 5) |
 | The player and the take (window capture with OpenScreen's engine) | Hosted voices, recording your own voice |
 | Narration with Kokoro, a local speech model (or Windows' voices), pronunciation list, clip reuse | Making videos from inside the app window (today: `Make Video.bat`) |
 | Captions (SRT and VTT), transcript, chapter list | Uploading from inside the app (packages are uploaded by hand) |
@@ -38,6 +42,7 @@ program, a release check names the exact step in each script that no longer work
 | The publishing package: thumbnail, upload details, checklist | |
 | Manual import (documentation project or PDF), AI planning, scriptwriting, rehearsal with repair, publishing details | |
 | The unattended queue for a whole manual, and the release check | |
+| The accessibility driver (no hook needed) and the connector for assistants | |
 
 ## What to do (no typing needed)
 
@@ -56,10 +61,13 @@ program, a release check names the exact step in each script that no longer work
 8. Many at once: **`Run Queue.bat`** records unattended (drag a manual onto it to do the whole manual, or series folders
    and scripts), skipping videos already made. After a new version of a program, **`Release Check.bat`** names the step
    in each script that no longer works.
+   **`Set Up Connector.bat`** turns on the connector for an assistant you use, for one folder you name.
 9. **`Check Same Video.bat`** is phase 1's acceptance test: it makes the video twice from scratch and checks both are the
    same. **`Check Guard.bat`** is phase 2's: a blocked name is stopped, a planted path is flagged, export stays shut.
    **`Check AI Scripts.bat`** is phase 3's: from one manual chapter, at least four in five AI scripts pass rehearsal.
    **`Check Batch.bat`** is phase 4's: a manual records unattended, and the release check names the exact broken steps.
+   **`Check Reach.bat`** is phase 5's: a program without the hook records, and Claude writes and rehearses a script
+   through the connector.
 10. **`Run OpenStage Studio.bat`** opens the app, which checks a script against the format and reviews videos.
 11. **`Test Everything.bat`** runs every automated test. **`Check Licences.bat`** checks every package's licence.
 12. **`Make App Icons.bat`** rebuilds the app icons from `OpenStage_Studio_Icon.zip` (or the `branding` folder).
@@ -83,6 +91,7 @@ src/review/                   the review screen in the app window
 src/manual/                   reading a manual: a documentation project file or a PDF
 src/ai/                       the AI choice, the built-in model, the four AI roles, rehearsal and the series commands
 src/batch/                    the unattended queue and the release check
+src/connector/                the connector (MCP server) for assistants, its setup and its acceptance test
 examples/manuals/             an invented manual for the practice program (written by tools/make-practice-manual.ts)
 demo-hook/                    the demo-mode hook a program includes (docs/demo-hook.md)
 sample-program/               Practice Planner, an invented program used for the tests and the example
@@ -93,7 +102,7 @@ src-tauri/                    the app's shell
 
 Read `docs/script-format.md` to write a script, `docs/demo-hook.md` to add the hook to a program, `docs/guard.md` for
 the guard, the review and the package, `docs/ai.md` for AI planning and scripting, `docs/batch.md` for the queue and
-the release check, and `docs/HANDOFF.md` for the decisions made so far and what comes next.
+the release check, `docs/accessibility-driver.md` and `docs/connector.md` for phase 5, and `docs/HANDOFF.md` for the decisions made so far and what comes next.
 
 ## Licence
 

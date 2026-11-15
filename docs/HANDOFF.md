@@ -1,10 +1,10 @@
 # Handoff
 
-Last updated 2026-11-15, at the end of the phase 4 build session.
+Last updated 2026-11-15, at the end of the phase 5 build session.
 
 ## Where things are
 
-Phases 1 to 4 are built, and their acceptance tests pass on Jason's computer (Windows 11 build 26200, two 1920 by 1080
+Phases 1 to 5 are built (phase 5 in part: the driver and the connector), and their acceptance tests pass on Jason's computer (Windows 11 build 26200, two 1920 by 1080
 displays at 100 percent; takes run on the second display).
 
 Phase 1, "One video by hand":
@@ -51,7 +51,18 @@ Phase 4, "Batch and re-record" (`docs/batch.md`):
   same problem later in a script (the hand-written example uses one renamed control twice and the other once later).
 - `Check Same Video.bat` still passes after phase 4, with the same frame fingerprint (version 1 of the practice program
   is unchanged).
-- 100 TypeScript tests and 19 helper tests pass (`Test Everything.bat`). Phase 4 added no packages.
+- Phase 4 added no packages.
+
+Phase 5, "Reach", in part (`docs/accessibility-driver.md`, `docs/connector.md`):
+
+- `Check Reach.bat` passes (2026-11-15). Practice Planner, started with its hook off, recorded a whole video through
+  the accessibility driver (11 steps, 54.8 seconds). Claude (`claude-opus-5-5`, Jason's key), given only the connector's
+  tools over the connector's own protocol, listed the files and programs, read the manual and the real controls, checked
+  and wrote a script for "Making a new lesson", and rehearsed it: it passed first time, and Studio's own rehearsal of it
+  passed too. The script is right on reading.
+- The accessibility example gave the same video to the pixel twice (`Check Same Video.bat`, all 1,643 frames), better
+  than the agreed "same to the eye"; the hook example's fingerprint is unchanged.
+- 105 TypeScript tests and 20 helper tests pass (`Test Everything.bat`). Phase 5 added no packages.
 
 ### Phase 3 results, and what the built-in model gets wrong
 
@@ -126,6 +137,12 @@ Confirmed by Jason:
     saved beside it as `<name>.repaired.json` for a person to read.
 17. **An unattended run is started by hand** (2026-11-15), with a double-click; it keeps the computer and screen awake,
     and carries on where it stopped.
+18. **Phase 5 now: the accessibility driver and the connector** (2026-11-15). Canvas commands for Author's stage and
+    direct upload wait.
+19. **The accessibility driver is proven on Practice Planner with its hook off** (2026-11-15), and its takes need only be
+    the same to the eye (every frame at least 40 dB alike).
+20. **The connector follows the documentation tool's pattern** (2026-11-15): off until turned on, one named folder; its
+    acceptance test has Claude, with Jason's key, act as the outside assistant.
 
 Made by Claude, open to change:
 
@@ -175,6 +192,16 @@ Made by Claude, open to change:
     it is started with `--sample-version 2` (Studio: `PRACTICE_PLANNER_VERSION=2`). Version 1 is unchanged.
 22. **A chapter of a documentation project with no numbered steps gets no videos** without asking the AI; the planner
     may also answer that a chapter has no tasks.
+23. **Accessibility targets are automation ids**, with a step's `fallback` `{role, name}` for a control with none. No format
+    version change: version 2 already had `driver` and `fallback`; Studio now accepts `"accessibility"`, and refuses its
+    key, scroll and open steps with the reason (they would need the real keyboard or mouse).
+24. **Without the hook, a program's window never takes the keyboard** (`--open-demo` makes Practice Planner's window
+    unfocusable), after real typing landed in a take while the window had the foreground. Clicking into a text box or
+    list only places the drawn pointer, so no cursor blinks in the pictures.
+25. **The connector's tools** are listing programs, controls and files, reading manuals and scripts, checking, writing
+    and rehearsing scripts. No recording through it: a person makes the video from a script it wrote.
+26. **The connector speaks the protocol itself** (JSON lines on standard input and output), as the documentation tool's
+    does, with no added package.
 
 ## Next
 
@@ -182,7 +209,9 @@ Made by Claude, open to change:
   buttons in its panes and dialogs, list its demo projects in `src/pipeline/programs.ts`, write its manual (or import
   one), and make its videos.
 - Put the player and AI setup in the app window: open a script, make the video, show progress, play it, go to review.
-- Phase 5 (reach): the accessibility-tree driver, the connector server, canvas commands, and optional direct upload.
+- The rest of phase 5: canvas commands for Author's stage (hook commands in Author's repository), and direct upload to a
+  video site (always private; the site's current upload rules to be confirmed first).
+- Try the connector from Jason's own assistant: `Set Up Connector.bat`, then add the lines it shows.
 
 ## Things to know
 

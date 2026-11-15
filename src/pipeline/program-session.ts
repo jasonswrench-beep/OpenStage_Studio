@@ -1,19 +1,25 @@
-// A program open in demo mode without recording: for reading its controls (what a scriptwriter may name) and for
-// rehearsing scripts. It runs on the display local-settings.json names, like a take, and is closed afterward.
+// A program open without recording: for reading its controls (what a scriptwriter may name) and for rehearsing
+// scripts. Through its demo-mode hook, or, for the accessibility driver, with the hook off. It runs on the display
+// local-settings.json names, like a take, and is closed afterward.
 
 import { spawn } from "node:child_process";
 import { HookServer } from "./hook-server.ts";
+import { AccessibilityDriver } from "./accessibility.ts";
+import type { Hook } from "./player.ts";
 import { demoEnvironment, findProgram, type ProgramEntry } from "./programs.ts";
 import type { ControlInfo, Hello } from "../../demo-hook/protocol.ts";
+import type { Driver } from "../script/format.ts";
 
 export interface ProgramSession {
   program: ProgramEntry;
-  hook: HookServer;
+  hook: Hook;
   hello: Hello;
+  driver: Driver;
   close(): Promise<void>;
 }
 
-export async function openProgram(root: string, programId: string, monitor: number, log: (s: string) => void = () => undefined): Promise<ProgramSession> {
+export async function openProgram(root: string, programId: string, monitor: number, log: (s: string) => void = () => undefined, driver: Driver = "hook"): Promise<ProgramSession> {
+  if (driver === "accessibility") return openAccessible(root, programId, monitor, log);
   const program = findProgram(programId);
   const hook = new HookServer();
   await hook.start();
@@ -27,7 +33,7 @@ export async function openProgram(root: string, programId: string, monitor: numb
     ]);
     const hello = await hook.send<Hello>({ cmd: "hello" });
     return {
-      program, hook, hello,
+      program, hook, hello, driver: "hook",
       close: async () => {
         await hook.close();
         app.kill();
@@ -40,6 +46,21 @@ export async function openProgram(root: string, programId: string, monitor: numb
   }
 }
 
+async function openAccessible(root: string, programId: string, monitor: number, log: (s: string) => void): Promise<ProgramSession> {
+  const program = findProgram(programId);
+  const first = program.demos?.[0]?.name;
+  if (!first) throw new Error(`${program.name} lists no demo projects to start with (src/pipeline/programs.ts).`);
+  const d = new AccessibilityDriver(root, program, monitor, log);
+  try {
+    await d.launch(first);
+    const hello = await d.send<Hello>({ cmd: "hello" });
+    return { program, hook: d, hello, driver: "accessibility", close: () => d.close() };
+  } catch (e) {
+    await d.close();
+    throw e;
+  }
+}
+
 /** One control as a scriptwriter sees it: its stable name, its words, its role, and whether it shows at the start. */
 export interface ControlFact {
   id: string;
@@ -48,7 +69,7 @@ export interface ControlFact {
   shownAtStart: boolean;
 }
 
-/** The program's controls with a demo project open, as the hook lists them. */
+/** The program's controls with a demo project open, as the hook (or the accessibility driver) lists them. */
 export async function readControls(s: ProgramSession, demoProject: string): Promise<ControlFact[]> {
   await s.hook.send({ cmd: "reset" });
   await s.hook.send({ cmd: "loadDemo", name: demoProject });

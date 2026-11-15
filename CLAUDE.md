@@ -9,7 +9,8 @@ Jason first.
 Read `docs/HANDOFF.md` first if you are starting a new session. Read `docs/script-format.md` before touching anything
 that reads or writes a tutorial script, `docs/demo-hook.md` before touching the demo-mode hook, `docs/guard.md`
 before touching the guard, the review gate or the publishing package, `docs/ai.md` before touching the AI roles, and
-`docs/batch.md` before touching the queue or the release check.
+`docs/batch.md` before touching the queue or the release check, `docs/accessibility-driver.md` before touching the
+accessibility driver, and `docs/connector.md` before touching the connector.
 
 ## What this is
 
@@ -21,7 +22,9 @@ Phase 1 ("One video by hand") is built: script format and validator, demo-mode h
 captions, assembly to a 1080p 30fps MP4. Phase 2 ("Guard and package") is built: blocklist, script scan, frame scan,
 review gate, guard report, publishing package (`docs/guard.md`). Phase 3 ("AI planning and scripting") is built: manual
 import, planner, scriptwriter, rehearsal with repair, metadata writer (`docs/ai.md`). Phase 4 ("Batch and re-record")
-is built: the unattended queue and the release check (`docs/batch.md`). Phase 5 (reach) is in the spec.
+is built: the unattended queue and the release check (`docs/batch.md`). Phase 5 ("Reach") is built in part: the
+accessibility-tree driver (`docs/accessibility-driver.md`) and the connector server (`docs/connector.md`); canvas commands
+and direct upload wait (Jason, 2026-11-15).
 
 ## Not in scope
 
@@ -77,6 +80,11 @@ is built: the unattended queue and the release check (`docs/batch.md`). Phase 5 
 - Windows first.
 - The demo-mode hook (`demo-hook/`) is off by default, starts only with the demo launch flag, and only ever talks to
   this computer, with a one-time token. Controls are found by stable names (`data-demo-id`), never by visible labels.
+- The accessibility driver works a program through Windows UI Automation only, never the real mouse or keyboard; its
+  targets are automation ids, with role and name as the fallback. Its takes must be the same to the eye (every frame at
+  least 40 dB alike); the hook stays the way to pixel-identical videos.
+- The connector (MCP) is off until a person turns it on, works only inside the one folder they name, checks everything
+  before changing anything, and never records, approves or exports a video.
 - Every format change bumps the script format version, ships a migration, and updates `docs/script-format.md` in the
   same commit.
 

@@ -13,7 +13,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | `title` | yes | The video's title, at most 100 characters (it goes on the title card). |
 | `goal` | yes | One line: what the viewer can do after watching. |
 | `program` | yes | `{ "id": "practice-planner", "name": "Practice Planner", "version": "1.0" }`. The id is how Studio finds the program to launch (`src/pipeline/programs.ts`); the name goes on the cards. |
-| `driver` | no | `"hook"` (the default). `"accessibility"` and `"position"` are part of the format but not built yet. |
+| `driver` | no | `"hook"` (the default), or `"accessibility"` for a program without the hook (docs/accessibility-driver.md: targets are automation ids, steps are click, type and wait). `"position"` is part of the format but not built yet. |
 | `startState` | yes | `{ "demoProject": "demo-lessons-01", "note": "..." }`. Always a demo project by name, never a file path. |
 | `playlist` | no | `{ "name": "...", "position": 1 }`. |
 | `intro` | no | Narration spoken over the title card. |
@@ -29,7 +29,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 |---|---|---|
 | `action` | What the player does | `click`, `type`, `key`, `scroll`, `open`, `wait` (`drag` is refused for now) |
 | `target` | The control, by its stable name | `toolbar.lesson.new` |
-| `fallback` | A second way to find it, for later drivers | `{ "role": "button", "name": "New lesson" }` or `{ "x": 0.2, "y": 0.05 }` |
+| `fallback` | Another way to find it: with the accessibility driver, a control with no automation id is found by `role` and `name` (and the step needs no target) | `{ "role": "button", "name": "New lesson" }` or `{ "x": 0.2, "y": 0.05 }` |
 | `value` | Text to type, a key, a demo project, a scroll, or seconds to wait | `Sorting leaves by shape`, `Ctrl+S`, `down 400` |
 | `narration` | One or two sentences spoken over the step | `Select New lesson on the toolbar.` |
 | `silent` | `true` for a step with no narration on purpose | |

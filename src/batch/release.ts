@@ -45,12 +45,14 @@ export async function releaseCheck(paths: string[], o: { log?: (s: string) => vo
         results.push({ entry: e, skipped: `It is not a valid script: ${e.problem}` });
         continue;
       }
-      byProgram.set(e.script.program.id, [...(byProgram.get(e.script.program.id) ?? []), e]);
+      const k = `${e.script.program.id}|${e.script.driver ?? "hook"}`;
+      byProgram.set(k, [...(byProgram.get(k) ?? []), e]);
     }
-    for (const [programId, list] of byProgram) {
+    for (const [key, list] of byProgram) {
+      const [programId, driver] = key.split("|") as [string, "hook" | "accessibility"];
       let session;
       try {
-        session = await openProgram(ROOT, programId, takeMonitor(), log);
+        session = await openProgram(ROOT, programId, takeMonitor(), log, driver);
       } catch (e) {
         for (const x of list) results.push({ entry: x, skipped: `The program could not be started: ${e instanceof Error ? e.message : String(e)}` });
         continue;

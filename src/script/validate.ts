@@ -103,7 +103,7 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
   }
   if (s.driver !== undefined) {
     if (!(DRIVERS as readonly unknown[]).includes(s.driver)) err("driver", `The driver is one of ${DRIVERS.join(", ")}.`);
-    else if (s.driver !== "hook") err("driver", `The ${s.driver} driver is not built yet. This version records through the demo-mode hook.`);
+    else if (s.driver === "position") err("driver", "The position driver is not built yet. Use the hook or the accessibility driver.");
   }
   if (!isObj(s.startState)) err("startState", "Name the demo project the video starts from, as startState.demoProject.");
   else {
@@ -169,6 +169,7 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
   }
 
   let rehearsable = true;
+  const accessible = s.driver === "accessibility";
   if (!Array.isArray(s.steps) || s.steps.length === 0) err("steps", "A script needs at least one step.");
   else if (s.steps.length > 200) err("steps", "A script has at most 200 steps. Split a long task into more than one video.");
   else {
@@ -179,7 +180,12 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
       const action = step.action;
       if (!(ACTIONS as readonly unknown[]).includes(action)) return err(`${at}.action`, `The action is one of ${ACTIONS.join(", ")}.`);
       const needsTarget = action === "click" || action === "drag";
-      if (needsTarget || (step.target !== undefined && action !== "open" && action !== "wait")) checkControl(`${at}.target`, step.target);
+      // The accessibility driver may find a control with no automation id by its role and name instead (fallback).
+      const byName = accessible && isObj(step.fallback) && isText(step.fallback.name);
+      if (accessible && !["click", "type", "wait"].includes(action as string)) {
+        err(`${at}.action`, `The accessibility driver does ${action === "key" || action === "scroll" ? "not press keys or scroll (it never uses the real keyboard or mouse)" : action === "open" ? "not open another demo project partway (the program starts with the script's demo project)" : "not do this"}. Use click, type and wait, or the hook.`);
+      }
+      if ((needsTarget && !(byName && step.target === undefined)) || (step.target !== undefined && action !== "open" && action !== "wait")) checkControl(`${at}.target`, step.target);
       if ((action === "open" || action === "wait") && step.target !== undefined) err(`${at}.target`, `A ${action} step has no target.`);
       const value = step.value;
       if (value !== undefined && typeof value !== "string") err(`${at}.value`, "The value is text.");

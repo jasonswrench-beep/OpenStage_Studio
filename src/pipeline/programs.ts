@@ -18,6 +18,9 @@ export interface ProgramEntry {
   appearing?: { pattern: string; about: string }[];
   /** Anything else a scriptwriter needs to know about driving the program. */
   notes?: string;
+  /** For the accessibility driver (no hook): the program and its arguments to start it with a demo project open on the
+   * given display. A program without this can only be driven through its hook. */
+  launchPlain?(root: string, monitor: number, demo: string): { exe: string; args: string[] };
 }
 
 export const PROGRAMS: ProgramEntry[] = [
@@ -30,6 +33,11 @@ export const PROGRAMS: ProgramEntry[] = [
       // PRACTICE_PLANNER_VERSION=2 runs the version with a changed interface, for the release check's acceptance test.
       const version = /^[0-9]{1,2}$/.test(process.env.PRACTICE_PLANNER_VERSION ?? "") ? ["--sample-version", process.env.PRACTICE_PLANNER_VERSION!] : [];
       return { exe, args: ["--sample-program", "--demo-hook", endpoint, "--demo-token", token, "--monitor", String(monitor), ...version] };
+    },
+    launchPlain(root, monitor, demo) {
+      const exe = resolve(root, "src-tauri/target/release/openstage-studio.exe");
+      if (!existsSync(exe)) throw new Error(`OpenStage Studio is not built yet (${exe}). Run "Build Studio.bat" first.`);
+      return { exe, args: ["--sample-program", "--monitor", String(monitor), "--open-demo", demo] };
     },
     windowTitle: "Practice Planner (OpenStage Studio sample program)",
     demos: [
