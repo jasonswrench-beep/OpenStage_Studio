@@ -72,8 +72,10 @@ captions, assembly to a 1080p 30fps MP4. Phases 2 to 5 (guard and package, AI pl
 
 ### Licensing
 
-This project is Apache 2.0. Permissive licences (MIT, BSD, Apache 2.0, ISC, Zlib) are fine. LGPL is dynamic linking
-only. GPL and AGPL are refused. Open model weights (speech models included) are audited one by one before bundling or
+This project is Apache 2.0. Permissive licences are fine: MIT, BSD, Apache 2.0, ISC, Zlib, the public-domain-like ones
+(Unlicense, CC0, WTFPL) and the Unicode and CDLA-Permissive data licences. MPL-2.0 is fine for code used unchanged, with
+NOTICE saying where its source is. LGPL is dynamic linking only. GPL and AGPL are refused. The accepted list lives in
+`tools/licence-rules.mjs`; change it and this paragraph together, and anything not on it is Jason's call. Open model weights (speech models included) are audited one by one before bundling or
 downloading. Run `Check Licences.bat` before adding or updating any dependency. Record anything adopted in `NOTICE`.
 Use original code, assets and design.
 

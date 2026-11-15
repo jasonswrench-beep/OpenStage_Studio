@@ -12,10 +12,13 @@ Phase 1 ("One video by hand") is built and its acceptance test passes on Jason's
 - `Check Same Video.bat` made it twice from scratch (new narration clips, a new take each time). The take's pictures, the
   timeline, every frame and sound sample given to the encoder, and the two finished MP4 files read back with Windows'
   decoder were all the same: 3,601 of 3,601 frames identical to the pixel, the sound identical.
-- 41 TypeScript tests and 14 helper tests pass (`Test Everything.bat`). The licence check passes.
+- With the Kokoro voice (2026-11-14) both repeat checks pass: the example's 3,284 frames and Author's first look's 1,105
+  frames identical to the pixel, the sound identical.
+- 51 TypeScript tests and 17 helper tests pass (`Test Everything.bat`). The licence check passes against the accepted
+  list in `tools/licence-rules.mjs`; MPL-2.0 (Eigen inside ONNX Runtime, a few of Tauri's crates) and the WTFPL
+  (language-tokenizer) were accepted by Jason on 2026-11-14.
 
-Nothing has been watched or listened to by a person yet. Frames were looked at as still pictures; the sound was measured
-but not heard.
+Jason watched and listened to both videos on 2026-11-14: everything works, the narration included.
 
 ## How a video is made
 

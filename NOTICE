@@ -22,6 +22,12 @@ Rust crates added by OpenStage Studio's own helper (studio-helper/Cargo.toml), b
   (fdeflate, flate2, miniz_oxide, crc32fast, adler2, simd-adler32, bitflags), each MIT, Apache-2.0, Zlib or a choice of them.
 
 The app's shell is Tauri (https://tauri.app), MIT OR Apache-2.0, with its dialog and file plugins, under the same licences.
+A few of the crates Tauri brings in are under the Mozilla Public License 2.0 (file-level copyleft). They are used unchanged,
+and their source is public:
+- cssparser and cssparser-macros (https://github.com/servo/rust-cssparser)
+- selectors (https://github.com/servo/stylo)
+- dtoa-short (https://github.com/upsuper/dtoa-short)
+- option-ext (https://github.com/soc/option-ext)
 
 The app icon (branding/ and src-tauri/icons/) is OpenStage Studio's own, made for the OpenStage suite.
 
@@ -35,10 +41,9 @@ Narration with the Kokoro voice (studio-helper/src/kokoro.rs), added 2026-11-14:
 - ONNX Runtime 1.31.0 (https://github.com/microsoft/onnxruntime), MIT, linked into studio-helper through the ort crate
   (https://github.com/pykeio/ort, MIT OR Apache-2.0), whose build fetches the prebuilt library. Its licence and its own
   third-party notices are in third-party/onnxruntime/ and ship with the app. Among them, Eigen is under the Mozilla Public
-  License 2.0 (file-level copyleft): it is used unchanged, and its source is at https://gitlab.com/libeigen/eigen.
+  License 2.0 (file-level copyleft): it is used unchanged, and its source is at https://gitlab.com/libeigen/eigen. Accepted 2026-11-14.
 - misaki-rs 0.9.0 (https://github.com/MicheleYin/misaki-rs), MIT, built without its default espeak feature, so no GPL code
   is included. It carries Kokoro's English pronunciation dictionaries from misaki (https://github.com/hexgrad/misaki),
   Apache-2.0, and a part-of-speech tagger whose weights were extracted from spaCy's en_core_web_sm model, MIT.
 - language-tokenizer 0.1.0 (https://github.com/savannstm/language-tokenizer), a dependency of misaki-rs, under the WTFPL
-  version 2: a public-domain-like licence with no conditions. It is permissive, but not one of the licences the project
-  lists by name, so it is recorded here for a person to confirm.
+  version 2: a public-domain-like licence with no conditions. Accepted 2026-11-14.

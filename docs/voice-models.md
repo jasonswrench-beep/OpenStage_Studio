@@ -75,5 +75,6 @@ Kitten ONNX files contain unseeded random steps, and whether the Rust front end 
 - The same text gives the same sound every time: checked byte for byte, and in the acceptance test (two full runs from
   scratch, identical sound).
 - `studio-helper phonemes --text "..."` shows how a line will be said, to check a pronunciation.
-- One licence for a person to look at: ONNX Runtime includes Eigen, under the Mozilla Public License 2.0 (file-level
-  copyleft, not GPL). It is used unchanged and its source is public; NOTICE says where.
+- Licences: ONNX Runtime includes Eigen, under the Mozilla Public License 2.0 (file-level copyleft, not GPL), and misaki-rs
+  uses language-tokenizer, under the WTFPL. Both were accepted on 2026-11-14: Eigen is used unchanged and NOTICE says where
+  its source is; the WTFPL has no conditions.

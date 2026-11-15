@@ -1,22 +1,26 @@
-// Checks the licence of every installed JavaScript package and every Rust crate.
-// Refuses GPL and AGPL. Flags LGPL and anything unknown for a human decision.
+// Checks the licence of every installed JavaScript package and every Rust crate against the accepted list in
+// tools/licence-rules.mjs (the same list as CLAUDE.md). Refuses GPL and AGPL. Flags LGPL (dynamic linking only) and any
+// licence not on the list for a person to decide. Packages under MPL-2.0 must be named in NOTICE.
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
+import { classify, usesMpl, READ_BY_HAND } from "./licence-rules.mjs";
 
-const REFUSED = /\b(A?GPL)(?!.*LGPL)/i;
-const LGPL = /LGPL/i;
 const problems = [];
 const reviews = [];
+const mpl = new Set();
+let count = 0;
 
-function judge(kind, name, licence) {
-  const text = String(licence ?? "").trim();
-  if (!text || /UNKNOWN|SEE LICEN/i.test(text)) return reviews.push(`${kind} ${name}: licence not stated`);
-  // An OR expression is fine if any alternative is permissive.
-  const options = text.replace(/[()]/g, "").split(/\s+OR\s+|\//i);
-  const allBad = options.every((o) => REFUSED.test(o) && !LGPL.test(o));
-  if (allBad) return problems.push(`${kind} ${name}: ${text}`);
-  if (options.every((o) => LGPL.test(o))) reviews.push(`${kind} ${name}: ${text} (dynamic linking only)`);
+function judge(kind, name, version, licence) {
+  count++;
+  const id = `${name}@${version}`;
+  const text = String(licence ?? "").trim() || READ_BY_HAND.get(id) || "";
+  if (!text) return reviews.push(`${kind} ${id}: licence not stated`);
+  const verdict = classify(text);
+  if (verdict === "refused") return problems.push(`${kind} ${id}: ${text}`);
+  if (verdict === "lgpl") return reviews.push(`${kind} ${id}: ${text} (dynamic linking only)`);
+  if (verdict === "unknown") return reviews.push(`${kind} ${id}: ${text} (not on the accepted list)`);
+  if (usesMpl(text)) mpl.add(name);
 }
 
 function scanNode(dir) {
@@ -29,7 +33,7 @@ function scanNode(dir) {
     if (!existsSync(pkg)) continue;
     const data = JSON.parse(readFileSync(pkg, "utf8"));
     const lic = typeof data.license === "string" ? data.license : data.license?.type ?? (data.licenses ?? []).map((l) => l.type).join(" OR ");
-    judge("npm", `${data.name}@${data.version}`, lic);
+    judge("npm", data.name, data.version, lic);
   }
 }
 
@@ -37,20 +41,37 @@ scanNode("node_modules");
 
 // The app shell, the helper (its own Rust program, with the capture engine copied from OpenStage Author inside it), and
 // the engine on its own.
+const seen = new Set();
 for (const manifest of ["src-tauri/Cargo.toml", "studio-helper/Cargo.toml", "capture/Cargo.toml"]) {
   if (!existsSync(manifest)) continue;
   try {
     const out = execSync(`cargo metadata --format-version 1 --manifest-path ${manifest}`, { maxBuffer: 1 << 28 }).toString();
-    for (const p of JSON.parse(out).packages) judge("crate", `${p.name}@${p.version}`, p.license);
+    for (const p of JSON.parse(out).packages) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      judge("crate", p.name, p.version, p.license);
+    }
   } catch {
     reviews.push(`The Rust crates in ${manifest} were not checked because cargo could not run. Install Rust and run this again.`);
   }
 }
 
+// Software built into the app that no package list shows. ONNX Runtime arrives as a prebuilt library; its notices list
+// Eigen under MPL-2.0 (see NOTICE).
+mpl.add("Eigen");
+
+const notice = existsSync("NOTICE") ? readFileSync("NOTICE", "utf8") : "";
+const unnamed = [...mpl].filter((name) => !notice.includes(name));
+if (unnamed.length) reviews.push(`Under MPL-2.0 but not named in NOTICE (say where their source is): ${unnamed.join(", ")}`);
+
+console.log(`Checked ${count} packages.`);
+console.log(`Under MPL-2.0, used unchanged and named in NOTICE: ${[...mpl].filter((n) => !unnamed.includes(n)).sort().join(", ") || "none"}.`);
 if (reviews.length) { console.log("\nNeeds a human look:"); reviews.forEach((r) => console.log("  - " + r)); }
 if (problems.length) {
   console.log("\nREFUSED (GPL or AGPL):"); problems.forEach((p) => console.log("  - " + p));
   console.log("\nThe licence check FAILED.");
   process.exit(1);
 }
-console.log("\nThe licence check passed. No GPL or AGPL packages were found.");
+console.log(reviews.length
+  ? "\nThe licence check passed (no GPL or AGPL), with the items above for a person to look at."
+  : "\nThe licence check passed. Every package is under a licence on the accepted list.");
