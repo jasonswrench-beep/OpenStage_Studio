@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isLoopback, readSettings, SETTINGS_GLOBAL, toFrame } from "../demo-hook/protocol.ts";
+import { isLoopback, readSettings, SETTINGS_GLOBAL, steadySelector, toFrame } from "../demo-hook/protocol.ts";
 import { HookServer } from "../src/pipeline/hook-server.ts";
 import { wavDurationMs } from "../src/pipeline/helper.ts";
 
@@ -103,4 +103,13 @@ test("a WAV file's length is read from its header", () => {
   buf.writeUInt32LE(samples * 2, 40);
   assert.equal(wavDurationMs(buf), 500);
   assert.throws(() => wavDurationMs(Buffer.from("nope nope nope")), /not a WAV/);
+});
+
+test("in demo mode focus and hover follow the hook's markers, not the window's state", () => {
+  assert.equal(steadySelector("input:focus"), "input[data-demo-focus]");
+  assert.equal(steadySelector("button:focus-visible, a:hover"), "button[data-demo-focus-visible], a[data-demo-hover]");
+  assert.equal(steadySelector(".row:focus-within > label"), ".row[data-demo-focus-within] > label");
+  assert.equal(steadySelector("input:not(:focus)"), "input:not([data-demo-focus])");
+  assert.equal(steadySelector(".focused-item:hover-ish"), ".focused-item:hover-ish", "only the real pseudo-classes");
+  assert.equal(steadySelector("button.primary"), "button.primary");
 });

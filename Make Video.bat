@@ -15,8 +15,9 @@ if "%SCRIPT%"=="" set "SCRIPT=examples\plan-a-lesson.json"
 echo Making a video of %SCRIPT%
 echo (To make a video of another script, drag its .json file onto this file.)
 echo.
-echo The program being recorded fills your main screen for a minute or two. You can leave it running;
-echo the recording ignores the mouse, so moving it does no harm. It closes by itself when the take is done.
+echo The program being recorded fills one screen for a minute or two: the main one, or the one local-settings.json names.
+echo You can leave it running; it ignores the mouse and the keyboard, and closes by itself when the take is done.
+echo The first time, narration needs the voice: run Get Voice.bat once first.
 echo.
 node src\pipeline\make-video.ts "%SCRIPT%" || (pause & exit /b 1)
 echo.

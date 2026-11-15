@@ -14,6 +14,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # PNG files for the still pictures of the take. MIT OR Apache-2.0.
 png = "0.17"
+# Kokoro narration (src/kokoro.rs). ONNX Runtime through ort, MIT OR Apache-2.0; ONNX Runtime itself is MIT.
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "ndarray", "download-binaries", "tls-native", "api-31"] }
+# Kokoro's dictionary front end, MIT, built WITHOUT its default espeak feature (espeak-ng is GPL). Do not turn it on.
+misaki-rs = { version = "0.9.0", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [

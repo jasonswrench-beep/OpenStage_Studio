@@ -95,11 +95,12 @@ export async function play(script: Script, hook: Hook, camera: Camera, options: 
           out.changes.push(await shot());
         }
         if (role === "combobox") {
-          await hook.send({ cmd: "type", text });
+          await hook.send({ cmd: "type", ...(step.target ? { id: step.target } : {}), text });
           out.changes.push(await shot());
         } else {
           for (const ch of text) {
-            await hook.send({ cmd: "type", text: ch });
+            // With a target, every key names its field, so typing never depends on where the page thinks the focus is.
+            await hook.send({ cmd: "type", ...(step.target ? { id: step.target } : {}), text: ch });
             out.changes.push(await shot());
           }
         }

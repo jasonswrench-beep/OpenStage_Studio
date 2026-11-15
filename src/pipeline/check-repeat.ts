@@ -7,7 +7,7 @@
 //   3. what went into the encoder: every frame's pixels and every sound sample (fingerprints from the assembly)
 //   4. the finished MP4 files, read back with Windows' own decoder and compared frame by frame
 //
-// node src/pipeline/check-repeat.ts <script.json>
+// node src/pipeline/check-repeat.ts <script.json> [--monitor <n>]
 
 import { rmSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { helperPath, runHelper } from "./helper.ts";
 import { makeVideo, ROOT, type MadeVideo } from "./make-video.ts";
 
-export async function checkRepeat(scriptPath: string, log: (s: string) => void = console.log): Promise<boolean> {
+export async function checkRepeat(scriptPath: string, log: (s: string) => void = console.log, monitor?: number): Promise<boolean> {
   const name = basename(scriptPath, ".json");
   const base = resolve(ROOT, "renders", `${name}-repeat`);
   rmSync(base, { recursive: true, force: true });
@@ -23,7 +23,7 @@ export async function checkRepeat(scriptPath: string, log: (s: string) => void =
   for (const run of ["first", "second"]) {
     log(`\n=== The ${run} run ===`);
     const folder = join(base, run);
-    runs.push(await makeVideo(scriptPath, folder, { log, clipDir: join(folder, "narration") }));
+    runs.push(await makeVideo(scriptPath, folder, { log, clipDir: join(folder, "narration"), monitor }));
   }
   const [a, b] = runs;
   const lines: string[] = [`Repeat check for ${basename(scriptPath)}`, ""];
@@ -56,7 +56,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.error("Say which script to check.");
     process.exit(2);
   }
-  checkRepeat(resolve(script)).then(
+  const at = process.argv.indexOf("--monitor");
+  checkRepeat(resolve(script), console.log, at > 0 ? Number(process.argv[at + 1]) : undefined).then(
     (ok) => process.exit(ok ? 0 : 1),
     (e) => {
       console.error(`\nThe check could not finish: ${e instanceof Error ? e.message : String(e)}`);

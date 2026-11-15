@@ -22,11 +22,33 @@ import { buildTimeline, type Paces, type TakeLog, type Timeline } from "../timel
 import { HookServer } from "./hook-server.ts";
 import { helperPath, runHelper, TakeSession, wavDurationMs } from "./helper.ts";
 import { play } from "./player.ts";
+import { readManifest } from "./get-voice.ts";
+import { voiceReady, voicesRoot } from "../narration/voice-download.ts";
 import { findProgram } from "./programs.ts";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const FRAME: [number, number] = [1920, 1080];
 export const FPS = 30;
+/** How long a program is given to finish starting before the first step of a take. */
+export const WARM_UP_MS = 5000;
+
+/** Settings for this computer only, kept in local-settings.json beside this project (git ignores it), such as which
+ * display takes use: `{ "monitor": 2 }` puts the program being recorded on the second display. */
+export function localSettings(): { monitor?: number } {
+  const file = join(ROOT, "local-settings.json");
+  if (!existsSync(file)) return {};
+  try {
+    return JSON.parse(readFileSync(file, "utf8")) as { monitor?: number };
+  } catch {
+    return {};
+  }
+}
+
+/** The display takes use: the one asked for, else this computer's setting, else the main display. */
+export function takeMonitor(asked?: string | number): number {
+  const n = Number(asked ?? localSettings().monitor ?? 1);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}
 
 /** Settings shared by every video of a project: the voice, how names are said, and the paces. */
 export interface ProjectSettings {
@@ -67,7 +89,15 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   mkdirSync(outFolder, { recursive: true });
 
   // 2. Narration: one clip per line, kept by what shapes its sound, so unchanged lines are never made again.
-  if (settings.voice.engine !== "windows") throw new Error(`The narration engine "${settings.voice.engine}" is not built yet. Use "windows".`);
+  const engine = settings.voice.engine;
+  if (engine !== "windows" && engine !== "kokoro") throw new Error(`The narration engine "${engine}" is not built yet. Use "kokoro" or "windows".`);
+  let modelDir: string | undefined;
+  if (engine === "kokoro") {
+    const m = readManifest();
+    modelDir = join(voicesRoot(), m.folder);
+    if (!voiceReady(modelDir, m)) throw new Error("The voice is not downloaded yet. Run \"Get Voice.bat\" first (about 340 MB, once).");
+    settings.voice = { ...settings.voice, model: m.revision };
+  }
   const lines = narrationLines(script, settings.pronunciations);
   const clipDir = options.clipDir ?? resolve(ROOT, "work/narration");
   mkdirSync(clipDir, { recursive: true });
@@ -76,14 +106,14 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   if (missing.length) {
     log(`Making ${missing.length} narration clip(s) of ${lines.length}.`);
     const jobsFile = join(outFolder, "narration-jobs.json");
-    writeFileSync(jobsFile, JSON.stringify({ voice: settings.voice.voice, rate: settings.voice.rate, jobs: missing.map((l) => ({ text: l.spoken, out: clipFile.get(l.id) })) }, null, 2));
+    writeFileSync(jobsFile, JSON.stringify({ engine, ...(modelDir ? { modelDir } : {}), voice: settings.voice.voice, rate: settings.voice.rate, jobs: missing.map((l) => ({ text: l.spoken, out: clipFile.get(l.id) })) }, null, 2));
     await runHelper(helper, ["speak", "--jobs", jobsFile], (e) => e.event === "voice" && log(`Voice: ${e.name}.`));
   } else log(`All ${lines.length} narration clips are already made.`);
   const clips: Record<string, number> = {};
   for (const l of lines) clips[l.id] = wavDurationMs(readFileSync(clipFile.get(l.id)!));
 
   // 3. The take.
-  const take = await recordTake(script, join(outFolder, "take"), helper, options.monitor ?? 1, log);
+  const take = await recordTake(script, join(outFolder, "take"), helper, takeMonitor(options.monitor), log);
   writeFileSync(join(outFolder, "take-log.json"), JSON.stringify(take, null, 2));
 
   // 4. The timeline.
@@ -120,7 +150,7 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   const made: MadeVideo = { folder: outFolder, video, timeline, take, frameDigest: String(done.frameDigest), soundDigest: (done.soundDigest as string) ?? null };
   writeFileSync(join(outFolder, "run-report.json"), JSON.stringify({
     script: relative(ROOT, scriptPath), video: basename(video), durationMs: timeline.durationMs, frames: timeline.frames,
-    frameDigest: made.frameDigest, soundDigest: made.soundDigest, voice: settings.voice, narration: "computer generated (Windows voice)",
+    frameDigest: made.frameDigest, soundDigest: made.soundDigest, voice: settings.voice, narration: engine === "kokoro" ? `computer generated (Kokoro voice ${settings.voice.voice})` : "computer generated (Windows voice)",
     pictures: new Set(take.steps.flatMap((s) => [...s.changes, ...(s.hover ? [s.hover] : [])])).size + 1,
   }, null, 2));
   log(`Done: ${video}`);
@@ -143,6 +173,10 @@ async function recordTake(script: Script, pictureDir: string, helper: string, mo
     session = new TakeSession(helper, program.windowTitle, FRAME);
     const ready = await session.ready();
     log(`Recording the window "${ready.window}" (${ready.windowWidth} by ${ready.windowHeight}).`);
+    // A program that has just opened is still settling for a few seconds (its layout size is set as it opens, and it draws
+    // some of its controls twice), so the take waits before the first step. Without this, two takes could differ.
+    log("Letting the program finish starting.");
+    await new Promise((r) => setTimeout(r, WARM_UP_MS));
     const s = session;
     const take = await play(script, server, { grab: async () => (await s.grab(pictureDir)).hash }, { frame: FRAME, log });
     return take;
@@ -188,7 +222,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
   const scriptPath = resolve(scriptArg);
   const out = resolve(value("--out") ?? join(ROOT, "renders", basename(scriptPath, ".json")));
-  makeVideo(scriptPath, out, { monitor: Number(value("--monitor") ?? 1) }).catch((e) => {
+  makeVideo(scriptPath, out, { monitor: takeMonitor(value("--monitor")) }).catch((e) => {
     console.error(`\nThe video was not made: ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);
   });

@@ -55,7 +55,11 @@ captions, assembly to a 1080p 30fps MP4. Phases 2 to 5 (guard and package, AI pl
 ### Architecture
 
 - TypeScript throughout, with a Tauri 2 shell and Vite. Rust only where native Windows needs it: `studio-helper/` (window
-  capture, Windows' speech, frame drawing and MP4 encoding) and the Tauri shell itself (`src-tauri/`).
+  capture, narration with the Kokoro model and Windows' voices, frame drawing and MP4 encoding) and the Tauri shell itself
+  (`src-tauri/`).
+- Narration defaults to Kokoro-82M, run in the helper with ONNX Runtime and misaki-rs. misaki-rs is always built WITHOUT its
+  default `espeak` feature (espeak-ng is GPL). The model is downloaded on request and checked against
+  `tools/kokoro-model.json`; never bundle it or fetch an unpinned file.
 - The capture engine in `capture/` is OpenScreen's, copied from OpenStage Author (`capture/IMPORT-MANIFEST.md`). Its code is
   unchanged; only product names in comments and messages were reworded, in both repositories. Change it only when Studio
   needs it, say so, record the change in the manifest, and make the same change in Author's copy so the two stay identical.
@@ -88,3 +92,5 @@ Use original code, assets and design.
 - Avoid em dashes in prose written for this project.
 - When a decision could reasonably go either way, say so and ask rather than picking silently.
 - Keep building rather than stopping to ask Jason to test; ask only about decisions.
+- Run anything that opens a program window (takes, experiments) on Jason's second display (`local-settings.json`, or
+  `--monitor 2`), never the main one.

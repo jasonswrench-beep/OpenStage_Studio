@@ -20,7 +20,9 @@
     "resources": {
       "../studio-helper/target/release/studio-helper.exe": "studio-helper.exe",
       "../LICENSE": "LICENSE.txt",
-      "../NOTICE": "NOTICE.txt"
+      "../NOTICE": "NOTICE.txt",
+      "../third-party/onnxruntime/LICENSE": "third-party/onnxruntime/LICENSE.txt",
+      "../third-party/onnxruntime/ThirdPartyNotices.txt": "third-party/onnxruntime/ThirdPartyNotices.txt"
     },
     "windows": {
       "webviewInstallMode": { "type": "embedBootstrapper" },

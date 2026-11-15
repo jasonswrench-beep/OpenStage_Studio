@@ -13,7 +13,7 @@ call "%~dp0Build Studio.bat" nopause || (pause & exit /b 1)
 set "SCRIPT=%~1"
 if "%SCRIPT%"=="" set "SCRIPT=examples\plan-a-lesson.json"
 echo This makes the video of %SCRIPT% twice, from scratch each time, and checks that both are the same.
-echo It takes about five minutes. The program being recorded fills your main screen during each take.
+echo It takes about ten minutes. The program being recorded fills one screen during each take (see local-settings.json).
 echo.
 node src\pipeline\check-repeat.ts "%SCRIPT%"
 echo.

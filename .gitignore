@@ -9,6 +9,9 @@ capture/target/
 .DS_Store
 Thumbs.db
 
+# Settings for one computer only (for example which display takes use).
+local-settings.json
+
 # Everything a run makes: narration clips, still pictures of the take, plans and finished videos.
 work/
 renders/

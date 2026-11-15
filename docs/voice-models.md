@@ -1,8 +1,8 @@
 # Local voice models: the audited shortlist
 
-Jason chose a downloadable local speech model as the default voice (2026-11-14). Nothing is downloaded or bundled until a
-model passes this audit and Jason picks it. Checked 2026-11-14 against the model cards, LICENSE files and source code (links
-at the end). Until then Studio narrates with the voice built into Windows.
+Jason chose a downloadable local speech model as the default voice, and then Kokoro-82M run natively inside Studio's helper
+(both 2026-11-14). That is built: see "What was built" at the end. The audit below was checked on 2026-11-14 against the model
+cards, LICENSE files and source code (links further down).
 
 What a model must have: weights that may be passed on and used commercially with no non-commercial clause; runtime code
 that is permissive; a text front end (the part that turns spelling into sounds) that is not GPL, or a permissive
@@ -31,7 +31,7 @@ replacement; a way to run it on Windows without Python; and the same sound for t
    disclosure line is available); its noise must be seeded for repeatable sound; its repository is archived, so it gets
    no more updates.
 
-## Two ways to run Kokoro (a choice for Jason)
+## Two ways to run Kokoro (Jason chose A)
 
 - **A. Natively in Studio's helper** (recommended): the ONNX model run by a permissive runtime inside `studio-helper`, with a
   permissive Rust front end. No Python and no GPL anywhere. More work, and the front end's handling of unknown words needs
@@ -61,3 +61,19 @@ replacement; a way to run it on Windows without Python; and the same sound for t
 
 Not yet checked: MeloTTS's sound rate and size, Matcha's weights licence, Piper's voice sizes, whether the Kokoro and
 Kitten ONNX files contain unseeded random steps, and whether the Rust front end builds on Windows.
+
+## What was built (2026-11-14)
+
+- `studio-helper/src/kokoro.rs` runs the ONNX model with ONNX Runtime (linked in, on the processor, one thread) and turns
+  words into sounds with misaki-rs built without its GPL fallback. Words its dictionary does not know go through Studio's
+  own fallback: joined words are split where the case changes (OpenStage), two known words written as one are found, common
+  endings are taken off, and anything left is spelled out letter by letter. Studio's pronunciation list comes first.
+- `tools/kokoro-model.json` pins the model's revision and every file's size and SHA-256 (the model, its vocabulary and the 28
+  English voices: 340 MB). `Get Voice.bat` downloads them into `%LOCALAPPDATA%\OpenStage Studio\voices\`, with
+  progress, carrying on after an interruption, and stopping on Ctrl+C; a file that does not match is refused.
+- The default voice is `af_heart` (US English); any of the 28 can be named in `studio-project.json`.
+- The same text gives the same sound every time: checked byte for byte, and in the acceptance test (two full runs from
+  scratch, identical sound).
+- `studio-helper phonemes --text "..."` shows how a line will be said, to check a pronunciation.
+- One licence for a person to look at: ONNX Runtime includes Eigen, under the Mozilla Public License 2.0 (file-level
+  copyleft, not GPL). It is used unchanged and its source is public; NOTICE says where.

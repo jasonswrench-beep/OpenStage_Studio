@@ -12,7 +12,14 @@ use serde::Deserialize;
 use serde_json::json;
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct Jobs {
+    /// `kokoro` (the local speech model) or `windows` (the default, for older job lists).
+    #[serde(default)]
+    engine: Option<String>,
+    /// For Kokoro: the folder the model was downloaded to.
+    #[serde(default)]
+    model_dir: Option<String>,
     #[serde(default)]
     voice: Option<String>,
     #[serde(default)]
@@ -33,10 +40,22 @@ pub fn list_voices() -> Result<(), String> {
     Ok(())
 }
 
+/// `phonemes --text <words> [--model <folder>]`: how Kokoro will say some words.
+pub fn phonemes(args: &[String]) -> Result<(), String> {
+    let text = arg(args, "--text").ok_or("Give the words with --text.")?;
+    let dir = arg(args, "--model").map(std::path::PathBuf::from).unwrap_or_else(crate::kokoro::default_dir);
+    let k = crate::kokoro::Kokoro::load(&dir, "af_heart")?;
+    say(json!({ "event": "phonemes", "text": text, "phonemes": k.phonemes(&text)? }));
+    Ok(())
+}
+
 pub fn run(args: &[String]) -> Result<(), String> {
     let path = arg(args, "--jobs").ok_or("Say where the list of lines is with --jobs.")?;
     let text = std::fs::read_to_string(&path).map_err(|e| format!("Could not read {path}: {e}"))?;
     let jobs: Jobs = serde_json::from_str(&text).map_err(|e| format!("The list of lines in {path} is not right: {e}"))?;
+    if jobs.engine.as_deref() == Some("kokoro") {
+        return run_kokoro(&jobs);
+    }
     let voice = jobs.voice.unwrap_or_else(|| "default".into());
     let rate = jobs.rate.unwrap_or(1.0).clamp(0.5, 2.0);
     let speaker = imp::Speaker::new(&voice, rate)?;
@@ -50,6 +69,26 @@ pub fn run(args: &[String]) -> Result<(), String> {
         }
         std::fs::write(out, &wav).map_err(|e| format!("Could not save {}: {e}", out.display()))?;
         say(json!({ "event": "spoken", "out": job.out, "ms": crate::wav::duration_ms(&mono), "rate": mono.rate }));
+    }
+    Ok(())
+}
+
+fn run_kokoro(jobs: &Jobs) -> Result<(), String> {
+    let dir = jobs.model_dir.as_ref().map(std::path::PathBuf::from).unwrap_or_else(crate::kokoro::default_dir);
+    let voice = jobs.voice.clone().filter(|v| v != "default").unwrap_or_else(|| "af_heart".into());
+    let speed = jobs.rate.unwrap_or(1.0).clamp(0.5, 2.0) as f32;
+    let mut k = crate::kokoro::Kokoro::load(&dir, &voice)?;
+    say(json!({ "event": "voice", "name": format!("Kokoro {}", k.voice_name) }));
+    for job in &jobs.jobs {
+        let samples = k.speak(&job.text, speed)?;
+        let wav = crate::wav::wav_bytes(&samples, crate::kokoro::SAMPLE_RATE);
+        let out = std::path::Path::new(&job.out);
+        if let Some(d) = out.parent() {
+            std::fs::create_dir_all(d).map_err(|e| format!("Could not make {}: {e}", d.display()))?;
+        }
+        std::fs::write(out, &wav).map_err(|e| format!("Could not save {}: {e}", out.display()))?;
+        let ms = samples.len() as u64 * 1000 / crate::kokoro::SAMPLE_RATE as u64;
+        say(json!({ "event": "spoken", "out": job.out, "ms": ms, "rate": crate::kokoro::SAMPLE_RATE }));
     }
     Ok(())
 }

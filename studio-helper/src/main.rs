@@ -7,7 +7,8 @@
 //! * `take --window <title>`: watch one window and save a still picture of it whenever asked (`{"cmd":"grab"}` on
 //!   standard input), once the window has stopped changing.
 //! * `voices`: the voices Windows can speak with.
-//! * `speak --jobs <file>`: turn lines of narration into sound files.
+//! * `speak --jobs <file>`: turn lines of narration into sound files, with Kokoro (a local speech model) or a Windows voice.
+//! * `phonemes --text <words>`: how Kokoro will say some words, to check a pronunciation.
 //! * `assemble --plan <file> --out <video>`: lay the pictures, pointer, callouts, cards and narration onto a timeline
 //!   and write the finished MP4.
 //! * `compare --a <video> --b <video>`: say whether two finished videos show and sound the same.
@@ -17,6 +18,7 @@
 
 mod assemble;
 mod compare;
+mod kokoro;
 mod pointer;
 mod pngio;
 mod speech;
@@ -49,6 +51,7 @@ fn main() -> ExitCode {
         "take" => take::run(&args),
         "voices" => speech::list_voices(),
         "speak" => speech::run(&args),
+        "phonemes" => speech::phonemes(&args),
         "assemble" => assemble::run(&args),
         "compare" => compare::run(&args),
         other => Err(format!("\"{other}\" is not something this helper does. Use windows, take, voices, speak, assemble or compare.")),

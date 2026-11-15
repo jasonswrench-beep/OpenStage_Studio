@@ -5,19 +5,22 @@
 
 import type { Script } from "../script/format.ts";
 
-/** The narration engines. Only the Windows voices are built in this version; see docs/HANDOFF.md for the open choice. */
-export const ENGINES = ["windows", "recorded"] as const;
+/** The narration engines: Kokoro, a local speech model run inside the helper (the default, docs/voice-models.md), or the
+ * voices built into Windows. Recording your own voice is part of the format but not built yet. */
+export const ENGINES = ["kokoro", "windows", "recorded"] as const;
 export type Engine = (typeof ENGINES)[number];
 
 export interface VoiceSettings {
   engine: Engine;
-  /** `default`, or part of a voice's name. */
+  /** For Kokoro, a voice's name (`af_heart`); for Windows, `default` or part of a voice's name. */
   voice: string;
   /** 1 is normal speed. */
   rate: number;
+  /** The model's pinned revision, so a new model makes new clips. Filled in by the pipeline. */
+  model?: string;
 }
 
-export const DEFAULT_VOICE: VoiceSettings = { engine: "windows", voice: "default", rate: 1 };
+export const DEFAULT_VOICE: VoiceSettings = { engine: "kokoro", voice: "af_heart", rate: 1 };
 
 /** How a term is said: `{ "OpenStage": "Open Stage" }`. Whole words, capital letters ignored. */
 export type Pronunciations = Record<string, string>;
@@ -56,5 +59,5 @@ export function narrationLines(script: Script, pronunciations: Pronunciations = 
 
 /** What a clip's sound depends on, as one string to fingerprint for its file name. */
 export function clipKey(line: NarrationLine, voice: VoiceSettings): string {
-  return JSON.stringify({ engine: voice.engine, voice: voice.voice, rate: voice.rate, text: line.spoken });
+  return JSON.stringify({ engine: voice.engine, voice: voice.voice, rate: voice.rate, ...(voice.model ? { model: voice.model } : {}), text: line.spoken });
 }

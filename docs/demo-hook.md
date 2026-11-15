@@ -14,6 +14,11 @@ sides) and `hook.ts` (the part a program includes).
 - In demo mode the page holds still and ignores the real mouse: transitions and animations are off, the text caret does
   not blink, and pointer events are switched off so a resting or stray mouse cannot change what is recorded. The hook's
   own clicks are unaffected.
+- In demo mode the page also looks the same whether or not its window is the active one: the hook rewrites the page's own
+  `:focus`, `:focus-visible`, `:focus-within` and `:hover` rules to follow markers it sets (`data-demo-focus` and the
+  rest), keeps track of the keyboard focus itself from every focus() and blur() call, and draws drop-down lists itself
+  (same box and colours, a plain arrow). A program does not need to do anything
+  for this; step 3 below is now optional.
 
 ## Adding it to a program
 

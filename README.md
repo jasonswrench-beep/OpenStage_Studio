@@ -10,30 +10,33 @@ Free and open source under the Apache License 2.0. Part of the OpenStage suite. 
 ## Where this stands
 
 Phase 1, "One video by hand", is built and passes its acceptance test: the hand-written script
-`examples/plan-a-lesson.json` makes a two-minute narrated, captioned 1080p video, and making it twice gives the same
-video (every one of its 3,601 frames identical to the pixel, and the sound identical).
+`examples/plan-a-lesson.json` makes a narrated, captioned 1080p video of just under two minutes, and making it twice gives
+the same video: with the Kokoro voice, every one of its 3,284 frames identical to the pixel and the sound identical (with
+the Windows voice it runs 2:00, also identical).
 
 | Built | Not built yet |
 |---|---|
 | The tutorial script format and its validator | The guard: blocklist, script and frame scans, review gate (phase 2) |
 | The demo-mode hook, in an invented practice program | The hook in a real OpenStage program |
 | The player and the take (window capture with OpenScreen's engine) | AI planning, scripting and rehearsal repair (phase 3) |
-| Narration with Windows' built-in voices, pronunciation list, clip reuse | A downloadable local voice model, hosted voices, recording your own voice |
+| Narration with Kokoro, a local speech model (or Windows' voices), pronunciation list, clip reuse | Hosted voices, recording your own voice |
 | Captions (SRT and VTT), transcript, chapter list | The publishing package and thumbnail (phase 2) |
 | Assembly to MP4 (1920 by 1080, 30 frames a second) with title and end cards | Making videos from inside the app window (today: `Make Video.bat`) |
 
 ## What to do (no typing needed)
 
 1. **`Build Studio.bat`** builds everything. The first time takes several minutes.
-2. **`Make Video.bat`** makes the example video. Drag any script's `.json` file onto it to make that one instead. The
+2. **`Get Voice.bat`** downloads the narration voice once (340 MB, checked file by file). Narration works offline after that.
+3. **`Make Video.bat`** makes the example video. Drag any script's `.json` file onto it to make that one instead. The
    finished video, its captions, transcript and chapter list land in `renders\<script name>\`.
-3. **`Check Same Video.bat`** is the acceptance test: it makes the video twice from scratch and checks both are the same.
-4. **`Run OpenStage Studio.bat`** opens the app, which checks a script against the format and lists its steps.
-5. **`Test Everything.bat`** runs every automated test. **`Check Licences.bat`** checks every package's licence.
-6. **`Make App Icons.bat`** rebuilds the app icons from `OpenStage_Studio_Icon.zip` (or the `branding` folder).
+4. **`Check Same Video.bat`** is the acceptance test: it makes the video twice from scratch and checks both are the same.
+5. **`Run OpenStage Studio.bat`** opens the app, which checks a script against the format and lists its steps.
+6. **`Test Everything.bat`** runs every automated test. **`Check Licences.bat`** checks every package's licence.
+7. **`Make App Icons.bat`** rebuilds the app icons from `OpenStage_Studio_Icon.zip` (or the `branding` folder).
 
-You need Node.js (22.13 or newer) and Rust installed. While a take runs, the practice program fills your main screen for
-a minute or two; it ignores the mouse, so nothing you do spoils the recording.
+You need Node.js (22.13 or newer) and Rust installed. While a take runs, the practice program fills one screen for a minute
+or two (the main one, or the one `local-settings.json` names, such as `{ "monitor": 2 }`); it ignores the mouse and the
+keyboard, so nothing you do spoils the recording.
 
 ## How it fits together
 

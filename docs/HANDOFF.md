@@ -7,7 +7,7 @@ Last updated 2026-11-14, at the end of the first build session.
 Phase 1 ("One video by hand") is built and its acceptance test passes on Jason's computer (Windows 11 build 26200, two
 1920 by 1080 displays at 100 percent):
 
-- `examples/plan-a-lesson.json` (23 steps) makes a 120.0 second video, 1920 by 1080, 30 frames a second, H.264 with AAC
+- `examples/plan-a-lesson.json` (23 steps) makes a 109.5 second video with the Kokoro voice (120.0 seconds with the Windows voice), 1920 by 1080, 30 frames a second, H.264 with AAC
   sound, with captions (SRT and VTT), a transcript and a chapter list.
 - `Check Same Video.bat` made it twice from scratch (new narration clips, a new take each time). The take's pictures, the
   timeline, every frame and sound sample given to the encoder, and the two finished MP4 files read back with Windows'
@@ -35,10 +35,9 @@ but not heard.
 
 Confirmed by Jason on 2026-11-14:
 
-1. **Default voice: a downloadable local speech model.** Until one is chosen, the built-in Windows voice (the computer's
-   default voice) is used: on every Windows computer, sends nothing anywhere, identical sound every time, but flat and
-   16,000 samples a second. Each candidate model's weights and its text-to-sound front end need a licence audit before
-   anything is downloaded or bundled (several common front ends are GPL). The shortlist is in `docs/voice-models.md`.
+1. **Default voice: Kokoro-82M, run natively in the helper.** Downloaded once with `Get Voice.bat` (340 MB, every file
+   checked), then offline. Voice `af_heart` by default. The Windows voices remain as a second engine
+   (`"engine": "windows"` in `studio-project.json`). Details and the licence audit: `docs/voice-models.md`.
 2. **First product: OpenStage Author.** The hook was built and proven in an invented program first (Practice Planner,
    `sample-program/`). Next it goes into Author's web-based editor, with a library of invented demo courses.
 3. **Still pictures, not a live recording.** The take saves a still picture after each change, and the video's timing
@@ -63,12 +62,19 @@ Made by Claude, open to change:
 
 ## Next
 
-- Choose the local voice model from the audited shortlist (`docs/voice-models.md`), then build its download (progress, resume, cancel) and narration engine.
 - OpenStage Author: the hook is on Author's local branch `studio-demo-hook` (not pushed; see docs/demo-hook.md). Still to do there: name the buttons in its panes and dialogs, keep demo mode out of the author's list of recent projects, and write the Author tutorial scripts.
 - Put the player in the app window: open a script, make the video, show progress, play the result.
 - Phase 2: demo workspace rules, blocklist, script scan, frame scan, review gate, guard report, publishing package.
 
 ## Things to know
+
+- **Takes do not depend on the computer's state.** In demo mode the hook rewrites the page's own focus and hover rules to
+  follow markers it sets, keeps track of the keyboard focus itself (the page does not record focus while its window is
+  not the active one), draws drop-down lists itself, and gives them their own layer; the take waits five seconds for a
+  program to finish starting. Each of these fixed a real difference between two takes (found while Jason was using the
+  computer during a run). If a repeat check ever fails, the take log shows the first picture that differs.
+- `local-settings.json` (git ignores it) holds settings for this computer only: `{ "monitor": 2 }` puts takes on the second
+  display, which is how Jason's computer is set up.
 
 - `Make Video.bat` uses display 1. `node src/pipeline/make-video.ts <script> --monitor 2` uses another.
 - The practice program lays its page out at 1280 by 720 CSS pixels and is shown at 1920 by 1080, so text reads well at
