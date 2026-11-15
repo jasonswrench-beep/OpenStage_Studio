@@ -47,3 +47,17 @@ Narration with the Kokoro voice (studio-helper/src/kokoro.rs), added 2026-11-14:
   Apache-2.0, and a part-of-speech tagger whose weights were extracted from spaCy's en_core_web_sm model, MIT.
 - language-tokenizer 0.1.0 (https://github.com/savannstm/language-tokenizer), a dependency of misaki-rs, under the WTFPL
   version 2: a public-domain-like licence with no conditions. Accepted 2026-11-14.
+
+AI planning, scripting and rehearsal (src/ai/, src/manual/), added 2026-11-15:
+
+- The built-in AI model: Qwen 3.5, 4 billion parameters, by Alibaba Cloud (Qwen), Apache-2.0, in the Q4_K_M file made by
+  Unsloth (https://huggingface.co/unsloth/Qwen3.5-4B-GGUF, revision e87f176479d0855a907a41277aca2f8ee7a09523). Not bundled:
+  downloaded on request by "Set Up AI.bat", with its licence text, each file checked against its SHA-256 in
+  tools/local-ai.json (the same pins the documentation tool uses).
+- llama.cpp build b12359 (https://github.com/ggml-org/llama.cpp), MIT, the program that runs the built-in model on this
+  computer. Not bundled: downloaded with the model, checked the same way. Its zip carries nlohmann/json (MIT, licence
+  downloaded beside it) and the LLVM OpenMP runtime (Apache-2.0 with LLVM Exceptions, licence kept with it).
+- The Anthropic TypeScript SDK (@anthropic-ai/sdk, https://github.com/anthropics/anthropic-sdk-typescript), Apache-2.0,
+  used only when a person chooses Claude with their own key. Its dependencies: standardwebhooks (MIT), json-schema-to-ts
+  (MIT) and @opentelemetry/api (Apache-2.0).
+- PDF.js (pdfjs-dist, https://github.com/mozilla/pdf.js), Apache-2.0, for reading the words of a PDF manual.

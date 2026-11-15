@@ -29,6 +29,8 @@ export interface PlayOptions {
   scrollPieces?: number;
   /** Ask the program for the text on screen at every picture, for the frame scan. On unless switched off. */
   readText?: boolean;
+  /** Called just before each step; an error it throws fails that step (rehearsal checks steps with it). Takes never use it. */
+  beforeStep?: (index: number) => Promise<void>;
 }
 
 export class StepFailed extends Error {
@@ -78,6 +80,7 @@ export async function play(script: Script, hook: Hook, camera: Camera, options: 
   for (let index = 0; index < script.steps.length; index++) {
     const step = script.steps[index];
     try {
+      await options.beforeStep?.(index);
       steps.push(await playStep(index, step));
     } catch (e) {
       throw e instanceof StepFailed ? e : new StepFailed(index, e instanceof Error ? e.message : String(e));

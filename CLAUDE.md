@@ -7,8 +7,8 @@ The design is the "OpenStage Studio Specification" (a Docs file owned by Jason).
 Jason first.
 
 Read `docs/HANDOFF.md` first if you are starting a new session. Read `docs/script-format.md` before touching anything
-that reads or writes a tutorial script, `docs/demo-hook.md` before touching the demo-mode hook, and `docs/guard.md`
-before touching the guard, the review gate or the publishing package.
+that reads or writes a tutorial script, `docs/demo-hook.md` before touching the demo-mode hook, `docs/guard.md`
+before touching the guard, the review gate or the publishing package, and `docs/ai.md` before touching the AI roles.
 
 ## What this is
 
@@ -18,7 +18,9 @@ any AI model or a person can write one. Everything must work by hand with no AI.
 
 Phase 1 ("One video by hand") is built: script format and validator, demo-mode hook, player, window capture, narration,
 captions, assembly to a 1080p 30fps MP4. Phase 2 ("Guard and package") is built: blocklist, script scan, frame scan,
-review gate, guard report, publishing package (`docs/guard.md`). Phases 3 to 5 (AI planning, batch, reach) are in the spec.
+review gate, guard report, publishing package (`docs/guard.md`). Phase 3 ("AI planning and scripting") is built: manual
+import, planner, scriptwriter, rehearsal with repair, metadata writer (`docs/ai.md`). Phases 4 and 5 (batch, reach) are
+in the spec.
 
 ## Not in scope
 
@@ -33,8 +35,11 @@ review gate, guard report, publishing package (`docs/guard.md`). Phases 3 to 5 (
 
 ### Naming
 
-- Never name commercial software, or compare Studio to products on the market, anywhere in the repository: code,
-  comments, documents, test data, demo content. Use generic terms ("a video site", "a screen reader", "the browser engine").
+- Never compare Studio to products on the market or present it as a replacement for one, anywhere in the repository:
+  code, comments, documents, test data, demo content. No "an alternative to X", no feature comparisons, no competitors
+  named. Elsewhere, prefer generic terms ("a video site", "a screen reader", "the browser engine").
+- Naming a service Studio works with directly is fine where a person needs it to set Studio up, such as the hosted AI
+  services in the AI settings (agreed with Jason on 2026-11-15).
 - Demo content is invented: made-up names, original text, images we own. No real people, institutions, file paths or data.
 - The blocklist in the repository holds categories and patterns only. Names to block live in each person's own
   `blocklist.local.json`, which git ignores. Test data blocks invented names.
@@ -88,6 +93,12 @@ Use original code, assets and design.
 - Optional, and never in the recorded take, and never approves a video. No test or tool approves a review either: only a
   person, in the review screen.
 - Every AI output is a file a person can read and edit before anything is recorded.
+- The built-in model (Qwen 3.5 4B, run by llama.cpp's server on this computer only) is downloaded on request and checked
+  against `tools/local-ai.json`, the same pins as the documentation tool; never bundle it. Hosted services use the
+  person's own key, kept in `%APPDATA%\org.openstage.studio\ai.json` and sent only to that service. Claude goes through
+  Anthropic's own SDK.
+- Every AI answer is checked by Studio (format, the program's real controls, its demo projects, the script scan) and sent
+  back with the problems in words until it passes. Prefer a fixed check over asking the AI to judge.
 - Scripts record who wrote them (`writtenBy`) and whether a person edited them, for the guard report.
 
 ## Working style

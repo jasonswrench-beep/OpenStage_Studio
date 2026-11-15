@@ -1,0 +1,45 @@
+{
+  "name": "The built-in AI model: Qwen 3.5, 4 billion parameters (Q4_K_M), run by llama.cpp build b12359",
+  "licence": "Apache-2.0 (the model), MIT (the runtime)",
+  "about": "The same pinned files OpenStage's documentation tool uses (OpenExplainer: src/ai/model-info.ts and tools/ai-runtime.json), checked file by file. Changing any of them means auditing the new files and updating NOTICE.",
+  "source": "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF",
+  "revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+  "folder": "qwen3.5-4b-e87f176-llama-b12359",
+  "model": "Qwen3.5-4B-Q4_K_M.gguf",
+  "modelName": "Qwen 3.5 4B (built in)",
+  "runtime": {
+    "zip": "llama-b12359-bin-win-cpu-x64.zip",
+    "keep": ["llama-server.exe", "llama-server-impl.dll", "llama.dll", "llama-common.dll", "ggml.dll", "ggml-base.dll", "ggml-cpu*.dll", "mtmd.dll", "libomp.dll", "LICENSE-LLVM-OpenMP"]
+  },
+  "files": [
+    {
+      "path": "Qwen3.5-4B-Q4_K_M.gguf",
+      "size": 2740937888,
+      "sha256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4"
+    },
+    {
+      "path": "LICENSE-Qwen3.5-4B.txt",
+      "url": "https://huggingface.co/Qwen/Qwen3.5-4B/raw/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/LICENSE",
+      "size": 11544,
+      "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+    },
+    {
+      "path": "llama-b12359-bin-win-cpu-x64.zip",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12359/llama-b12359-bin-win-cpu-x64.zip",
+      "size": 25097509,
+      "sha256": "837c1655e87df3b66989f4be33a792a1399c785bf259038dc75c900096683e69"
+    },
+    {
+      "path": "LICENSE-llama.cpp.txt",
+      "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12359/LICENSE",
+      "size": 1078,
+      "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+    },
+    {
+      "path": "LICENSE-jsonhpp.txt",
+      "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12359/licenses/LICENSE-jsonhpp",
+      "size": 1075,
+      "sha256": "c0d068392ea65358b798b8c165103560f06e9e3b38c4ab4e2d8810a7b931af86"
+    }
+  ]
+}

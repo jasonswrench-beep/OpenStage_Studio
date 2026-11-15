@@ -1,10 +1,10 @@
 # Handoff
 
-Last updated 2026-11-15, at the end of the phase 2 build session.
+Last updated 2026-11-15, at the end of the phase 3 build session.
 
 ## Where things are
 
-Phases 1 and 2 are built, and their acceptance tests pass on Jason's computer (Windows 11 build 26200, two 1920 by 1080
+Phases 1 to 3 are built, and their acceptance tests pass on Jason's computer (Windows 11 build 26200, two 1920 by 1080
 displays at 100 percent; takes run on the second display).
 
 Phase 1, "One video by hand":
@@ -14,8 +14,8 @@ Phase 1, "One video by hand":
   chapter list.
 - `Check Same Video.bat` makes it twice from scratch and compares the take's pictures, the timeline, every frame and
   sound sample given to the encoder, and the two finished MP4 files read back with Windows' decoder. Last run 2026-11-15,
-  after the phase 2 changes: 3,284 of 3,284 frames identical to the pixel, the sound identical, and the same frame
-  fingerprint as before phase 2 (the guard does not change the video). Author's first look also passes (see below).
+  after the phase 3 changes (hook version 3, grey text smoothing): 3,284 of 3,284 frames identical to the pixel and the
+  sound identical; Author's first look 1,105 of 1,105.
 - Jason watched and listened to both videos on 2026-11-14: everything works, the narration included.
 
 Phase 2, "Guard and package" (`docs/guard.md`):
@@ -28,8 +28,31 @@ Phase 2, "Guard and package" (`docs/guard.md`):
   the flag then counts as resolved; approving and exporting in the review screen makes the package and checklist.
 - The review screen was checked in a browser with a stand-in for the app's file access
   (`tools/review-harness/`, development only), and the real app opens a review on the second display.
-- 79 TypeScript tests and 19 helper tests pass (`Test Everything.bat`). The licence check passes; phase 2 added no
-  packages (text recognition is part of Windows).
+- Phase 2 added no packages (text recognition is part of Windows).
+
+Phase 3, "AI planning and scripting" (`docs/ai.md`):
+
+- `Check AI Scripts.bat` passes with the built-in model (Qwen 3.5 4B on this computer): from the "Planning lessons"
+  chapter of the invented Practice Planner manual, it planned six videos, wrote six scripts, and all six passed rehearsal
+  after automatic repair, with no hand edits (the bar is four in five). See "Phase 3 results" below.
+- Not yet tried with a hosted model: Jason will add a key with `Set Up AI.bat`.
+- 92 TypeScript tests and 19 helper tests pass (`Test Everything.bat`). The licence check passes with phase 3's two
+  packages (Anthropic's SDK and PDF.js, both Apache 2.0, in NOTICE).
+
+### Phase 3 results, and what the built-in model gets wrong
+
+Rehearsal passing means every step can be performed and none types onto a box's old words. It does not prove each step
+does what its narration says, and the built-in model's scripts still need a person's read:
+
+- It reads the program's real controls well: lesson numbers, opening a menu or dialog first, typing a list's choice.
+- On the last run (2026-11-15) all six scripts did exactly what their tasks say, after two automatic repairs (typing into
+  the checklist's new item, and selecting the copy's title before renaming it).
+- An earlier slip: in "Copy a lesson", it clicked the original lesson after Duplicate and renamed that instead of the
+  copy, and rehearsal could not see it. Practice Planner's notes for the AI now say Duplicate opens the copy at once,
+  which fixed it; slips of this kind are why a person reads every script.
+- Asking it to judge each step's `expect` against what changed on screen was tried and dropped (it flagged ordinary
+  changes and its repairs made scripts worse). Fixed rules catch the real mistakes instead: clicking a drop-down list to
+  choose from it, typing onto a box's old words, and a step repeated by mistake (tidied away).
 
 ## How a video is made
 
@@ -73,6 +96,15 @@ Confirmed by Jason:
    name, home folder and computer name. A recording-only account stays optional.
 9. **The "computer generated" line in descriptions is off by default** (2026-11-15). Every package's upload.txt says how
    the narration was made either way, and a project can switch the line on (`publish.disclosureLine`).
+10. **AI: the built-in model plus your own key** (2026-11-15), matching the documentation tool. The connector server waits
+    for phase 5, as the spec says. The built-in model is the documentation tool's pinned Qwen 3.5 4B and llama.cpp build.
+11. **Naming** (2026-11-15): the rule is about positioning. Never compare Studio to products on the market or call it a
+    replacement for one; naming a service Studio works with directly, such as the hosted AI services, is fine.
+12. **Phase 3 is proven on an invented Practice Planner manual** (2026-11-15), written as a documentation project file;
+    imports are documentation project files and PDFs.
+13. **Plain grey text smoothing in demo mode** (2026-11-15): Studio starts every program in demo mode with its browser
+    engine told not to use coloured (subpixel) smoothing, which could switch for a label beside a control drawn in its own
+    layer and made two takes differ. Set at launch (`src/pipeline/programs.ts`), so no program's own code changes.
 
 Made by Claude, open to change:
 
@@ -98,21 +130,40 @@ Made by Claude, open to change:
 11. **The thumbnail template**: the product's name and the title on the left, a close view of one step on the right
     (the last step, or `publish.thumbnailStep`), colours from `studio-project.json` with a contrast warning.
 12. **The repeat check skips the frame scan**, which does not change the video, to save time.
+13. **AI output goes into a series folder** (`series\<program>-<chapter>\`, which git ignores): `plan.json`, the scripts and
+    `rehearsal.txt`. A person approves videos by setting `status` in `plan.json`; `Write Scripts.bat` writes the approved
+    ones (or, with `--all`, every proposed one, as the acceptance test does).
+14. **The scriptwriter sees the program's real controls**, read through the hook with each demo project open, plus the
+    numbered families and notes in `src/pipeline/programs.ts`. Every AI answer is checked and sent back with the problems
+    in words until it passes (up to three or four tries).
+15. **Rehearsal flags typing onto a one-line box's old words** unless Ctrl+A selected them first (hook version 3 reports
+    a box's words and makes Ctrl+A select them). Writing refuses clicking a drop-down list to choose, and tidies away a
+    step repeated by mistake.
+16. **Publishing details**: the metadata writer is told the program's name; chapters only for scripts of eight steps or
+    more, at least two steps apart, as video sites need three chapters of ten seconds or more.
+17. **Claude** goes through Anthropic's own SDK, starting at `claude-opus-5-5` with medium effort and the service's own
+    fallback on a refusal. Keys are kept in `%APPDATA%\org.openstage.studio\ai.json`.
+18. **AI setup is a double-click console script for now** (`Set Up AI.bat`): asked in words, one question at a time, so a
+    screen reader can follow it. An AI settings screen in the app comes with moving the player into the app.
 
 ## Next
 
-- OpenStage Author: the hook is on Author's branch `studio-demo-hook` (pushed, not merged). The hook copy there has the
-  phase 2 `text` command, uncommitted until Jason says yes. Still to do: name the buttons in its panes and dialogs, and
-  write the Author tutorial scripts and their demo courses.
-- Put the player in the app window: open a script, make the video, show progress, play the result, go to review.
-- Phase 3: manual import, planner, scriptwriter, rehearsal with repair, metadata writer.
+- Try phase 3 with a hosted model: Jason adds a key with `Set Up AI.bat`, then `Check AI Scripts.bat`.
+- OpenStage Author: the hook is on Author's branch `studio-demo-hook` (pushed, not merged). The hook copy there now has
+  hook version 3, uncommitted until Jason says yes. Still to do: name the buttons in its panes and dialogs, list its demo
+  projects in `src/pipeline/programs.ts`, write its manual (or import one), and make its videos.
+- Put the player and AI setup in the app window: open a script, make the video, show progress, play it, go to review.
+- Phase 4: a queue for a whole manual, unattended runs, and a release check that reruns every script and names the steps
+  a new version broke.
 
 ## Things to know
 
 - **Takes do not depend on the computer's state.** In demo mode the hook rewrites the page's own focus and hover rules to
   follow markers it sets, keeps track of the keyboard focus itself, draws drop-down lists itself, and gives them their own
-  layer; the take waits five seconds for a program to finish starting. If a repeat check ever fails, the take log shows
-  the first picture that differs.
+  layer; the take waits five seconds for a program to finish starting; and the program is started with plain grey text
+  smoothing. If a repeat check ever fails, the take log shows the first picture that differs.
+- The built-in AI model and its runtime live in `%LOCALAPPDATA%\OpenStage Studio\ai\`; writing one script with it takes a
+  minute or two on this computer's processor, and a whole chapter's run about 25 minutes.
 - `local-settings.json` (git ignores it) holds settings for this computer only: `{ "monitor": 2 }` puts takes on the second
   display, which is how Jason's computer is set up. Every double-click script follows it; `--monitor <n>` overrides it.
   The app's own window also takes `--monitor <n>` (used for tests).

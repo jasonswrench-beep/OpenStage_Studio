@@ -19,6 +19,9 @@ sides) and `hook.ts` (the part a program includes).
   rest), keeps track of the keyboard focus itself from every focus() and blur() call, and draws drop-down lists itself
   (same box and colours, a plain arrow). A program does not need to do anything
   for this; step 3 below is now optional.
+- Studio starts every program in demo mode with its browser engine set to plain grey text smoothing (not the coloured
+  kind), because the coloured kind can switch for text beside a control drawn in its own layer
+  (`demoEnvironment` in `src/pipeline/programs.ts`). A program's own code does not change.
 
 ## Adding it to a program
 
@@ -46,21 +49,22 @@ sides) and `hook.ts` (the part a program includes).
 | Command | What it does |
 |---|---|
 | `hello` | Says the program's name, the hook version, the page size and how many named controls there are. |
-| `list` | Lists every named control: name, label, role, place, whether it is visible and switched on. |
+| `list` | Lists every named control: name, label, role, place, whether it is visible and switched on, whether it has the keyboard focus, and for a box, the words in it now (never a password box's) and whether it takes several lines. |
 | `position` | The place of one control, for the pointer, the click circle and callouts. |
 | `hover` | Gives a control its hover look (`data-demo-hover`), or clears it. |
 | `click` | Presses a control, with the pointer and mouse events a click sends. |
 | `focus` | Gives a control the keyboard focus. |
 | `type` | Types text one character at a time with key events, or chooses a drop-down option by its words. |
-| `key` | Presses a key or chord on the focused control; Tab, Enter, Space and Backspace do what a browser would. |
+| `key` | Presses a key or chord on the focused control; Tab, Enter, Space and Backspace do what a browser would, and Ctrl+A selects all of a box's words, so the next typing replaces them. |
 | `scroll` | Scrolls a control or the page by a number of pixels. |
 | `loadDemo` | Opens a demo project from the program's demo library, by name. |
 | `reset` | Puts the program back to a known state. |
 | `settle` | Waits for fonts, any running animations and two drawn frames, so a still picture shows the finished result. |
 | `text` | Lists every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their placeholder), and the choice showing in each drop-down list. Text hidden, scrolled out of view or clipped is left out. For the frame scan (docs/guard.md); it never changes the page. |
 
-The hook's version is 2 (version 2 added `text`). The player asks a program with an older hook for nothing it lacks: the
-frame scan then reads the pictures only.
+The hook's version is 3. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
+`list`, and Ctrl+A. Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
+only, and rehearsal skips its check on typing into a box that already holds words (docs/ai.md).
 
 ## Programs with the hook
 

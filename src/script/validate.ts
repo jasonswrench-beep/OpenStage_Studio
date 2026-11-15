@@ -25,6 +25,17 @@ export interface Validation {
 export interface ValidateOptions {
   /** The program's real control names from the demo-mode hook. When given, any target not in the list is an error. */
   controls?: readonly string[];
+  /** Controls that appear only after an action, with * for their number (such as `sidebar.lesson.*`); they count as real. */
+  controlPatterns?: readonly string[];
+}
+
+/** Whether a control name fits a pattern such as `sidebar.lesson.*`, where * is a number. */
+export function fitsPattern(name: string, pattern: string): boolean {
+  const parts = pattern.split("*");
+  if (parts.length !== 2) return name === pattern;
+  const [head, tail] = parts;
+  return name.length > head.length + tail.length && name.startsWith(head) && name.endsWith(tail)
+    && /^[0-9]{1,4}$/.test(name.slice(head.length, name.length - tail.length));
 }
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/;
@@ -59,7 +70,7 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
   const checkControl = (path: string, value: unknown) => {
     if (!isText(value)) return err(path, "Name a control by its stable name, such as toolbar.insert.textbox.");
     if (!CONTROL.test(value)) return err(path, `"${value}" is not a control name. Use letters, digits, - and _, in parts joined by dots.`);
-    if (controls && !controls.has(value)) err(path, `The program has no control called "${value}".`);
+    if (controls && !controls.has(value) && !(options.controlPatterns ?? []).some((p) => fitsPattern(value, p))) err(path, `The program has no control called "${value}".`);
   };
   const unknownKeys = (obj: Obj, allowed: string[], path: string) => {
     for (const key of Object.keys(obj)) if (!allowed.includes(key)) err(path ? `${path}.${key}` : key, `"${key}" is not part of a script here. Check the spelling.`);

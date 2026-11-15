@@ -19,6 +19,8 @@ blocklist.local.json
 work/
 renders/
 packages/
+# Plans and scripts the AI writes from a manual (each person keeps the ones they want wherever they like).
+series/
 
 # Local AI-assistant files and credentials: never commit these
 .claude/

@@ -30,7 +30,7 @@ import { helperPath, runHelper, TakeSession, wavDurationMs } from "./helper.ts";
 import { play } from "./player.ts";
 import { readManifest } from "./get-voice.ts";
 import { voiceReady, voicesRoot } from "../narration/voice-download.ts";
-import { findProgram } from "./programs.ts";
+import { demoEnvironment, findProgram } from "./programs.ts";
 import { describeScriptHit, scanScript, scriptTexts } from "../guard/script-scan.ts";
 import { loadBlocklist, type LoadedBlocklist } from "../guard/load.ts";
 import { scanFrames, type OcrResult } from "../guard/frame-scan.ts";
@@ -300,7 +300,7 @@ async function recordTake(script: Script, pictureDir: string, helper: string, mo
   await server.start();
   const launch = program.launch(ROOT, server.endpoint, server.token, monitor);
   log(`Starting ${program.name} in demo mode.`);
-  const app = spawn(launch.exe, launch.args, { stdio: "ignore", windowsHide: false });
+  const app = spawn(launch.exe, launch.args, { stdio: "ignore", windowsHide: false, env: demoEnvironment() });
   let session: TakeSession | null = null;
   try {
     await Promise.race([

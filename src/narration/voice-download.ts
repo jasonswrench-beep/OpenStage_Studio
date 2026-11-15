@@ -10,6 +10,8 @@ export interface VoiceFile {
   path: string;
   size: number;
   sha256: string;
+  /** Where to fetch it, when it does not come from the manifest's source and revision (the AI runtime and licences). */
+  url?: string;
 }
 
 export interface VoiceManifest {
@@ -18,7 +20,7 @@ export interface VoiceManifest {
   source: string;
   revision: string;
   folder: string;
-  defaultVoice: string;
+  defaultVoice?: string;
   files: VoiceFile[];
 }
 
@@ -35,6 +37,10 @@ export function voicesRoot(env: NodeJS.ProcessEnv = process.env): string {
 
 /** The address of one pinned file. */
 export function fileUrl(m: VoiceManifest, f: VoiceFile): string {
+  if (f.url) {
+    if (!f.url.startsWith("https://")) throw new Error(`${f.path} is not on a secure address; it was not downloaded.`);
+    return f.url;
+  }
   return `${m.source}/resolve/${m.revision}/${f.path}`;
 }
 
@@ -44,6 +50,7 @@ export function safePath(p: string): boolean {
 }
 
 export function sizeText(bytes: number): string {
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
   return bytes >= 1e6 ? `${(bytes / 1e6).toFixed(0)} MB` : `${Math.max(1, Math.round(bytes / 1e3))} KB`;
 }
 
