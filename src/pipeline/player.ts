@@ -7,7 +7,7 @@
 
 import { parseKey, parseScroll, type Script, type Step } from "../script/format.ts";
 import type { Rect, TakeLog, TakeStep } from "../timeline/build.ts";
-import type { Command, ControlInfo, Hello } from "../../demo-hook/protocol.ts";
+import type { Command, ControlInfo, Hello, TextOnScreen } from "../../demo-hook/protocol.ts";
 import { toFrame } from "../../demo-hook/protocol.ts";
 
 /** Something that sends a command to the program and waits for its answer. */
@@ -27,6 +27,8 @@ export interface PlayOptions {
   log?: (line: string) => void;
   /** How many pieces a scroll is shown in. */
   scrollPieces?: number;
+  /** Ask the program for the text on screen at every picture, for the frame scan. On unless switched off. */
+  readText?: boolean;
 }
 
 export class StepFailed extends Error {
@@ -43,9 +45,24 @@ export async function play(script: Script, hook: Hook, camera: Camera, options: 
   log(`Connected to ${hello.program}: ${hello.controls} named controls, page ${hello.viewport[0]} by ${hello.viewport[1]}.`);
 
   const settle = () => hook.send({ cmd: "settle" });
+  // The text on screen at each picture, read from the page (the frame scan also reads the pictures themselves). A program
+  // with an older hook has no text command; the frame scan then reads the pictures alone.
+  const pageText: Record<string, { text: string; rect: Rect }[]> = {};
+  let readText = options.readText !== false && hello.hookVersion >= 2;
+  if (options.readText !== false && !readText) log("This program's demo hook cannot report its text; the frame scan will read the pictures only.");
   const shot = async () => {
     await settle();
-    return camera.grab();
+    const id = await camera.grab();
+    if (readText && !pageText[id]) {
+      try {
+        const answer = await hook.send<{ viewport: [number, number]; items: TextOnScreen[] }>({ cmd: "text" });
+        pageText[id] = answer.items.map((t) => ({ text: t.text, rect: toFrame(t.rect, answer.viewport, options.frame) }));
+      } catch (e) {
+        readText = false;
+        log(`The program did not report its text (${e instanceof Error ? e.message : String(e)}); the frame scan will read the pictures only.`);
+      }
+    }
+    return id;
   };
   const where = async (id: string): Promise<{ rect: Rect; label: string; role: string }> => {
     const answer = await hook.send<{ viewport: [number, number]; control: ControlInfo }>({ cmd: "position", id });
@@ -68,7 +85,7 @@ export async function play(script: Script, hook: Hook, camera: Camera, options: 
     log(`Step ${index + 1} of ${script.steps.length} done: ${step.action}${step.target ? ` ${step.target}` : ""}.`);
   }
   await hook.send({ cmd: "hover", id: null });
-  return { width: options.frame[0], height: options.frame[1], start, steps };
+  return { width: options.frame[0], height: options.frame[1], start, steps, ...(readText ? { pageText } : {}) };
 
   async function playStep(index: number, step: Step): Promise<TakeStep> {
     const out: TakeStep = { index, changes: [] };

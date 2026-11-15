@@ -12,9 +12,13 @@ Thumbs.db
 # Settings for one computer only (for example which display takes use).
 local-settings.json
 
+# Each person's own blocklist: names of other companies' products and real people never reach the repository.
+blocklist.local.json
+
 # Everything a run makes: narration clips, still pictures of the take, plans and finished videos.
 work/
 renders/
+packages/
 
 # Local AI-assistant files and credentials: never commit these
 .claude/

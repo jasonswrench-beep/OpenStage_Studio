@@ -1,0 +1,22 @@
+{
+  "format": "openstage-studio-script",
+  "version": 2,
+  "title": "Guard test: a planted path",
+  "goal": "Check that the frame scan flags a file path that appears on screen but not in the script.",
+  "program": { "id": "practice-planner", "name": "Practice Planner", "version": "1.0" },
+  "driver": "hook",
+  "startState": { "demoProject": "guard-test-planted-path", "note": "For the guard's acceptance test. The first lesson's notes show an invented file path." },
+  "writtenBy": { "kind": "person", "editedByPerson": true },
+  "steps": [
+    {
+      "action": "click", "target": "sidebar.lesson.1",
+      "narration": "Select the first lesson in the list. Its notes open on the right.",
+      "expect": "The first lesson is selected"
+    },
+    {
+      "action": "click", "target": "sidebar.lesson.2",
+      "narration": "Now select the second lesson.",
+      "expect": "The second lesson is selected"
+    }
+  ]
+}

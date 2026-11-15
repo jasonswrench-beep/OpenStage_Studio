@@ -57,10 +57,14 @@ sides) and `hook.ts` (the part a program includes).
 | `loadDemo` | Opens a demo project from the program's demo library, by name. |
 | `reset` | Puts the program back to a known state. |
 | `settle` | Waits for fonts, any running animations and two drawn frames, so a still picture shows the finished result. |
+| `text` | Lists every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their placeholder), and the choice showing in each drop-down list. Text hidden, scrolled out of view or clipped is left out. For the frame scan (docs/guard.md); it never changes the page. |
+
+The hook's version is 2 (version 2 added `text`). The player asks a program with an older hook for nothing it lacks: the
+frame scan then reads the pictures only.
 
 ## Programs with the hook
 
 | Program | Status |
 |---|---|
 | Practice Planner (the invented sample in `sample-program/`) | Built in; used for the tests and the example. |
-| OpenStage Author (the first product, chosen 2026-11-14) | On the local branch `studio-demo-hook` of Author's repository, not pushed: `editor/src/demohook/` (a copy of this folder), `editor/src-tauri/src/demo.rs` (the launch flags), every menu and menu command named from its key in Author's command table (`menu.insert`, `menu.insert.add-text`, `menu.help.keys`), and the examples as its demo library (`minimal`, `lesson-parts` and the rest). `examples/author/first-look.json` is its first script. Buttons in panes and dialogs are not named yet. |
+| OpenStage Author (the first product, chosen 2026-11-14) | On the branch `studio-demo-hook` of Author's repository (pushed; not merged into Author's main): `editor/src/demohook/` (a copy of this folder), `editor/src-tauri/src/demo.rs` (the launch flags), every menu and menu command named from its key in Author's command table (`menu.insert`, `menu.insert.add-text`, `menu.help.keys`), and the examples as its demo library (`minimal`, `lesson-parts` and the rest). `examples/author/first-look.json` is its first script. Buttons in panes and dialogs are not named yet. |

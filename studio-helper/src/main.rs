@@ -12,6 +12,8 @@
 //! * `assemble --plan <file> --out <video>`: lay the pictures, pointer, callouts, cards and narration onto a timeline
 //!   and write the finished MP4.
 //! * `compare --a <video> --b <video>`: say whether two finished videos show and sound the same.
+//! * `ocr --jobs <file>`: read the text in still pictures, for the frame scan.
+//! * `thumbnail --plan <file> --out <png>`: draw a video's thumbnail.
 //!
 //! The capture engine (Windows Graphics Capture, the MP4 writer, the drawing on frames) is OpenScreen's, copied from
 //! OpenStage Author into `capture/` and used without change.
@@ -19,10 +21,12 @@
 mod assemble;
 mod compare;
 mod kokoro;
+mod ocr;
 mod pointer;
 mod pngio;
 mod speech;
 mod take;
+mod thumbnail;
 mod wav;
 
 use std::process::ExitCode;
@@ -43,7 +47,7 @@ pub fn arg(args: &[String], name: &str) -> Option<String> {
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let Some(command) = args.first().map(String::as_str) else {
-        eprintln!("Say what to do: windows, take, voices, speak, assemble or compare.");
+        eprintln!("Say what to do: windows, take, voices, speak, assemble, compare, ocr or thumbnail.");
         return ExitCode::from(2);
     };
     let result = match command {
@@ -54,7 +58,9 @@ fn main() -> ExitCode {
         "phonemes" => speech::phonemes(&args),
         "assemble" => assemble::run(&args),
         "compare" => compare::run(&args),
-        other => Err(format!("\"{other}\" is not something this helper does. Use windows, take, voices, speak, assemble or compare.")),
+        "ocr" => ocr::run(&args),
+        "thumbnail" => thumbnail::run(&args),
+        other => Err(format!("\"{other}\" is not something this helper does. Use windows, take, voices, speak, assemble, compare, ocr or thumbnail.")),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

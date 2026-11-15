@@ -1,4 +1,4 @@
-# The tutorial script format (version 1)
+# The tutorial script format (version 2)
 
 A tutorial script is one JSON file that fully describes one video. A person or any AI model can write one, and the player
 performs it without interpretation. `src/script/format.ts` holds the types and `src/script/validate.ts` the validator,
@@ -9,7 +9,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | Field | Required | What it holds |
 |---|---|---|
 | `format` | yes | Always `"openstage-studio-script"`. |
-| `version` | yes | `1`. A newer number is refused with a message saying a newer Studio made it. |
+| `version` | yes | `2`. A version 1 script is read as version 2 (see "Versions" below). A newer number is refused with a message saying a newer Studio made it. |
 | `title` | yes | The video's title, at most 100 characters (it goes on the title card). |
 | `goal` | yes | One line: what the viewer can do after watching. |
 | `program` | yes | `{ "id": "practice-planner", "name": "Practice Planner", "version": "1.0" }`. The id is how Studio finds the program to launch (`src/pipeline/programs.ts`); the name goes on the cards. |
@@ -19,6 +19,8 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | `intro` | no | Narration spoken over the title card. |
 | `outro` | no | Narration spoken over the end card. |
 | `writtenBy` | no | `{ "kind": "person" or "model", "name": "...", "editedByPerson": true }`, for the guard report. |
+| `publish` | no | For the publishing package: `{ "description": "...", "tags": ["..."], "thumbnailStep": 3 }`. The description opens the video's description (the goal is used if there is none); the thumbnail shows that step's picture (the last step's if left out). |
+| `redactions` | no | Blurred boxes, usually added by the review screen: `[{ "box": [697, 401, 566, 38], "fromStep": 1, "toStep": 2, "reason": "..." }]`. The box is left, top, width and height in pixels of the 1920 by 1080 video; it blurs every picture of the take from the start of `fromStep` (0 is the starting picture) to the start of the step after `toStep`. Title and end cards are never blurred. |
 | `steps` | yes | 1 to 200 steps. |
 
 ## A step
@@ -65,7 +67,13 @@ Any callout may have a `color` (`#E0182D`). Callouts show from the moment of the
 - Control names are stable names (letters, digits, `-` and `_`, in parts joined by dots). When the program's control list
   is given (`validateScript(script, { controls })`), any target not in it is an error.
 - `expect` is optional, but a script counts as rehearsed only when every step has one.
-- Warnings (not errors): narration of more than two sentences, or longer than 280 characters.
+- A blurred box stays inside the 1920 by 1080 picture, and its steps are steps of the script.
+- Warnings (not errors): narration of more than two sentences, or longer than 280 characters; a description or tags
+  longer than video sites usually allow.
+
+The script scan (docs/guard.md) runs when a video is made, not here: it checks the words a viewer will see or hear
+(the title, goal, intro, outro, narration, typed values, callout labels, chapter names, description and tags) against
+the blocklist. Notes for people (`startState.note`, `expect`, `writtenBy`, a blurred box's `reason`) are not checked.
 
 ## Project settings
 
@@ -81,3 +89,27 @@ A `studio-project.json` beside the scripts holds what every video of a project s
 
 `pronunciations` change only what the voice is given; captions and the transcript keep the written words. `paces` can
 override any of the defaults in `src/timeline/build.ts`.
+
+`publish` (optional) sets the product's thumbnail template and the description's narration line:
+
+```json
+"publish": {
+  "thumbnail": { "background": "#102037", "accent": "#FF7BCC", "color": "#FFFFFF", "kicker": "Practice Planner", "footer": "" },
+  "disclosureLine": false,
+  "disclosureText": "The narration in this video is computer generated."
+}
+```
+
+The thumbnail's colours get a contrast check, as a warning only. The narration line is off unless a project turns it on;
+every package's upload.txt says how the narration was made either way.
+
+## Versions
+
+Every change to the format bumps its version, and `src/script/migrate.ts` brings older scripts up to date, so no script is
+ever stranded. A script brought up to date is used as it is, with a warning that says what changed; nothing is written
+back unless the review screen adds a blurred box, which also writes the new version number.
+
+| Version | What changed |
+|---|---|
+| 1 | The first format (phase 1). |
+| 2 | Added `publish` and `redactions` (phase 2). Nothing in a version 1 script changes meaning. |

@@ -23,7 +23,7 @@ export async function checkRepeat(scriptPath: string, log: (s: string) => void =
   for (const run of ["first", "second"]) {
     log(`\n=== The ${run} run ===`);
     const folder = join(base, run);
-    runs.push(await makeVideo(scriptPath, folder, { log, clipDir: join(folder, "narration"), monitor }));
+    runs.push(await makeVideo(scriptPath, folder, { log, clipDir: join(folder, "narration"), monitor, frameScan: false }));
   }
   const [a, b] = runs;
   const lines: string[] = [`Repeat check for ${basename(scriptPath)}`, ""];

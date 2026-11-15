@@ -27,6 +27,9 @@ export interface TakeLog {
   /** The picture of the starting state. */
   start: string;
   steps: TakeStep[];
+  /** The text on screen at each picture, by picture, as the program reported it (in pixels of the frame). For the frame
+   * scan only; the video does not use it. */
+  pageText?: Record<string, { text: string; rect: Rect }[]>;
 }
 
 /** How long each narration clip lasts, in milliseconds, by its id: `intro`, `outro`, `step-<index>`. */

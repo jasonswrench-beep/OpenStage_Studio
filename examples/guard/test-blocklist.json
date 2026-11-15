@@ -1,0 +1,7 @@
+{
+  "format": "openstage-studio-blocklist",
+  "version": 1,
+  "about": "For the guard's acceptance test only. The name below is invented; it stands in for another company's product.",
+  "byCategory": { "product": ["Zentrova Planner"] },
+  "allow": []
+}

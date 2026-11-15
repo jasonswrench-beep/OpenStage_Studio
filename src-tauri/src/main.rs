@@ -27,6 +27,17 @@ fn hook_settings(args: &[String]) -> Option<(String, String)> {
     }
 }
 
+/// Display number `n`: 1 is the main display, 2 the first other one, and so on. The main display if there is no such one.
+fn pick_monitor(window: &tauri::WebviewWindow, n: usize) -> tauri::Result<Option<tauri::Monitor>> {
+    let monitors = window.available_monitors()?;
+    let primary = window.primary_monitor()?;
+    if n <= 1 {
+        return Ok(primary.or_else(|| monitors.first().cloned()));
+    }
+    let others: Vec<_> = monitors.iter().filter(|m| primary.as_ref().map(|p| p.name() != m.name()).unwrap_or(true)).cloned().collect();
+    Ok(others.get(n - 2).cloned().or(primary))
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let sample = args.iter().any(|a| a == "--sample-program");
@@ -35,11 +46,41 @@ fn main() {
         .plugin(tauri_plugin_fs::init())
         .setup(move |app| {
             if !sample {
-                WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
+                let mut builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
                     .title("OpenStage Studio")
-                    .inner_size(1180.0, 800.0)
-                    .min_inner_size(720.0, 520.0)
-                    .build()?;
+                    .inner_size(1180.0, 860.0)
+                    .min_inner_size(720.0, 520.0);
+                // `--review <folder>`: open that video's review. The window may read that folder, and write the one
+                // script named in its review (to add a blurred box), and nothing else unless the person chooses it.
+                if let Some(folder) = value_after(&args, "--review") {
+                    // The full path, written plainly (without Windows' long-path prefix), as the page will ask for it.
+                    let full = std::fs::canonicalize(&folder).unwrap_or_else(|_| std::path::PathBuf::from(&folder));
+                    let folder = std::path::PathBuf::from(full.to_string_lossy().trim_start_matches(r"\\?\").to_string());
+                    let review = folder.join("review.json");
+                    if review.is_file() {
+                        use tauri_plugin_fs::FsExt;
+                        app.fs_scope().allow_directory(&folder, true)?;
+                        let script = std::fs::read_to_string(&review)
+                            .ok()
+                            .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+                            .and_then(|v| v["script"].as_str().map(String::from));
+                        if let Some(script) = script {
+                            app.fs_scope().allow_file(&script)?;
+                        }
+                        let path = folder.to_string_lossy().to_string();
+                        builder = builder.initialization_script(format!("window.__OPENSTAGE_REVIEW__ = {};", serde_json::json!(path)));
+                    } else {
+                        eprintln!("{} has no review.json, so it was not opened for review.", folder.display());
+                    }
+                }
+                let window = builder.build()?;
+                // `--monitor <n>` puts the window on that display (used when testing, so the main display stays free).
+                if let Some(n) = value_after(&args, "--monitor").and_then(|v| v.parse::<usize>().ok()) {
+                    if let Some(m) = pick_monitor(&window, n)? {
+                        let p = m.position();
+                        window.set_position(tauri::PhysicalPosition::new(p.x + 40, p.y + 40))?;
+                    }
+                }
                 return Ok(());
             }
             // The practice program, full screen on the chosen display (1 is the main one).
@@ -57,19 +98,7 @@ fn main() {
                 builder = builder.initialization_script(format!("window.__OPENSTAGE_DEMO_HOOK__ = {settings};"));
             }
             let window = builder.build()?;
-            let monitors = window.available_monitors()?;
-            let primary = window.primary_monitor()?;
-            let monitor = if monitor_number == 1 {
-                primary.or_else(|| monitors.first().cloned())
-            } else {
-                let others: Vec<_> = monitors
-                    .iter()
-                    .filter(|m| primary.as_ref().map(|p| p.name() != m.name()).unwrap_or(true))
-                    .cloned()
-                    .collect();
-                others.get(monitor_number - 2).cloned().or(primary)
-            };
-            if let Some(m) = monitor {
+            if let Some(m) = pick_monitor(&window, monitor_number)? {
                 window.set_position(*m.position())?;
                 window.set_size(*m.size())?;
                 let zoom = m.size().width as f64 / (m.scale_factor() * layout_width);

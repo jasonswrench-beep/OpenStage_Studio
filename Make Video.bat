@@ -23,4 +23,5 @@ node src\pipeline\make-video.ts "%SCRIPT%" || (pause & exit /b 1)
 echo.
 for %%F in ("%SCRIPT%") do set "NAME=%%~nF"
 if exist "renders\%NAME%" start "" "renders\%NAME%"
+echo Next: review the video with Review Video.bat. Nothing can be exported until a person has reviewed and approved it.
 pause

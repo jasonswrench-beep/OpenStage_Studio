@@ -39,6 +39,16 @@ export const DEMO_PROJECTS: DemoProject[] = [
     ],
   },
   { name: "demo-empty", label: "Empty planner", lessons: [] },
+  {
+    // For the guard's acceptance test only: a lesson whose notes show an invented file path, planted so the frame scan has
+    // something to find. No video meant for viewers opens it.
+    name: "guard-test-planted-path",
+    label: "Guard test: planted path",
+    lessons: [
+      lesson("Sorting leaves by shape", "Science", 40, "Marks are kept in C:\\Users\\dana.whitfield\\Documents\\Marks\\term2.txt", ["Leaf collection"]),
+      lesson("Telling the time", "Mathematics", 35, "Start with o'clock and half past.", ["Clock faces"]),
+    ],
+  },
 ];
 
 export const SUBJECTS = ["Art", "Geography", "Mathematics", "Music", "Science", "Wellbeing", "Writing"];

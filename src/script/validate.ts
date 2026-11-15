@@ -4,6 +4,7 @@
 import {
   ACTIONS, DRIVERS, parseKey, parseScroll, SCRIPT_FORMAT, SCRIPT_VERSION, type Script,
 } from "./format.ts";
+import { migrateScript } from "./migrate.ts";
 
 export interface Problem {
   /** Where in the script, such as `steps[3].target`. */
@@ -31,7 +32,7 @@ const CONTROL = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/;
 const COLOUR = /^#[0-9A-Fa-f]{6}$/;
 const SIDES = ["left", "right", "above", "below"];
 
-const HEADER_KEYS = ["format", "version", "title", "goal", "program", "driver", "startState", "playlist", "intro", "outro", "writtenBy", "steps"];
+const HEADER_KEYS = ["format", "version", "title", "goal", "program", "driver", "startState", "playlist", "intro", "outro", "writtenBy", "publish", "redactions", "steps"];
 const STEP_KEYS = ["action", "target", "fallback", "value", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter"];
 
 type Obj = Record<string, unknown>;
@@ -68,7 +69,9 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
     err("", "A script is a JSON object with a title, a goal, a program, a starting state and a list of steps.");
     return { ok: false, errors, warnings, rehearsable: false };
   }
-  const s = input;
+  const migrated = migrateScript(input);
+  const s = migrated.data as Obj;
+  if (migrated.from !== undefined) warn("version", `This script is version ${migrated.from} and was read as version ${SCRIPT_VERSION}. ${migrated.notes.join(" ")}`);
   unknownKeys(s, HEADER_KEYS, "");
   if (s.format !== SCRIPT_FORMAT) err("format", `The format must be "${SCRIPT_FORMAT}".`);
   if (s.version !== SCRIPT_VERSION) {
@@ -115,6 +118,43 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
     const w = s.writtenBy;
     if (!isObj(w) || (w.kind !== "person" && w.kind !== "model")) err("writtenBy", 'writtenBy.kind is "person" or "model".');
     else unknownKeys(w, ["kind", "name", "editedByPerson"], "writtenBy");
+  }
+  const stepCount = Array.isArray(s.steps) ? s.steps.length : 0;
+  if (s.publish !== undefined) {
+    const p = s.publish;
+    if (!isObj(p)) err("publish", "publish is an object with a description, tags and a thumbnail step.");
+    else {
+      unknownKeys(p, ["description", "tags", "thumbnailStep"], "publish");
+      if (p.description !== undefined && !isText(p.description)) err("publish.description", "The description is text.");
+      else if (isText(p.description) && p.description.length > 4000) warn("publish.description", "The description is long; video sites allow about 5,000 characters, and the chapter list is added to it.");
+      if (p.tags !== undefined) {
+        if (!Array.isArray(p.tags) || !p.tags.every(isText)) err("publish.tags", "The tags are a list of words or short phrases.");
+        else if (p.tags.join(",").length > 450) warn("publish.tags", "The tags add up to more than video sites usually allow (about 500 characters).");
+      }
+      if (p.thumbnailStep !== undefined && !(Number.isInteger(p.thumbnailStep) && (p.thumbnailStep as number) >= 1 && (p.thumbnailStep as number) <= stepCount)) {
+        err("publish.thumbnailStep", `The thumbnail step is a step number from 1 to ${stepCount}.`);
+      }
+    }
+  }
+  if (s.redactions !== undefined) {
+    if (!Array.isArray(s.redactions)) err("redactions", "redactions is a list of blurred boxes.");
+    else s.redactions.forEach((r: unknown, i: number) => {
+      const at = `redactions[${i}]`;
+      if (!isObj(r)) return err(at, "A blurred box has a box, a first step and a last step.");
+      unknownKeys(r, ["box", "fromStep", "toStep", "reason"], at);
+      const b = r.box;
+      if (!Array.isArray(b) || b.length !== 4 || !b.every((n) => typeof n === "number" && Number.isFinite(n))) err(`${at}.box`, "The box is four numbers: left, top, width and height, in pixels of the 1920 by 1080 video.");
+      else {
+        const [x, y, w, h] = b as number[];
+        if (w <= 0 || h <= 0) err(`${at}.box`, "The box needs a width and a height.");
+        else if (x < 0 || y < 0 || x + w > 1920 || y + h > 1080) err(`${at}.box`, "The box goes outside the 1920 by 1080 picture.");
+      }
+      const from = r.fromStep, to = r.toStep;
+      if (!Number.isInteger(from) || (from as number) < 0 || (from as number) > stepCount) err(`${at}.fromStep`, `The first step is a step number from 1 to ${stepCount}, or 0 for the starting picture.`);
+      if (!Number.isInteger(to) || (to as number) < 0 || (to as number) > stepCount) err(`${at}.toStep`, `The last step is a step number from 1 to ${stepCount}, or 0 for the starting picture.`);
+      else if (Number.isInteger(from) && (to as number) < (from as number)) err(`${at}.toStep`, "The last step comes before the first.");
+      if (r.reason !== undefined && typeof r.reason !== "string") err(`${at}.reason`, "The reason is text.");
+    });
   }
 
   let rehearsable = true;

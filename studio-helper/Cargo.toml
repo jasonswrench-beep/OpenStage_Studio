@@ -23,8 +23,11 @@ misaki-rs = { version = "0.9.0", default-features = false }
 windows = { version = "0.62", features = [
     "Foundation",
     "Foundation_Collections",
+    "Globalization",
+    "Graphics_Imaging",
     "Media",
     "Media_Core",
+    "Media_Ocr",
     "Media_SpeechSynthesis",
     "Storage_Streams",
     "Win32_Foundation",

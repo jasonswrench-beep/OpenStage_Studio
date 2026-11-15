@@ -41,6 +41,19 @@ pub struct Plan {
     pub marks: Vec<Mark>,
     #[serde(default)]
     pub audio: Option<Audio>,
+    /// Blurred boxes, chosen in review: each hides part of the picture for a run of frames.
+    #[serde(default)]
+    pub redactions: Vec<RedactionSpan>,
+}
+
+/// A blurred box over the picture from one frame to another. The box is in pixels of a 1920 by 1080 frame and is scaled to
+/// the plan's size.
+#[derive(Deserialize)]
+pub struct RedactionSpan {
+    pub from: u64,
+    pub to: u64,
+    #[serde(rename = "box")]
+    pub rect: [i32; 4],
 }
 
 fn default_bitrate() -> u32 {
@@ -308,6 +321,9 @@ pub fn assemble(plan: &Plan, base: &Path, out: &Path) -> Result<(), String> {
             let share = ((i - seg.from + 1) * 255 / (seg.fade_in + 1)) as u32;
             mix_into(&mut canvas, base_of(si - 1), 255 - share);
         }
+        for r in plan.redactions.iter().filter(|r| r.from <= i && i < r.to) {
+            blur_box(&mut canvas, r.rect, w as f32 / 1920.0);
+        }
         for m in plan.marks.iter().filter(|m| m.from <= i && i < m.to) {
             draw_mark(&mut canvas, m, text.as_ref())?;
         }
@@ -446,6 +462,64 @@ fn average_around(pic: &Canvas, rect: [i32; 4]) -> Rgb {
     Rgb((r / n) as u8, (g / n) as u8, (b / n) as u8)
 }
 
+/// Hide part of the picture beyond reading: the box becomes coarse blocks of its own average colours, softened towards the
+/// box's overall colour. The same picture always gives the same result.
+pub fn blur_box(canvas: &mut Canvas, rect: [i32; 4], scale: f32) {
+    let (cw, ch) = (canvas.width as i32, canvas.height as i32);
+    let x0 = ((rect[0] as f32 * scale).floor() as i32).clamp(0, cw);
+    let y0 = ((rect[1] as f32 * scale).floor() as i32).clamp(0, ch);
+    let x1 = (((rect[0] + rect[2]) as f32 * scale).ceil() as i32).clamp(0, cw);
+    let y1 = (((rect[1] + rect[3]) as f32 * scale).ceil() as i32).clamp(0, ch);
+    if x1 <= x0 || y1 <= y0 {
+        return;
+    }
+    let block = ((24.0 * scale).round() as i32).max(4);
+    let stride = canvas.width as usize * 4;
+    let px = |x: i32, y: i32| y as usize * stride + x as usize * 4;
+    // The box's overall colour.
+    let mut all = [0u64; 3];
+    let mut n_all = 0u64;
+    for y in y0..y1 {
+        for x in x0..x1 {
+            let i = px(x, y);
+            for c in 0..3 {
+                all[c] += canvas.bgra[i + c] as u64;
+            }
+            n_all += 1;
+        }
+    }
+    let overall: Vec<u64> = all.iter().map(|v| v / n_all.max(1)).collect();
+    let mut by = y0;
+    while by < y1 {
+        let mut bx = x0;
+        let ey = (by + block).min(y1);
+        while bx < x1 {
+            let ex = (bx + block).min(x1);
+            let mut sum = [0u64; 3];
+            let mut n = 0u64;
+            for y in by..ey {
+                for x in bx..ex {
+                    let i = px(x, y);
+                    for c in 0..3 {
+                        sum[c] += canvas.bgra[i + c] as u64;
+                    }
+                    n += 1;
+                }
+            }
+            let fill: Vec<u8> = (0..3).map(|c| ((sum[c] / n.max(1)) * 2 / 5 + overall[c] * 3 / 5) as u8).collect();
+            for y in by..ey {
+                for x in bx..ex {
+                    let i = px(x, y);
+                    canvas.bgra[i..i + 3].copy_from_slice(&fill);
+                    canvas.bgra[i + 3] = 255;
+                }
+            }
+            bx = ex;
+        }
+        by = ey;
+    }
+}
+
 fn draw_mark(canvas: &mut Canvas, m: &Mark, text: &dyn TextRenderer) -> Result<(), String> {
     let red = Rgb(224, 24, 45);
     match m.kind.as_str() {
@@ -523,6 +597,28 @@ fn req(text: &str, x: i32, y: i32, w: i32, h: i32, font: f32, bold: bool, color:
     // the card starts at the same place.
     let pad = openstage_capture_render::padding(font);
     TextRequest { text: text.to_string(), area: PixelRect::new(x - pad, y - pad, w + pad, h + pad), font_px: font, bold, color, background: None, align: EditAlign::Left }
+}
+
+#[cfg(test)]
+mod blur_tests {
+    use super::blur_box;
+    use openstage_capture_render::Canvas;
+
+    #[test]
+    fn a_blurred_box_changes_only_inside_it_and_hides_detail() {
+        let mut c = Canvas::new(96, 48);
+        // Fine stripes: detail that must not survive.
+        for (k, p) in c.bgra.chunks_exact_mut(4).enumerate() {
+            let v = if (k % 96) % 2 == 0 { 255 } else { 0 };
+            p.copy_from_slice(&[v, v, v, 255]);
+        }
+        let before = c.bgra.clone();
+        blur_box(&mut c, [0, 0, 48, 48], 1.0);
+        let at = |b: &Vec<u8>, x: usize, y: usize| b[(y * 96 + x) * 4];
+        assert_eq!(at(&c.bgra, 0, 0), at(&c.bgra, 1, 0), "neighbouring stripes are one colour after blurring");
+        assert_eq!(at(&c.bgra, 60, 10), at(&before, 60, 10), "outside the box nothing changes");
+        assert_eq!(at(&c.bgra, 61, 10), at(&before, 61, 10));
+    }
 }
 
 #[cfg(test)]

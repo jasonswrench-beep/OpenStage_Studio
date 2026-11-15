@@ -7,7 +7,8 @@ The design is the "OpenStage Studio Specification" (a Docs file owned by Jason).
 Jason first.
 
 Read `docs/HANDOFF.md` first if you are starting a new session. Read `docs/script-format.md` before touching anything
-that reads or writes a tutorial script, and `docs/demo-hook.md` before touching the demo-mode hook.
+that reads or writes a tutorial script, `docs/demo-hook.md` before touching the demo-mode hook, and `docs/guard.md`
+before touching the guard, the review gate or the publishing package.
 
 ## What this is
 
@@ -16,7 +17,8 @@ video before it leaves the machine. The tutorial script is the core: a plain JSO
 any AI model or a person can write one. Everything must work by hand with no AI.
 
 Phase 1 ("One video by hand") is built: script format and validator, demo-mode hook, player, window capture, narration,
-captions, assembly to a 1080p 30fps MP4. Phases 2 to 5 (guard and package, AI planning, batch, reach) are in the spec.
+captions, assembly to a 1080p 30fps MP4. Phase 2 ("Guard and package") is built: blocklist, script scan, frame scan,
+review gate, guard report, publishing package (`docs/guard.md`). Phases 3 to 5 (AI planning, batch, reach) are in the spec.
 
 ## Not in scope
 
@@ -34,6 +36,8 @@ captions, assembly to a 1080p 30fps MP4. Phases 2 to 5 (guard and package, AI pl
 - Never name commercial software, or compare Studio to products on the market, anywhere in the repository: code,
   comments, documents, test data, demo content. Use generic terms ("a video site", "a screen reader", "the browser engine").
 - Demo content is invented: made-up names, original text, images we own. No real people, institutions, file paths or data.
+- The blocklist in the repository holds categories and patterns only. Names to block live in each person's own
+  `blocklist.local.json`, which git ignores. Test data blocks invented names.
 
 ### Repeatable takes
 
@@ -81,7 +85,8 @@ Use original code, assets and design.
 
 ### AI
 
-- Optional, and never in the recorded take, and never approves a video.
+- Optional, and never in the recorded take, and never approves a video. No test or tool approves a review either: only a
+  person, in the review screen.
 - Every AI output is a file a person can read and edit before anything is recorded.
 - Scripts record who wrote them (`writtenBy`) and whether a person edited them, for the guard report.
 

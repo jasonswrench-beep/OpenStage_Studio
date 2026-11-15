@@ -2,7 +2,7 @@
 // A person or any AI model can write one, and the player performs it without interpretation.
 
 export const SCRIPT_FORMAT = "openstage-studio-script";
-export const SCRIPT_VERSION = 1;
+export const SCRIPT_VERSION = 2;
 
 /** What the player does in a step. Drag is part of the format but not performed yet (canvas work comes later). */
 export const ACTIONS = ["click", "type", "key", "drag", "scroll", "open", "wait"] as const;
@@ -80,7 +80,32 @@ export interface Script {
   outro?: string;
   /** Who wrote the script, for the guard report: a person, or the AI model's name, and whether a person edited it. */
   writtenBy?: { kind: "person" | "model"; name?: string; editedByPerson?: boolean };
+  /** For the publishing package (version 2). */
+  publish?: Publish;
+  /** Blurred boxes over parts of the picture, chosen in review (version 2). */
+  redactions?: Redaction[];
   steps: Step[];
+}
+
+/** What the publishing package says about the video. The title is the script's title. */
+export interface Publish {
+  /** The description's opening words. The chapter list follows it. */
+  description?: string;
+  tags?: string[];
+  /** The step whose picture goes on the thumbnail (counting from 1). The last step's picture if left out. */
+  thumbnailStep?: number;
+}
+
+/** A blurred box over part of the picture, from the start of one step to the end of another. */
+export interface Redaction {
+  /** Left, top, width and height, in pixels of the 1920 by 1080 video. */
+  box: [number, number, number, number];
+  /** The first step it covers (counting from 1), or 0 for the starting picture before step 1. */
+  fromStep: number;
+  /** The last step it covers. */
+  toStep: number;
+  /** Why it is there, for the guard report. */
+  reason?: string;
 }
 
 /** The keys a `key` step can press. Modifiers are joined with +, as in `Ctrl+Shift+S`. */

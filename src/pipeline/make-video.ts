@@ -5,9 +5,15 @@
 //   3. the take: start the program in demo mode and perform the script, saving a still picture after every change
 //   4. build the timeline from the narration's lengths
 //   5. write the captions (SRT and VTT), the transcript and the chapter list
-//   6. assemble the finished MP4 (1920 by 1080, 30 frames a second)
+//   6. assemble the finished MP4 (1920 by 1080, 30 frames a second), with any blurred boxes from review
+//   7. the guard: the frame scan reads the text in every picture; the flags go to review.json and guard-report.txt
+//   8. the thumbnail for the publishing package
 //
-// node src/pipeline/make-video.ts <script.json> [--out <folder>] [--monitor <n>]
+// The script scan runs first of all: a script that would say, type or show a blocked name is stopped before anything
+// is recorded. Nothing made here leaves this computer: the publishing package is made only after a person has resolved
+// every flag and approved the video (src/package/export.ts).
+//
+// node src/pipeline/make-video.ts <script.json> [--out <folder>] [--monitor <n>] [--blocklist <file>]...
 
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -25,6 +31,12 @@ import { play } from "./player.ts";
 import { readManifest } from "./get-voice.ts";
 import { voiceReady, voicesRoot } from "../narration/voice-download.ts";
 import { findProgram } from "./programs.ts";
+import { describeScriptHit, scanScript, scriptTexts } from "../guard/script-scan.ts";
+import { loadBlocklist, type LoadedBlocklist } from "../guard/load.ts";
+import { scanFrames, type OcrResult } from "../guard/frame-scan.ts";
+import { redactionSpans } from "../guard/redact.ts";
+import { carryDecisions, gate, guardReport, REVIEW_FORMAT, type Review } from "../guard/review.ts";
+import { makeDraft, thumbnailPlan, type ProjectPublishSettings } from "../package/package.ts";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const FRAME: [number, number] = [1920, 1080];
@@ -55,6 +67,8 @@ export interface ProjectSettings {
   voice: VoiceSettings;
   pronunciations: Pronunciations;
   paces?: Partial<Paces>;
+  /** The thumbnail template and the description's narration line (src/package/package.ts). */
+  publish?: ProjectPublishSettings;
 }
 
 export function readProjectSettings(scriptPath: string): ProjectSettings {
@@ -62,7 +76,7 @@ export function readProjectSettings(scriptPath: string): ProjectSettings {
   const settings: ProjectSettings = { voice: { ...DEFAULT_VOICE }, pronunciations: {} };
   if (!existsSync(file)) return settings;
   const data = JSON.parse(readFileSync(file, "utf8")) as Partial<ProjectSettings>;
-  return { voice: { ...settings.voice, ...data.voice }, pronunciations: data.pronunciations ?? {}, paces: data.paces };
+  return { voice: { ...settings.voice, ...data.voice }, pronunciations: data.pronunciations ?? {}, paces: data.paces, publish: data.publish };
 }
 
 export interface MadeVideo {
@@ -72,11 +86,32 @@ export interface MadeVideo {
   take: TakeLog;
   frameDigest: string;
   soundDigest: string | null;
+  /** The review, if the frame scan ran. */
+  review?: Review;
+}
+
+/** A script the script scan stopped. Nothing was recorded. */
+export class ScriptBlocked extends Error {
+  readonly hits: number;
+  constructor(hits: number) {
+    super(`The script scan found ${hits} blocked thing${hits === 1 ? "" : "s"} in the script, so nothing was recorded. Change the words, or add your own names to the allowlist in blocklist.local.json.`);
+    this.hits = hits;
+  }
+}
+
+export interface MakeOptions {
+  monitor?: number;
+  log?: (s: string) => void;
+  clipDir?: string;
+  /** More blocklists to use, besides this computer's blocklist.local.json. */
+  blocklists?: string[];
+  /** Whether to read the text in the pictures (on unless switched off, as the repeat check does to save time). */
+  frameScan?: boolean;
 }
 
 const fingerprint = (text: string) => createHash("sha256").update(text).digest("hex").slice(0, 24);
 
-export async function makeVideo(scriptPath: string, outFolder: string, options: { monitor?: number; log?: (s: string) => void; clipDir?: string } = {}): Promise<MadeVideo> {
+export async function makeVideo(scriptPath: string, outFolder: string, options: MakeOptions = {}): Promise<MadeVideo> {
   const log = options.log ?? ((s: string) => console.log(s));
   const helper = helperPath(ROOT);
 
@@ -86,6 +121,16 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   if (!v.ok) throw new Error(`The script has ${v.errors.length} error(s) and was not recorded.`);
   const script = v.script as Script;
   const settings = readProjectSettings(scriptPath);
+
+  // The script scan, before anything is recorded.
+  const blocklist = loadBlocklist(ROOT, (options.blocklists ?? []).map((b) => resolve(b)));
+  blocklist.problems.forEach((p) => log(`Note: ${p}`));
+  const scriptHits = scanScript(script, blocklist.list);
+  if (scriptHits.length) {
+    scriptHits.forEach((h) => log(describeScriptHit(h)));
+    throw new ScriptBlocked(scriptHits.length);
+  }
+  log(`The script scan found nothing blocked (${scriptTexts(script).length} pieces of text, ${blocklist.list.terms.length} blocked terms and the built-in patterns).`);
   mkdirSync(outFolder, { recursive: true });
 
   // 2. Narration: one clip per line, kept by what shapes its sound, so unchanged lines are never made again.
@@ -131,8 +176,9 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   writeFileSync(join(outFolder, "chapters.txt"), chapters.text);
   chapters.warnings.forEach((w) => log(`Note: ${w}`));
 
-  // 6. Assemble.
-  const plan = makePlan(timeline, outFolder, clipFile);
+  // 6. Assemble, with any blurred boxes chosen in review.
+  const plan = { ...makePlan(timeline, outFolder, clipFile), redactions: redactionSpans(script, timeline) };
+  if (plan.redactions.length) log(`Blurring ${script.redactions!.length} box(es) chosen in review.`);
   const planFile = join(outFolder, "plan.json");
   writeFileSync(planFile, JSON.stringify(plan));
   const video = join(outFolder, `${basename(scriptPath, ".json")}.mp4`);
@@ -148,13 +194,104 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   });
   const done = events.find((e) => e.event === "assembled")!;
   const made: MadeVideo = { folder: outFolder, video, timeline, take, frameDigest: String(done.frameDigest), soundDigest: (done.soundDigest as string) ?? null };
+  const narration = engine === "kokoro" ? `computer generated (Kokoro voice ${settings.voice.voice})` : "computer generated (Windows voice)";
+
+  // 7. The frame scan and the review it starts.
+  if (options.frameScan !== false) {
+    made.review = await frameScan(script, scriptPath, outFolder, video, take, timeline, blocklist, narration, scriptTexts(script).length, helper, log);
+  }
+
+  // 8. The thumbnail, and the publishing details as they stand now.
+  await makeThumbnail(script, take, timeline, settings, outFolder, helper, log);
+  writeFileSync(join(outFolder, "publish.json"), JSON.stringify(makeDraft(script, basename(scriptPath, ".json"), chapters.text, narration, settings.publish), null, 2) + "\n");
+
   writeFileSync(join(outFolder, "run-report.json"), JSON.stringify({
-    script: relative(ROOT, scriptPath), video: basename(video), durationMs: timeline.durationMs, frames: timeline.frames,
-    frameDigest: made.frameDigest, soundDigest: made.soundDigest, voice: settings.voice, narration: engine === "kokoro" ? `computer generated (Kokoro voice ${settings.voice.voice})` : "computer generated (Windows voice)",
+    script: relative(ROOT, scriptPath), scriptPath, video: basename(video), durationMs: timeline.durationMs, frames: timeline.frames,
+    frameDigest: made.frameDigest, soundDigest: made.soundDigest, voice: settings.voice, narration,
     pictures: new Set(take.steps.flatMap((s) => [...s.changes, ...(s.hover ? [s.hover] : [])])).size + 1,
+    ...(made.review ? { flags: made.review.flags.length, gate: gate(made.review).says } : {}),
   }, null, 2));
   log(`Done: ${video}`);
+  if (made.review) log(`${gate(made.review).says} ${made.review.flags.length ? "Review the flags" : "Approve the video"} in OpenStage Studio (Review Video.bat) before exporting it.`);
   return made;
+}
+
+/** A fingerprint of a whole file. */
+export function fileDigest(path: string): string {
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
+/** Who wrote the script, in words, for the guard report. */
+function writer(script: Script): string {
+  const w = script.writtenBy;
+  if (!w) return "not recorded";
+  if (w.kind === "person") return `a person${w.name ? ` (${w.name})` : ""}`;
+  return `an AI model${w.name ? ` (${w.name})` : ""}, ${w.editedByPerson ? "edited by a person" : "not edited by a person"}`;
+}
+
+async function frameScan(script: Script, scriptPath: string, outFolder: string, video: string, take: TakeLog, timeline: Timeline, blocklist: LoadedBlocklist, narration: string, scriptChecked: number, helper: string, log: (s: string) => void): Promise<Review> {
+  const pictures = [...new Set(timeline.segments.flatMap((s) => (s.picture ? [s.picture] : [])))];
+  log(`The frame scan: reading the text in ${pictures.length} pictures.`);
+  const jobsFile = join(outFolder, "ocr-jobs.json");
+  const ocrFile = join(outFolder, "ocr.json");
+  writeFileSync(jobsFile, JSON.stringify({ pictures: pictures.map((id) => ({ id, file: join(outFolder, "take", `${id}.png`) })), out: ocrFile, language: "en-US" }));
+  let lastShown = -1;
+  await runHelper(helper, ["ocr", "--jobs", jobsFile], (e) => {
+    if (e.event !== "progress") return;
+    const pct = Math.floor(((e.done as number) / (e.of as number)) * 4) * 25;
+    if (pct !== lastShown) {
+      lastShown = pct;
+      log(`Reading: ${pct} percent.`);
+    }
+  });
+  const read = JSON.parse(readFileSync(ocrFile, "utf8")) as { language: string; pictures: OcrResult };
+  const flags = scanFrames({ script, take, timeline, ocr: read.pictures, list: blocklist.list });
+  const reviewFile = join(outFolder, "review.json");
+  let earlier: Review | null = null;
+  if (existsSync(reviewFile)) {
+    try {
+      earlier = JSON.parse(readFileSync(reviewFile, "utf8")) as Review;
+    } catch {
+      earlier = null;
+    }
+  }
+  const fresh: Review = {
+    format: REVIEW_FORMAT, version: 1, video: basename(video), videoDigest: fileDigest(video), script: scriptPath, title: script.title, fps: timeline.fps,
+    narration, writtenBy: writer(script),
+    scans: {
+      script: { ran: true, checked: scriptChecked, hits: 0 },
+      frames: { ran: true, pictures: pictures.length, read: `Windows' text recognition (${read.language})`, pageText: !!take.pageText },
+      blocklist: { terms: blocklist.list.terms.length, patterns: blocklist.list.patterns, files: blocklist.files },
+    },
+    flags,
+    decisions: {},
+  };
+  const review = carryDecisions(fresh, earlier);
+  writeFileSync(reviewFile, JSON.stringify(review, null, 2));
+  writeFileSync(join(outFolder, "guard-report.txt"), guardReport(review));
+  const blurred = flags.filter((f) => f.covered).length;
+  const carried = Object.keys(review.decisions).length;
+  log(`The frame scan raised ${flags.length} flag${flags.length === 1 ? "" : "s"}${blurred ? ` (${blurred} already blurred)` : ""}${carried ? `; ${carried} decision(s) carried over from the last review of the same pictures` : ""}.`);
+  for (const f of flags) log(`  Flag ${f.id}: ${f.how === "pattern" ? `${f.term}, "${f.found}"` : `"${f.term}"`} at ${(f.shown[0][0] / timeline.fps).toFixed(1)} seconds${f.covered ? " (blurred)" : ""}.`);
+  return review;
+}
+
+async function makeThumbnail(script: Script, take: TakeLog, timeline: Timeline, settings: ProjectSettings, outFolder: string, helper: string, log: (s: string) => void) {
+  // The chosen step's last picture (or the last step's), centred on the control it acted on.
+  const index = (script.publish?.thumbnailStep ?? script.steps.length) - 1;
+  const step = take.steps.find((s) => s.index === index);
+  const picture = step ? (step.changes[step.changes.length - 1] ?? step.hover ?? take.start) : take.start;
+  const r = step?.target?.rect ?? step?.callout?.rect;
+  const focus: [number, number] | null = r ? [r[0] + r[2] / 2, r[1] + r[3] / 2] : null;
+  // Any blurred box over that picture where it shows in the video is on the thumbnail too.
+  const at = timeline.segments.filter((s) => s.picture === picture);
+  const boxes = redactionSpans(script, timeline).filter((sp) => at.some((s) => sp.from < s.to && sp.to > s.from)).map((sp) => sp.box);
+  const { plan, warnings } = thumbnailPlan(script, settings.publish?.thumbnail, join(outFolder, "take", `${picture}.png`), focus, boxes);
+  warnings.forEach((w) => log(`Note: ${w}`));
+  const planFile = join(outFolder, "thumbnail-plan.json");
+  writeFileSync(planFile, JSON.stringify(plan, null, 2));
+  await runHelper(helper, ["thumbnail", "--plan", planFile, "--out", join(outFolder, "thumbnail.png")], (e) => e.event === "warning" && log(`Note: ${e.message}`));
+  log("Made the thumbnail.");
 }
 
 async function recordTake(script: Script, pictureDir: string, helper: string, monitor: number, log: (s: string) => void): Promise<TakeLog> {
@@ -222,8 +359,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
   const scriptPath = resolve(scriptArg);
   const out = resolve(value("--out") ?? join(ROOT, "renders", basename(scriptPath, ".json")));
-  makeVideo(scriptPath, out, { monitor: takeMonitor(value("--monitor")) }).catch((e) => {
+  const blocklists = args.flatMap((a, i) => (a === "--blocklist" && args[i + 1] ? [args[i + 1]] : []));
+  makeVideo(scriptPath, out, { monitor: takeMonitor(value("--monitor")), blocklists }).catch((e) => {
     console.error(`\nThe video was not made: ${e instanceof Error ? e.message : String(e)}`);
-    process.exit(1);
+    process.exit(e instanceof ScriptBlocked ? 3 : 1);
   });
 }

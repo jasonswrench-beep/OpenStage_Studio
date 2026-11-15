@@ -1,0 +1,22 @@
+{
+  "format": "openstage-studio-script",
+  "version": 2,
+  "title": "Guard test: a blocked name",
+  "goal": "Check that the script scan stops a script that types a blocked name, before anything is recorded.",
+  "program": { "id": "practice-planner", "name": "Practice Planner", "version": "1.0" },
+  "driver": "hook",
+  "startState": { "demoProject": "demo-lessons-01", "note": "For the guard's acceptance test. test-blocklist.json blocks the invented name typed here." },
+  "writtenBy": { "kind": "person", "editedByPerson": true },
+  "steps": [
+    {
+      "action": "click", "target": "toolbar.lesson.new",
+      "narration": "Select New lesson on the toolbar.",
+      "expect": "A new untitled lesson is selected"
+    },
+    {
+      "action": "type", "target": "editor.title", "value": "Copied from Zentrova Planner",
+      "narration": "Type a title for the lesson.",
+      "expect": "The title is typed"
+    }
+  ]
+}

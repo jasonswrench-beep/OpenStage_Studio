@@ -6,7 +6,7 @@ import { describeProblems, looksLikePath, sentenceCount, validateScript } from "
 
 const good = () => ({
   format: "openstage-studio-script",
-  version: 1,
+  version: 2,
   title: "Add a lesson",
   goal: "Make a new lesson.",
   program: { id: "practice-planner", name: "Practice Planner" },
@@ -148,4 +148,40 @@ test("anything that is not an object is refused with a plain message", () => {
   assert.equal(validateScript(null).ok, false);
   assert.equal(validateScript([]).ok, false);
   assert.equal(validateScript("script").errors.length, 1);
+});
+
+test("a version 1 script is brought up to version 2 and still passes", () => {
+  const s = good() as unknown as Record<string, unknown>;
+  s.version = 1;
+  const v = validateScript(s);
+  assert.equal(v.ok, true);
+  assert.equal(v.script?.version, 2);
+  assert.equal(v.warnings[0].path, "version");
+});
+
+test("blurred boxes and publishing details are checked", () => {
+  const s = good() as unknown as Record<string, unknown>;
+  s.redactions = [{ box: [100, 200, 300, 40], fromStep: 0, toStep: 1, reason: "a path" }];
+  s.publish = { description: "Plan a lesson.", tags: ["lesson planning"], thumbnailStep: 1 };
+  assert.equal(validateScript(s).ok, true);
+  s.redactions = [{ box: [1800, 0, 300, 40], fromStep: 2, toStep: 1 }];
+  s.publish = { thumbnailStep: 99 };
+  const paths = validateScript(s).errors.map((e) => e.path);
+  assert.deepEqual(paths, ["publish.thumbnailStep", "redactions[0].box", "redactions[0].toStep"]);
+});
+
+test("a blurred box is added to a script without disturbing its layout", async () => {
+  const { addRedaction } = await import("../src/script/edit.ts");
+  const text = readFileSync("examples/guard/planted-path.json", "utf8");
+  const box = { box: [697, 401, 566, 38] as [number, number, number, number], fromStep: 1, toStep: 2, reason: "a user folder (flag 5e1231b4)" };
+  const once = addRedaction(text, box);
+  // Everything else is untouched: only the new lines differ.
+  const added = once.split("\n").filter((l) => !text.split("\n").includes(l));
+  assert.deepEqual(added.map((l) => l.trim()), ['"redactions": [', '{ "box": [697, 401, 566, 38], "fromStep": 1, "toStep": 2, "reason": "a user folder (flag 5e1231b4)" }', "],"]);
+  assert.equal(validateScript(JSON.parse(once)).script?.redactions?.length, 1);
+  assert.equal(addRedaction(once, box), once, "the same box is not added twice");
+  const twice = addRedaction(once, { ...box, box: [10, 10, 50, 20] });
+  assert.equal(validateScript(JSON.parse(twice)).script?.redactions?.length, 2);
+  const old = JSON.stringify({ ...JSON.parse(text), version: 1 }, null, 2);
+  assert.equal(JSON.parse(addRedaction(old, box)).version, 2, "an older script is brought up to date");
 });
