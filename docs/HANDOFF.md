@@ -168,7 +168,8 @@ Made by Claude, open to change:
   run took about 10 minutes, most of it rehearsal.
 - When an AI assistant runs Studio's commands from inside a packaged desktop app, Windows keeps anything it writes under
   AppData in that app's private folder: the AI settings, the voice and the model it downloads there are not the ones
-  Studio sees when run by double-click. Studio itself, run normally, is not affected.
+  Studio sees when run by double-click. Studio itself, run normally, is not affected. `Copy Downloads.bat` copies the
+  voice and the model from such a private copy to where Studio looks, checking every file against its pinned fingerprint.
 - `local-settings.json` (git ignores it) holds settings for this computer only: `{ "monitor": 2 }` puts takes on the second
   display, which is how Jason's computer is set up. Every double-click script follows it; `--monitor <n>` overrides it.
   The app's own window also takes `--monitor <n>` (used for tests).
