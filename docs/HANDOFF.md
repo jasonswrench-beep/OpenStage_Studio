@@ -35,7 +35,8 @@ Phase 3, "AI planning and scripting" (`docs/ai.md`):
 - `Check AI Scripts.bat` passes with the built-in model (Qwen 3.5 4B on this computer): from the "Planning lessons"
   chapter of the invented Practice Planner manual, it planned six videos, wrote six scripts, and all six passed rehearsal
   after automatic repair, with no hand edits (the bar is four in five). See "Phase 3 results" below.
-- Not yet tried with a hosted model: Jason will add a key with `Set Up AI.bat`.
+- It also passes with Claude (`claude-opus-5-5`, Jason's own key, 2026-11-15): six videos planned, six scripts written,
+  all six passed rehearsal at the first run with no repairs, and on reading, every script does what its task says.
 - 92 TypeScript tests and 19 helper tests pass (`Test Everything.bat`). The licence check passes with phase 3's two
   packages (Anthropic's SDK and PDF.js, both Apache 2.0, in NOTICE).
 
@@ -163,7 +164,11 @@ Made by Claude, open to change:
   layer; the take waits five seconds for a program to finish starting; and the program is started with plain grey text
   smoothing. If a repeat check ever fails, the take log shows the first picture that differs.
 - The built-in AI model and its runtime live in `%LOCALAPPDATA%\OpenStage Studio\ai\`; writing one script with it takes a
-  minute or two on this computer's processor, and a whole chapter's run about 25 minutes.
+  minute or two on this computer's processor, and a whole chapter's run about 25 minutes. With Claude a whole chapter's
+  run took about 10 minutes, most of it rehearsal.
+- When an AI assistant runs Studio's commands from inside a packaged desktop app, Windows keeps anything it writes under
+  AppData in that app's private folder: the AI settings, the voice and the model it downloads there are not the ones
+  Studio sees when run by double-click. Studio itself, run normally, is not affected.
 - `local-settings.json` (git ignores it) holds settings for this computer only: `{ "monitor": 2 }` puts takes on the second
   display, which is how Jason's computer is set up. Every double-click script follows it; `--monitor <n>` overrides it.
   The app's own window also takes `--monitor <n>` (used for tests).

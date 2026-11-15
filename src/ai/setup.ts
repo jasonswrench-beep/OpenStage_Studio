@@ -11,22 +11,51 @@ import { localAiReady, readLocalManifest } from "./local.ts";
 import { getLocalAi } from "./get-local.ts";
 import { describeChoice, HOSTED_NOTE, missing, PRESETS, readAiSettings, settingsFile, writeAiSettings, type AiSettings } from "./settings.ts";
 
-/** Ask for a key without showing it. */
-async function askHidden(rl: Interface, prompt: string): Promise<string> {
-  const out = rl as unknown as { _writeToOutput?: (s: string) => void; output: NodeJS.WriteStream };
-  const original = out._writeToOutput;
-  let shown = false;
-  out._writeToOutput = (s: string) => {
-    if (!shown) {
-      process.stdout.write(prompt);
-      shown = true;
-    } else if (s.includes("\n")) process.stdout.write("\n");
-  };
-  try {
-    return (await rl.question(prompt)).trim();
-  } finally {
-    out._writeToOutput = original;
+/**
+ * Ask for a key without showing it: each character typed or pasted shows as *, Backspace takes one back, Enter ends it.
+ * The question-and-answer reader is closed first, so nothing else echoes the keys. (An earlier version relied on that
+ * reader's internals, which a newer Node changed, and the key was shown; this one reads the keys itself.)
+ */
+export async function askHidden(rl: Interface, prompt: string, input: NodeJS.ReadStream = process.stdin, out: NodeJS.WriteStream = process.stdout): Promise<string> {
+  rl.close();
+  out.write(prompt);
+  if (!input.isTTY) {
+    // Not typed at a keyboard (piped in): nothing is shown anyway, so read one line.
+    const once = createInterface({ input, terminal: false });
+    const line = await new Promise<string>((ok) => once.once("line", ok));
+    once.close();
+    out.write("\n");
+    return line.trim();
   }
+  return new Promise((ok, fail) => {
+    let value = "";
+    input.setRawMode(true);
+    input.setEncoding("utf8");
+    input.resume();
+    const finish = (then: () => void) => {
+      input.removeListener("data", onData);
+      input.setRawMode(false);
+      input.pause();
+      out.write("\n");
+      then();
+    };
+    const onData = (chunk: string) => {
+      for (const ch of chunk) {
+        if (ch === "\r" || ch === "\n") return finish(() => ok(value.trim()));
+        if (ch === "\u0003") return finish(() => fail(new Error("Stopped; nothing was saved.")));
+        if (ch === "\u0008" || ch === "\u007f") {
+          if (value) {
+            value = value.slice(0, -1);
+            out.write("\b \b");
+          }
+        } else if (ch >= " ") {
+          value += ch;
+          out.write("*");
+        }
+      }
+    };
+    input.on("data", onData);
+  });
 }
 
 async function choose(rl: Interface, question: string, options: string[]): Promise<number> {
@@ -91,7 +120,8 @@ export async function setup(): Promise<void> {
       await a.close();
     }
   } finally {
-    rl.close();
+    // The key question closes the reader itself; closing it twice is harmless but is skipped.
+    if (!(rl as unknown as { closed?: boolean }).closed) rl.close();
   }
 }
 
