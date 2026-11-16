@@ -4,7 +4,16 @@ Written 2026-11-15, following OpenExplainer's policy (Jason chose to sign Studio
 
 ## Code signing policy
 
-Every published release of OpenStage Studio is to be signed. None is published yet.
+Every published release of OpenStage Studio is signed.
+
+## Releases
+
+| Release | Published | Commit | SHA-256 of the setup |
+|---|---|---|---|
+| [0.1.0 alpha 1](https://github.com/jasonswrench-beep/OpenStage_Studio/releases/tag/v0.1.0-alpha.1) (pre-release) | 2026-11-16 | `fe2033bc0da9ba6b2523da39e7a820d9bc04c088` | `88fc1850ab272b8bed9d6808e3c93609a9db8187011caec1361057819e67f159` |
+
+0.1.0 alpha 1 was checked as step 6 below says: the tag points at the commit, GitHub's SHA-256 of the setup matches, the
+release holds exactly two files, and a downloaded copy is signed by Jason Wrench with a timestamp.
 
 - **Who signs.** The setup file and every program in it (Studio itself, the helper, the installer's plugins and the
   uninstaller) are signed by the publisher, **Jason Wrench**, with a code-signing certificate in the publisher's own name

@@ -28,7 +28,8 @@ import, planner, scriptwriter, rehearsal with repair, metadata writer (`docs/ai.
 is built: the unattended queue and the release check (`docs/batch.md`). Phase 5 ("Reach") is built in part: the
 accessibility-tree driver (`docs/accessibility-driver.md`) and the connector server (`docs/connector.md`); canvas commands
 and direct upload wait (Jason, 2026-11-15). The installer is built (`docs/release.md`): the window does every job, through the
-engine; releases are signed like OpenExplainer's (`docs/code-signing.md`), and none is published yet. The development list of 2026-11-15 is built: scripts from recordings
+engine; releases are signed like OpenExplainer's (`docs/code-signing.md`); the first, 0.1.0 alpha 1, is published as a
+pre-release (2026-11-16). The development list of 2026-11-15 is built: scripts from recordings
 (C1), a text description track (its voice waits for C5, `CORE-REQUESTS.md`), and lectures.
 
 ## Not in scope

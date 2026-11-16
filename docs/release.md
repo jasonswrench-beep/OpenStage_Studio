@@ -108,10 +108,11 @@ interface; the take screen was set to display 2 on the Settings page; the exampl
 on display 2 and its review opened with its Approve button; the examples were in the work folder; after uninstalling, the
 work folder and the downloads were still there.
 
+On 2026-11-16 the same test passed on the signed setup of 0.1.0 alpha 1, the file that was published.
+
 ## Not tried yet
 
 - The interactive installer wizard (only the silent install), a clean computer, or a second Windows account.
 - A real screen reader on the new pages (the accessibility test checks names and that every page opens by its name, not
   how it sounds).
-- A signed build (it waits for the owner's computer and signing account).
 - Windows on ARM.

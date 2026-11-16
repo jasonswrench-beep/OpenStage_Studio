@@ -155,8 +155,8 @@ Confirmed by Jason:
 - **The installer** (2026-11-15): signed the way OpenExplainer is (Azure Artifact Signing with the suite's shared
   `tools/sign_windows.py`, on Jason's computer only); a person's work in `Documents\OpenStage Studio`; the first
   installer's window does all the jobs. Node.js is carried in the installer (pinned in `tools/node-runtime.json`, v24.22.3,
-  the 24 line Studio is developed on); the voice and the model still download on request. First release name
-  `0.1.0-alpha.1`; nothing published yet.
+  the 24 line Studio is developed on); the voice and the model still download on request. The first release,
+  `0.1.0-alpha.1`, is published as a signed pre-release (2026-11-16, commit `fe2033b`; `docs/code-signing.md`).
 
 1. **Default voice: Kokoro-82M, run natively in the helper** (2026-11-14). Downloaded once with `Get Voice.bat`
    (340 MB, every file checked), then offline. Voice `af_heart` by default; the Windows voices remain as a second engine.
@@ -267,8 +267,8 @@ Made by Claude, open to change:
 - OpenStage Author: the hook is on Author's branch `studio-demo-hook` (pushed, not merged). Still to do: name the
   buttons in its panes and dialogs, list its demo projects in `src/pipeline/programs.ts`, write its manual (or import
   one), and make its videos.
-- A signed build on Jason's computer (`node tools/build-installer.mjs --sign`), then `Test Installed App.bat` on it; publishing
-  a pre-release is Jason's call each time (`docs/code-signing.md`).
+- The next release: raise `RELEASE` in `tools/build-installer.mjs`, build it with `--sign` and test it as
+  `docs/code-signing.md` says; publishing is Jason's call each time.
 - A short pass with a real screen reader on the window's new pages.
 - The rest of phase 5: canvas commands for Author's stage (hook commands in Author's repository), and direct upload to a
   video site (always private; the site's current upload rules to be confirmed first).

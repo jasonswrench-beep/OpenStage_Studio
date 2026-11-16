@@ -41,8 +41,9 @@ scripts now say so). Run them when you are happy to spend the credit.
 
 ### Installer and release
 
-- [ ] **A signed build** on your computer: `node tools/build-installer.mjs --sign`, then `Test Installed App.bat`
-      (`docs/code-signing.md`). Publishing a pre-release stays your call.
+- [x] **A signed build**, tested and published as the 0.1.0 alpha 1 pre-release (2026-11-16, `docs/code-signing.md`).
+- [ ] **Install the published release by hand** from its GitHub page: the download, SmartScreen, the installer's own
+      wizard (the test used the silent install), and a first look at the window.
 - [ ] The installed-app test leaves its example video and the examples in `OneDrive\Documents\OpenStage Studio`. Delete
       them if you like; Studio copies the examples again when needed.
 
