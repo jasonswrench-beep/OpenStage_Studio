@@ -7,7 +7,7 @@ export default defineConfig({
     port: 1430,
     strictPort: true,
     // Rust's build folders are locked while compiling, so Vite must not watch them.
-    watch: { ignored: ["**/src-tauri/**", "**/studio-helper/**", "**/capture/**", "**/work/**"] },
+    watch: { ignored: ["**/src-tauri/**", "**/studio-helper/**", "**/work/**"] },
   },
   build: {
     target: "es2022",

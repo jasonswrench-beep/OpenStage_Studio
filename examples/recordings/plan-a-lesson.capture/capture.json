@@ -1,0 +1,15 @@
+{
+  "format": "openstage-capture-project",
+  "schemaVersion": "0.2.5",
+  "id": "cap-example-plan-a-lesson",
+  "title": "Plan a lesson",
+  "language": "en-US",
+  "created": "2026-11-15T09:00:00Z",
+  "tracks": {
+    "captions": [],
+    "transcript": null,
+    "audioDescription": [],
+    "altText": []
+  },
+  "edit": null
+}

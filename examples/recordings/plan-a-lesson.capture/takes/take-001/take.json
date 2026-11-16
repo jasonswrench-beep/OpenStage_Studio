@@ -1,0 +1,17 @@
+{
+  "id": 1,
+  "state": "complete",
+  "startedAt": "2026-11-15T09:00:05Z",
+  "endedAt": "2026-11-15T09:01:10Z",
+  "setAsideAt": null,
+  "sources": ["screen:1"],
+  "target": null,
+  "flushMs": 2000,
+  "durationMs": 65000,
+  "maxLossMs": null,
+  "segments": 0,
+  "media": [
+    { "file": "events.jsonl", "kind": "interactions", "container": "jsonl",
+      "interactions": { "display": 1, "keys": true } }
+  ]
+}

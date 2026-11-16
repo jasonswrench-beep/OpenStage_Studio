@@ -89,13 +89,16 @@ export const PROGRAMS: ProgramEntry[] = [
  * coloured fringes do not survive compression. The engine's own default options are kept, since this setting replaces
  * them.
  *
- * It also draws everything in software, never on the graphics card: the engine starts drawing in software and moves to
- * the graphics card once that is ready, and the two smooth curved edges one level of brightness apart, so when the move
- * happened (timing again) decided which pictures had which corners. Seen on 2026-11-15, when the practice program got a
- * browser-engine data folder of its own: the same take moved at step 4, at no step, or at step 11.
+ * Studio's own window starts with the very same settings (BROWSER_SETTINGS in src-tauri/src/main.rs), so the two can share
+ * one browser data folder: the engine refuses to share a folder between two sets of settings. Measured on 2026-11-15:
+ * with the shared folder, six takes in a row gave the same pictures; with a folder of the practice program's own (and
+ * with software drawing) the rounded corners of some controls came out one to three levels of brightness apart from run
+ * to run.
  */
+export const TAKE_BROWSER_SETTINGS = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-lcd-text";
+
 export function demoEnvironment(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
-  return { ...env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-lcd-text --disable-gpu" };
+  return { ...env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: TAKE_BROWSER_SETTINGS };
 }
 
 export function findProgram(id: string): ProgramEntry {

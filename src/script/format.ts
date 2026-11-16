@@ -2,7 +2,7 @@
 // A person or any AI model can write one, and the player performs it without interpretation.
 
 export const SCRIPT_FORMAT = "openstage-studio-script";
-export const SCRIPT_VERSION = 2;
+export const SCRIPT_VERSION = 3;
 
 /** What the player does in a step. Drag is part of the format but not performed yet (canvas work comes later). */
 export const ACTIONS = ["click", "type", "key", "drag", "scroll", "open", "wait"] as const;
@@ -63,6 +63,9 @@ export interface Step {
   expect?: string;
   /** Starts a chapter of the video's chapter list here, with this name. */
   chapter?: string;
+  /** For a viewer who cannot see the screen: what this step shows that the narration does not say (version 3). Goes into
+   * the video's description track (descriptions.vtt) and the transcript. */
+  describe?: string;
 }
 
 export interface Script {

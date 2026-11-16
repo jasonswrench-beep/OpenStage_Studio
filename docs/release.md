@@ -75,16 +75,19 @@ A release is signed on the publisher's computer and published only with the owne
 
 ## What was found while building it
 
-- **The practice program needs its own browser-engine data folder.** Takes run the practice program's browser engine with
-  grey text smoothing (`src/pipeline/programs.ts`), and the engine refuses to share a data folder between two sets of
-  settings, so a take started from Studio's window (which runs with the ordinary settings) got a blank program and timed
-  out. It now keeps its data in `%LOCALAPPDATA%\org.openstage.studio\practice-program`.
-- **With that fresh data folder, one take in five differed from the others**, by one level of brightness on the rounded
-  corners of two controls (48 pixels). The browser engine starts drawing in software and moves to the graphics card once
-  that is ready, and the two smooth curved edges a little differently, so the moment of the move (timing) decided which
-  pictures had which corners; the old shared folder had happened to make the move at the same step every time. Programs in
-  demo mode now draw in software only (`--disable-gpu`, `src/pipeline/programs.ts`). The example's frame fingerprint is
-  now a76c2a692e538f8d.
+- **Studio's window and the practice program must start the browser engine with the same settings.** Takes run the
+  practice program's browser engine with grey text smoothing (`src/pipeline/programs.ts`), and the engine refuses to
+  share its data folder between two sets of settings, so a take started from Studio's window (then on the ordinary
+  settings) got a blank program and timed out. Studio's window now starts with exactly a take's settings
+  (`BROWSER_SETTINGS` in `src-tauri/src/main.rs`; a test keeps the two equal), and the two share the one data folder.
+- **Two other cures were tried and dropped (2026-11-15).** A data folder of the practice program's own, and then drawing
+  in software only, each let some takes differ from others by one to three levels of brightness on the rounded corners of
+  a few controls, from run to run. An experiment of three takes per setting showed it in every setting but the shared
+  folder, which gave the same pictures in six takes out of six and in every check since. The example's frame fingerprint
+  is 81d41989e3de3093.
+- **A program built in the repository runs the repository's engine.** An installer build leaves a bundled engine beside
+  `target\release\openstage-studio.exe`; the shell used it, with its own older code and the installed work folder, until
+  it was made to prefer the repository it is built in (`src-tauri/src/engine.rs`).
 - **Every module thought it was the program being run** once bundled into one file, since they all share that file's
   address. `src/util/is-main.ts` decides; the bundle marks itself, and only the engine's own command line starts.
 - **Installed, the engine first did nothing at all.** The shell handed Node.js the engine's path in Windows' long-path form

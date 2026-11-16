@@ -39,10 +39,9 @@ function scanNode(dir) {
 
 scanNode("node_modules");
 
-// The app shell, the helper (its own Rust program, with the capture engine copied from OpenStage Author inside it), and
-// the engine on its own.
+// The app shell and the helper (its own Rust program, with the shared core's capture engine inside it).
 const seen = new Set();
-for (const manifest of ["src-tauri/Cargo.toml", "studio-helper/Cargo.toml", "capture/Cargo.toml"]) {
+for (const manifest of ["src-tauri/Cargo.toml", "studio-helper/Cargo.toml"]) {
   if (!existsSync(manifest)) continue;
   try {
     const out = execSync(`cargo metadata --format-version 1 --manifest-path ${manifest}`, { maxBuffer: 1 << 28 }).toString();

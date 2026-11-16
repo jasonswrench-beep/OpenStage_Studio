@@ -14,6 +14,8 @@ import { checklistText, uploadText, type PublishDraft, type VideoRecord } from "
 import { addRedaction } from "../script/edit.ts";
 
 const PACKAGE_COPIES = ["captions.srt", "captions.vtt", "transcript.txt", "thumbnail.png"];
+/** Copied when the video has them (the description track; videos made before 2026-11-15 have none). */
+const PACKAGE_EXTRAS = ["descriptions.vtt"];
 const NAME_KEY = "openstage-studio.reviewer";
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string, unknown> = {}, ...children: (Node | string)[]): HTMLElementTagNameMap[K] {
@@ -228,6 +230,7 @@ export async function showReview(host: HTMLElement, folder: string, announce: (s
       await mkdir(target, { recursive: true });
       await copyFile(await join(folder, review.video), await join(target, "video.mp4"));
       for (const f of PACKAGE_COPIES) await copyFile(await join(folder, f), await join(target, f));
+      for (const f of PACKAGE_EXTRAS) if (await exists(await join(folder, f))) await copyFile(await join(folder, f), await join(target, f));
       await writeTextFile(await join(target, "upload.txt"), uploadText(record));
       await writeTextFile(await join(target, "video.json"), JSON.stringify(record, null, 2) + "\n");
       // The checklist covers every package in that folder, in playlist order.

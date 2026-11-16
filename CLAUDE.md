@@ -10,8 +10,10 @@ Read `docs/HANDOFF.md` first if you are starting a new session. Read `docs/scrip
 that reads or writes a tutorial script, `docs/demo-hook.md` before touching the demo-mode hook, `docs/guard.md`
 before touching the guard, the review gate or the publishing package, `docs/ai.md` before touching the AI roles, and
 `docs/batch.md` before touching the queue or the release check, `docs/accessibility-driver.md` before touching the
-accessibility driver, `docs/connector.md` before touching the connector, and `docs/release.md` before touching the engine,
-the window's pages, `src/paths.ts` or the installer.
+accessibility driver, `docs/connector.md` before touching the connector, `docs/release.md` before touching the engine,
+the window's pages, `src/paths.ts` or the installer, `docs/recordings.md` before touching `src/recording/`, and
+`docs/lecture-format.md` before touching lectures. `TESTING-TODO.md` lists what only Jason can check; `CORE-REQUESTS.md`
+what Studio has asked of the shared core.
 
 ## What this is
 
@@ -26,7 +28,8 @@ import, planner, scriptwriter, rehearsal with repair, metadata writer (`docs/ai.
 is built: the unattended queue and the release check (`docs/batch.md`). Phase 5 ("Reach") is built in part: the
 accessibility-tree driver (`docs/accessibility-driver.md`) and the connector server (`docs/connector.md`); canvas commands
 and direct upload wait (Jason, 2026-11-15). The installer is built (`docs/release.md`): the window does every job, through the
-engine; releases are signed like OpenExplainer's (`docs/code-signing.md`), and none is published yet.
+engine; releases are signed like OpenExplainer's (`docs/code-signing.md`), and none is published yet. The development list of 2026-11-15 is built: scripts from recordings
+(C1), a text description track (its voice waits for C5, `CORE-REQUESTS.md`), and lectures.
 
 ## Not in scope
 
@@ -75,9 +78,10 @@ engine; releases are signed like OpenExplainer's (`docs/code-signing.md`), and n
 - Narration defaults to Kokoro-82M, run in the helper with ONNX Runtime and misaki-rs. misaki-rs is always built WITHOUT its
   default `espeak` feature (espeak-ng is GPL). The model is downloaded on request and checked against
   `tools/kokoro-model.json`; never bundle it or fetch an unpinned file.
-- The capture engine in `capture/` is OpenScreen's, copied from OpenStage Author (`capture/IMPORT-MANIFEST.md`). Its code is
-  unchanged; only product names in comments and messages were reworded, in both repositories. Change it only when Studio
-  needs it, say so, record the change in the manifest, and make the same change in Author's copy so the two stay identical.
+- Build on the OpenStage shared core as published (`jasonswrench-beep/openstage-core`; read its `CORE-NOTES.md` first) and
+  never copy or reimplement its code. The capture engine (C1) comes from the core's tag `capture-v0.1.0` in
+  `studio-helper/Cargo.toml`. Anything Studio needs that the core does not offer yet goes in `CORE-REQUESTS.md`, not into
+  Studio's own code.
 - No Python in the product.
 - Windows first.
 - The demo-mode hook (`demo-hook/`) is off by default, starts only with the demo launch flag, and only ever talks to
@@ -90,7 +94,7 @@ engine; releases are signed like OpenExplainer's (`docs/code-signing.md`), and n
 - Installed, every job runs in the engine (`src/engine/main.ts`, bundled by `tools/bundle-engine.mjs`) with the pinned Node.js
   the installer carries (`tools/node-runtime.json`). The window starts only the engine's named jobs (`src-tauri/src/engine.rs`),
   and a key reaches the engine on its standard input, never its command line. `src/paths.ts` alone decides where the app's
-  files, a person's work (`DocumentsOpenStage Studio` installed, the repository otherwise) and the downloads are.
+  files, a person's work (`Documents\OpenStage Studio` installed, the repository otherwise) and the downloads are.
 - Every format change bumps the script format version, ships a migration, and updates `docs/script-format.md` in the
   same commit.
 

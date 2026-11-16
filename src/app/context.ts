@@ -13,7 +13,7 @@ export interface Status {
   ai: { choice: "none" | "builtin" | "hosted"; preset: string | null; model: string | null; address: string | null; pictures: boolean | null; hasKey: boolean; says: string; file: string };
   presets: { id: string; name: string; defaultModel: string | null; custom: boolean }[];
   hostedNote: string;
-  programs: { id: string; name: string }[];
+  programs: { id: string; name: string; demos: string[] }[];
   connector: { on: boolean; folder?: string };
   authorExe: string | null;
 }
@@ -23,6 +23,7 @@ export interface Library {
   scripts: { file: string; title: string; steps: number; series: string | null; renderName: string }[];
   videos: { folder: string; name: string; reviewed: boolean; says: string; open: boolean }[];
   series: string[];
+  lectures: { file: string; title: string; slides: number }[];
 }
 
 export interface Ctx {

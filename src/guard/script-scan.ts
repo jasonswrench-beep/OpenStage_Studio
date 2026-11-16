@@ -13,7 +13,7 @@ export interface ScriptHit extends Hit {
 }
 
 /** Fields whose words a viewer sees or hears: on the cards, spoken, typed or shown on screen, or in the description. */
-const SHOWN = new Set(["title", "goal", "intro", "outro", "narration", "value", "text", "chapter", "description", "tags", "name"]);
+const SHOWN = new Set(["title", "goal", "intro", "outro", "narration", "value", "text", "chapter", "description", "tags", "name", "describe", "points", "course", "pictureAlt"]);
 /** Parts of a script for people only, never shown: who wrote it, notes, what rehearsal checks, why a box is blurred. */
 const FOR_PEOPLE = /^(writtenBy|startState\.note|redactions)|\.(expect|note|reason)$/;
 

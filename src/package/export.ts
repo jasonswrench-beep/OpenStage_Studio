@@ -19,6 +19,8 @@ const ROOT = workspace();
 
 /** The files copied from a video's folder into its package, as they are named there. */
 export const PACKAGE_COPIES = ["captions.srt", "captions.vtt", "transcript.txt", "thumbnail.png"] as const;
+/** Copied when the video has them: the description track (made since 2026-11-15; older videos have none). */
+export const PACKAGE_EXTRAS = ["descriptions.vtt"] as const;
 
 export interface Exported {
   folder: string;
@@ -52,6 +54,7 @@ export function exportOne(renderFolder: string, outRoot: string): Exported {
   mkdirSync(folder, { recursive: true });
   copyFileSync(join(renderFolder, review.video), join(folder, "video.mp4"));
   for (const f of PACKAGE_COPIES) copyFileSync(join(renderFolder, f), join(folder, f));
+  for (const f of PACKAGE_EXTRAS) if (existsSync(join(renderFolder, f))) copyFileSync(join(renderFolder, f), join(folder, f));
   writeFileSync(join(folder, "upload.txt"), uploadText(record));
   writeFileSync(join(folder, "video.json"), JSON.stringify(record, null, 2) + "\n");
   // The guard report stays with the project, beside the video; it is brought up to date here, never put in the package.

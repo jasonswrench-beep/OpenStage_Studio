@@ -1,0 +1,57 @@
+{
+  "format": "openstage-studio-lecture",
+  "version": 1,
+  "title": "How seeds become plants",
+  "goal": "You understand how seeds become plants.",
+  "course": "Science with Year 4",
+  "intro": "This short lecture shows how a seed grows into a plant, and ends with an activity for class.",
+  "outro": "Next time, we will look at how plants make their food.",
+  "source": {
+    "kind": "notes",
+    "file": "how-seeds-become-plants.md"
+  },
+  "writtenBy": {
+    "kind": "person",
+    "name": "Studio, from your notes",
+    "editedByPerson": false
+  },
+  "slides": [
+    {
+      "title": "What a seed holds",
+      "points": [
+        "A tough seed coat keeps it safe and dry",
+        "The embryo is the young plant itself",
+        "The stored food feeds it before it has leaves"
+      ],
+      "narration": "A seed is a small plant waiting for the right moment. Inside its coat it keeps a tiny root, a tiny shoot and a store of food to live on until it has leaves of its own."
+    },
+    {
+      "title": "What a seed needs to start",
+      "points": [
+        "Water softens the coat and wakes the seed",
+        "Air gives the young plant oxygen",
+        "Warmth sets the right pace for growing"
+      ],
+      "narration": "Seeds wait until conditions are right. Most need water, air and warmth before they start to grow, and they do not need light until the first leaves open."
+    },
+    {
+      "title": "The first days of growth",
+      "points": [
+        "The root appears first and grows downward",
+        "The shoot grows up towards the light",
+        "The first leaves open and start making food"
+      ],
+      "narration": "When a seed starts to grow we call it germination. The root comes out first and grows down, holding the plant in place and drinking water. Then the shoot pushes up towards the light."
+    },
+    {
+      "title": "Try it in class",
+      "points": [
+        "Fold a damp paper towel inside each cup",
+        "Press a bean seed between the towel and the cup",
+        "Keep two cups warm and one cup in the cold",
+        "Draw what you see every morning for a week"
+      ],
+      "narration": "Plant three bean seeds in clear cups with damp paper towels, so the class can watch the roots and shoots appear. Keep one cup in the cold to compare."
+    }
+  ]
+}

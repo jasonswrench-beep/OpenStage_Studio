@@ -1,5 +1,5 @@
-// OpenStage Studio's window. A list of pages on the left (Home, Make a video, Review, From a manual, Queue, Release
-// check, AI, Connector, Settings), the page itself, and the job area, which says what is running on every page. Each
+// OpenStage Studio's window. A list of pages on the left (Home, Make a video, Review, From a manual, From a recording,
+// Lecture, Queue, Release check, AI, Connector, Settings), the page itself, and the job area, which says what is running on every page. Each
 // page's work is done by the engine (src/engine/main.ts), the same code the double-click files run.
 //
 // Keyboard: Tab moves through the page list, then the page, then the job area. Opening a page puts the focus on its
@@ -13,13 +13,15 @@ import { home } from "./app/pages/home.ts";
 import { make } from "./app/pages/make.ts";
 import { review } from "./app/pages/review.ts";
 import { manual } from "./app/pages/manual.ts";
+import { recording } from "./app/pages/recording.ts";
+import { lecture } from "./app/pages/lecture.ts";
 import { queue, release } from "./app/pages/batch.ts";
 import { ai } from "./app/pages/ai.ts";
 import { connector } from "./app/pages/connector.ts";
 import { settings } from "./app/pages/settings.ts";
 import "./style.css";
 
-const PAGES: Page[] = [home, make, review, manual, queue, release, ai, connector, settings];
+const PAGES: Page[] = [home, make, review, manual, recording, lecture, queue, release, ai, connector, settings];
 
 const status = el("p", { id: "status", className: "status", role: "status" });
 const say = (text: string) => {

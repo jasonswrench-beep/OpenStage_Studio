@@ -1,6 +1,6 @@
 {
   "format": "openstage-studio-script",
-  "version": 2,
+  "version": 3,
   "title": "Guard test: a blocked name",
   "goal": "Check that the script scan stops a script that types a blocked name, before anything is recorded.",
   "program": { "id": "practice-planner", "name": "Practice Planner", "version": "1.0" },

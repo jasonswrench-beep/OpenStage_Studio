@@ -21,9 +21,7 @@ sides) and `hook.ts` (the part a program includes).
   for this; step 3 below is now optional.
 - Studio starts every program in demo mode with its browser engine set to plain grey text smoothing (not the coloured
   kind), because the coloured kind can switch for text beside a control drawn in its own layer
-  (`demoEnvironment` in `src/pipeline/programs.ts`), and drawing everything in software, because the engine moves from
-  software to the graphics card at a moment that depends on timing, and the two smooth curved edges slightly differently.
-  A program's own code does not change.
+  (`demoEnvironment` in `src/pipeline/programs.ts`). A program's own code does not change.
 
 ## Adding it to a program
 

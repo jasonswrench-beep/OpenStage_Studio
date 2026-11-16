@@ -84,11 +84,11 @@ export class TakeSession {
   }
 
   /** Save a still picture once the window has stopped changing. Returns the file and its fingerprint. */
-  async grab(dir: string, settleMs = 180): Promise<{ file: string; hash: string; settled: boolean }> {
+  async grab(dir: string, settleMs = 180): Promise<{ file: string; hash: string; settled: boolean; waitedMs: number; newPictures: number }> {
     const answer = this.next(15000);
     this.child.stdin.write(JSON.stringify({ cmd: "grab", dir, settleMs, timeoutMs: 6000 }) + "\n");
     const e = await answer;
-    return { file: String(e.file), hash: String(e.hash), settled: e.settled !== false };
+    return { file: String(e.file), hash: String(e.hash), settled: e.settled !== false, waitedMs: Number(e.waitedMs ?? 0), newPictures: Number(e.newPictures ?? 0) };
   }
 
   async stop(): Promise<void> {

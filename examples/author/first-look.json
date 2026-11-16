@@ -1,6 +1,6 @@
 {
   "format": "openstage-studio-script",
-  "version": 2,
+  "version": 3,
   "title": "A first look at the editor",
   "goal": "Add a text box, show the timeline, and find the list of keyboard keys.",
   "program": { "id": "openstage-author", "name": "OpenStage Author" },

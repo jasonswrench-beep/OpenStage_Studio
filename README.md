@@ -30,14 +30,20 @@ Phase 5, "Reach", is built in part: an accessibility driver records programs wit
 screen reader reads (`docs/accessibility-driver.md`), and a connector lets an assistant you already use write and
 rehearse scripts (`docs/connector.md`).
 
+Since the development list of 2026-11-15, Studio also turns a **recording** made with an OpenStage recorder into a script
+it performs again (`docs/recordings.md`), writes a **description track** beside the captions for viewers who cannot
+see the screen (`docs/script-format.md`), and makes **lectures**: notes or a manual's chapter become slides and narration
+you approve, then a video (`docs/lecture-format.md`). It builds on the OpenStage shared core (its capture code), and asks
+the core for what it needs next in `CORE-REQUESTS.md`.
+
 There is an installer: one setup file that installs Studio for you, with no administrator rights, and whose window does
-every job the double-click files below do (`docs/release.md`). Installed, your work goes into `DocumentsOpenStage Studio`.
+every job the double-click files below do (`docs/release.md`). Installed, your work goes into `Documents\OpenStage Studio`.
 
 | Built | Not built yet |
 |---|---|
 | The tutorial script format (version 2) and its validator | Scheduling a queue for a set time (start it by hand for now) |
 | The demo-mode hook, in an invented practice program and in OpenStage Author (on a branch) | Canvas commands for Author's stage, and uploading from Studio (phase 5) |
-| The player and the take (window capture with OpenScreen's engine) | Hosted voices, recording your own voice |
+| The player and the take (window capture with the shared core's capture engine) | Hosted voices, recording your own voice |
 | Narration with Kokoro, a local speech model (or Windows' voices), pronunciation list, clip reuse | A signed, published release (the installer is built; signing waits for the owner's computer) |
 | Captions (SRT and VTT), transcript, chapter list | Uploading from inside the app (packages are uploaded by hand) |
 | Assembly to MP4 (1920 by 1080, 30 frames a second) with title and end cards | |
@@ -48,6 +54,9 @@ every job the double-click files below do (`docs/release.md`). Installed, your w
 | The accessibility driver (no hook needed) and the connector for assistants | |
 | The window: every job from its pages, by keyboard and screen reader (`docs/release.md`) | |
 | A per-user installer that carries everything but the downloads (`docs/release.md`) | |
+| Scripts from recordings (the shared capture format) | Spoken audio description (waits for the shared speech engine, C5) |
+| A description track (`descriptions.vtt`) for every video | |
+| Lectures: slides drawn by Studio, narration, captions, descriptions | |
 
 ## What to do (no typing needed)
 
@@ -80,6 +89,10 @@ every job the double-click files below do (`docs/release.md`). Installed, your w
 13. **`Build Installer.bat`** makes the setup file (not signed, for checking), **`Check Engine.bat`** runs the bundled
     engine the way the installed app does, and **`Test Installed App.bat`** installs the setup, works the installed window
     through Windows' accessibility interface, and uninstalls it (`docs/release.md`).
+14. **`Script From Recording.bat`** (drag a `.capture` folder onto it) turns a recording into a script; **`Check
+    Recording.bat`** is its acceptance test. **`Write Lecture.bat`** (drag notes or a manual), **`Approve Lecture.bat`** and
+    **`Make Lecture.bat`** make a lecture video; **`Check Lecture.bat`** is their acceptance test. `TESTING-TODO.md` lists
+    what only a person can check.
 
 You need Node.js (22.13 or newer) and Rust installed. While a take runs, the practice program fills one screen for a minute
 or two (the main one, or the one `local-settings.json` names, such as `{ "monitor": 2 }`); it ignores the mouse and the
@@ -101,6 +114,8 @@ src/manual/                   reading a manual: a documentation project file or 
 src/ai/                       the AI choice, the built-in model, the four AI roles, rehearsal and the series commands
 src/batch/                    the unattended queue and the release check
 src/connector/                the connector (MCP server) for assistants, its setup and its acceptance test
+src/recording/                a recording (the shared capture format) becomes a script Studio performs again
+src/lecture/                  lectures: the format, writing from notes or a manual, approval, and making the video
 src/engine/                   the engine: every job the window starts, by name (bundled into the installer)
 src/app/                      the window's pages and its job area
 src/paths.ts                  where things are: the app's own files, a person's work, the downloads
@@ -108,7 +123,6 @@ examples/manuals/             an invented manual for the practice program (writt
 demo-hook/                    the demo-mode hook a program includes (docs/demo-hook.md)
 sample-program/               Practice Planner, an invented program used for the tests and the example
 studio-helper/                the native part (Rust): window pictures, speech, drawing, the MP4, reading text, thumbnails
-capture/                      OpenScreen's capture engine, copied from OpenStage Author (capture/IMPORT-MANIFEST.md)
 src-tauri/                    the app's shell (src-tauri/src/engine.rs runs the engine's jobs for the window)
 tools/build-installer.mjs     the installer build; tools/release-smoke.mjs tests the installed app
 ```

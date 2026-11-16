@@ -20,6 +20,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { makeCaptions, makeChapters, makeTranscript, toSrt, toVtt } from "../captions/captions.ts";
+import { descriptionCaptions, makeDescriptions } from "../captions/descriptions.ts";
 import { clipKey, DEFAULT_VOICE, narrationLines, type Pronunciations, type VoiceSettings } from "../narration/narration.ts";
 import type { Script } from "../script/format.ts";
 import { describeProblems, validateScript } from "../script/validate.ts";
@@ -104,6 +105,10 @@ export interface MakeOptions {
   blocklists?: string[];
   /** Whether to read the text in the pictures (on unless switched off, as the repeat check does to save time). */
   frameScan?: boolean;
+  /** For something that is not a tutorial take, such as a lecture's drawn slides (src/lecture/make-lecture.ts): the script
+   * to use (already checked) in place of reading `scriptPath` as one, what else the script scan reads, and how the
+   * pictures are made in place of a take. The video has no pointer. */
+  prepared?: { script: Script; scanned: Record<string, unknown>; take: (pictureDir: string) => Promise<TakeLog> };
 }
 
 const fingerprint = (text: string) => createHash("sha256").update(text).digest("hex").slice(0, 24);
@@ -113,21 +118,26 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   const helper = helperPath(ROOT);
 
   // 1. Check the script.
-  const v = validateScript(JSON.parse(readFileSync(scriptPath, "utf8")));
-  for (const line of describeProblems(v)) log(line);
-  if (!v.ok) throw new Error(`The script has ${v.errors.length} error(s) and was not recorded.`);
-  const script = v.script as Script;
+  let script: Script;
+  if (options.prepared) script = options.prepared.script;
+  else {
+    const v = validateScript(JSON.parse(readFileSync(scriptPath, "utf8")));
+    for (const line of describeProblems(v)) log(line);
+    if (!v.ok) throw new Error(`The script has ${v.errors.length} error(s) and was not recorded.`);
+    script = v.script as Script;
+  }
   const settings = readProjectSettings(scriptPath);
 
   // The script scan, before anything is recorded.
   const blocklist = loadBlocklist(workspace(), (options.blocklists ?? []).map((b) => resolve(b)));
   blocklist.problems.forEach((p) => log(`Note: ${p}`));
-  const scriptHits = scanScript(script, blocklist.list);
+  const scanned = options.prepared?.scanned ?? script;
+  const scriptHits = scanScript(scanned, blocklist.list);
   if (scriptHits.length) {
     scriptHits.forEach((h) => log(describeScriptHit(h)));
     throw new ScriptBlocked(scriptHits.length);
   }
-  log(`The script scan found nothing blocked (${scriptTexts(script).length} pieces of text, ${blocklist.list.terms.length} blocked terms and the built-in patterns).`);
+  log(`The script scan found nothing blocked (${scriptTexts(scanned).length} pieces of text, ${blocklist.list.terms.length} blocked terms and the built-in patterns).`);
   mkdirSync(outFolder, { recursive: true });
 
   // 2. Narration: one clip per line, kept by what shapes its sound, so unchanged lines are never made again.
@@ -155,11 +165,13 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   for (const l of lines) clips[l.id] = wavDurationMs(readFileSync(clipFile.get(l.id)!));
 
   // 3. The take.
-  const take = await recordTake(script, join(outFolder, "take"), helper, takeMonitor(options.monitor), log);
+  const take = options.prepared ? await options.prepared.take(join(outFolder, "take")) : await recordTake(script, join(outFolder, "take"), helper, takeMonitor(options.monitor), log);
   writeFileSync(join(outFolder, "take-log.json"), JSON.stringify(take, null, 2));
 
   // 4. The timeline.
   const timeline = buildTimeline({ script, take, clips, fps: FPS, paces: settings.paces });
+  // Prepared pictures (slides) have nothing to point at.
+  if (options.prepared) timeline.pointer = timeline.pointer.map(() => null);
   writeFileSync(join(outFolder, "timeline.json"), JSON.stringify(timeline));
   log(`The video will be ${(timeline.durationMs / 1000).toFixed(1)} seconds (${timeline.frames} frames).`);
 
@@ -169,6 +181,8 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   writeFileSync(join(outFolder, "captions.vtt"), toVtt(captions));
   const targets = script.steps.map((_, i) => take.steps.find((s) => s.index === i)?.target);
   writeFileSync(join(outFolder, "transcript.txt"), makeTranscript(script, timeline, targets));
+  // The description track, as text (its voice waits for the shared speech engine: CORE-REQUESTS.md S1).
+  writeFileSync(join(outFolder, "descriptions.vtt"), toVtt(descriptionCaptions(makeDescriptions(script, timeline, targets.map((t) => t?.label)))));
   const chapters = makeChapters(script, timeline);
   writeFileSync(join(outFolder, "chapters.txt"), chapters.text);
   chapters.warnings.forEach((w) => log(`Note: ${w}`));
@@ -195,7 +209,7 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
 
   // 7. The frame scan and the review it starts.
   if (options.frameScan !== false) {
-    made.review = await frameScan(script, scriptPath, outFolder, video, take, timeline, blocklist, narration, scriptTexts(script).length, helper, log);
+    made.review = await frameScan(script, scriptPath, outFolder, video, take, timeline, blocklist, narration, scriptTexts(options.prepared?.scanned ?? script).length, helper, log);
   }
 
   // 8. The thumbnail, and the publishing details as they stand now.

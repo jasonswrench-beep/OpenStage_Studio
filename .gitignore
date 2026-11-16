@@ -37,3 +37,6 @@ OpenStage_Studio_Icon.zip
 # Made by the installer build: the bundled engine and the pinned Node.js runtime (tools/build-installer.mjs).
 src-tauri/engine/
 src-tauri/runtime/
+# Lectures and scripts made in the work folder (from notes, a manual or a recording).
+/lectures/
+/scripts/

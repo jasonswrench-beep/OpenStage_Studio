@@ -44,7 +44,7 @@ const COLOUR = /^#[0-9A-Fa-f]{6}$/;
 const SIDES = ["left", "right", "above", "below"];
 
 const HEADER_KEYS = ["format", "version", "title", "goal", "program", "driver", "startState", "playlist", "intro", "outro", "writtenBy", "publish", "redactions", "steps"];
-const STEP_KEYS = ["action", "target", "fallback", "value", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter"];
+const STEP_KEYS = ["action", "target", "fallback", "value", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter", "describe"];
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -237,6 +237,10 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
       if (step.expect !== undefined && !isText(step.expect)) err(`${at}.expect`, "expect says in words what must be true after the step.");
       if (!isText(step.expect)) rehearsable = false;
       if (step.chapter !== undefined && !isText(step.chapter)) err(`${at}.chapter`, "A chapter has a name.");
+      if (step.describe !== undefined) {
+        if (!isText(step.describe)) err(`${at}.describe`, "A description is words: what the step shows that the narration does not say.");
+        else if (step.describe.length > 280) err(`${at}.describe`, "A description is at most 280 characters; a player reads it while the step is on screen.");
+      }
       if (step.callout !== undefined) {
         const c = step.callout;
         const cp = `${at}.callout`;

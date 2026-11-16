@@ -16,7 +16,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 
 /// The jobs the window may start (src/engine/main.ts has the same list).
 const JOBS: &[&str] = &[
-    "status", "library", "make-video", "get-voice", "get-ai", "set-ai", "test-ai", "plan-series", "series-plan",
+    "status", "library", "make-video", "import-recording", "write-lecture", "lecture-info", "approve-lecture", "make-lecture", "get-voice", "get-ai", "set-ai", "test-ai", "plan-series", "series-plan",
     "series-choose", "write-series", "rehearse-series", "queue", "release-check", "export", "set-connector",
     "connector-lines", "set-settings", "start-blocklist",
 ];
@@ -44,8 +44,14 @@ fn repository() -> Option<PathBuf> {
     exe.ancestors().find(|p| p.join("src").join("engine").join("main.ts").is_file()).map(Path::to_path_buf)
 }
 
-/// How to start the engine: the installed copy if it is there, otherwise the repository's.
+/// How to start the engine: from the repository, for a program built in one (an installer build leaves a bundled engine
+/// beside it, which would soon be out of date); otherwise the installed copy.
 fn engine_command(app: &AppHandle) -> Result<(Command, bool), String> {
+    if let Some(repo) = repository() {
+        let mut cmd = Command::new("node");
+        cmd.arg(repo.join("src").join("engine").join("main.ts")).current_dir(&repo);
+        return Ok((cmd, false));
+    }
     let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
     let node = resources.join("node").join("node.exe");
     let bundle = resources.join("engine").join("engine.mjs");
@@ -55,10 +61,7 @@ fn engine_command(app: &AppHandle) -> Result<(Command, bool), String> {
         cmd.arg(plain(&bundle)).env("OPENSTAGE_STUDIO_RESOURCES", plain(&resources));
         return Ok((cmd, true));
     }
-    let repo = repository().ok_or("Studio's engine was not found. Reinstall OpenStage Studio.")?;
-    let mut cmd = Command::new("node");
-    cmd.arg(repo.join("src").join("engine").join("main.ts")).current_dir(&repo);
-    Ok((cmd, false))
+    Err("Studio's engine was not found. Reinstall OpenStage Studio.".into())
 }
 
 /// A path written plainly, without Windows' long-path prefix.
@@ -147,9 +150,8 @@ pub fn stop_all(app: &AppHandle) {
 /// The person's work folder, as src/paths.ts finds it: the repository for a build run from it; installed, the folder chosen
 /// in Settings (kept in %APPDATA%\org.openstage.studio\studio.json) or Documents\OpenStage Studio.
 fn workspace(app: &AppHandle) -> Option<PathBuf> {
-    let resources = app.path().resource_dir().ok()?;
-    if !resources.join("engine").join("engine.mjs").is_file() {
-        return repository();
+    if let Some(repo) = repository() {
+        return Some(repo);
     }
     let chosen = app
         .path()

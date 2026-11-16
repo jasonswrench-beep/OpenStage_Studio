@@ -5,11 +5,12 @@ edition = "2021"
 license = "Apache-2.0"
 description = "The native part of OpenStage Studio: window pictures, speech, and the finished video."
 
-# The capture engine is copied from OpenStage Author's OpenScreen (see capture/IMPORT-MANIFEST.md) and used as it is.
+# The capture engine (C1) is the OpenStage shared core's, at its published tag (openstage-core CORE-NOTES.md). A change to
+# it is made in the core first and gets a new tag; Studio moves its pin only with its own checks passing.
 [dependencies]
-openstage-capture-windows = { path = "../capture/crates/openstage-capture-windows" }
-openstage-capture-render = { path = "../capture/crates/openstage-capture-render" }
-openstage-capture-project = { path = "../capture/crates/openstage-capture-project" }
+openstage-capture-windows = { git = "https://github.com/jasonswrench-beep/openstage-core", tag = "capture-v0.1.0" }
+openstage-capture-render = { git = "https://github.com/jasonswrench-beep/openstage-core", tag = "capture-v0.1.0" }
+openstage-capture-project = { git = "https://github.com/jasonswrench-beep/openstage-core", tag = "capture-v0.1.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # PNG files for the still pictures of the take. MIT OR Apache-2.0.

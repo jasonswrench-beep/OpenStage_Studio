@@ -140,6 +140,7 @@ export function makeTranscript(script: Script, timeline: Timeline, targets: ({ l
     if (step.chapter) out.push(`${step.chapter}`, "");
     out.push(`Step ${k + 1} (${clock(t.startMs)}). On screen: ${describeAction(step, targets[t.index]?.label, targets[t.index]?.role)}`);
     if (step.narration && !step.silent) out.push(`Narration: ${step.narration}`);
+    if (step.describe) out.push(`Description: ${step.describe}`);
     out.push("");
   });
   if (script.outro) out.push(script.outro, "");

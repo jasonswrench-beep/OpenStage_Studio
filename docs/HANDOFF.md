@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated 2026-11-15, after the installer was built.
+Last updated 2026-11-16, after the development list round (recordings, description track, lectures).
 
 ## Where things are
 
@@ -71,7 +71,7 @@ The installer and the window (`docs/release.md`, `docs/code-signing.md`):
   Windows' accessibility interface: every page opens by its name, every control has a name, and the example video was
   made from the window and its review opened.
 - `src/paths.ts` separates the app's own files from a person's work. From the repository nothing changes; installed, the
-  work goes into `DocumentsOpenStage Studio` and the downloads into `%LOCALAPPDATA%org.openstage.studio` (moved there
+  work goes into `Documents\OpenStage Studio` and the downloads into `%LOCALAPPDATA%\org.openstage.studio` (moved there
   from the old folder the first time).
 - `Check Engine.bat` passes: the bundled engine, run from a folder laid out like the install folder with empty settings,
   made the example video with the same frames as the repository, and the connector answered through it.
@@ -79,15 +79,33 @@ The installer and the window (`docs/release.md`, `docs/code-signing.md`):
   `Test Installed App.bat` passes: installed silently, every page opened by its name with every control named (through
   UI Automation), the take screen set on Settings, the example video made from the installed window and its review
   opened, then uninstalled with the work folder (here `OneDrive\Documents\OpenStage Studio`) and the downloads kept.
-- Building the window found that the practice program must keep its own browser-engine data folder (a take started from
-  the window otherwise got a blank program). That fresh folder then showed that the browser engine's move from software
-  drawing to the graphics card happens at a moment that depends on timing, and the two smooth rounded corners one level
-  of brightness apart (48 pixels): one take in five differed. Programs in demo mode now draw in software only. The
-  example's frame fingerprint is now a76c2a692e538f8d (before: cffdaa5f8dc08793), the same in four takes made four ways:
-  twice by `Check Same Video.bat`, once by the bundled engine (`Check Engine.bat`) and once by the installed app's window.
+- Building the window found that a take started from the window got a blank practice program: the two shared one
+  browser data folder with different settings, which the browser engine refuses. Studio's window now starts with exactly a
+  take's settings (`BROWSER_SETTINGS` in `src-tauri/src/main.rs`, kept equal to `TAKE_BROWSER_SETTINGS` by a test). A
+  separate data folder and software-only drawing were tried first and dropped: each let rounded corners differ by a
+  brightness level from run to run (docs/release.md). The example's frame fingerprint is 81d41989e3de3093 (before the
+  installer work: cffdaa5f8dc08793), the same from the repeat check and from the window.
 - `check-repeat.ts` now compares an accessibility take's timeline with the pictures' names set aside: the timing must
   match, and the pictures need only be the same to the eye (as agreed), which the comparison of the finished videos judges.
   Before, one picture differing by one brightness level on a corner failed the timeline as well.
+
+The development list round of 2026-11-15/16 (the "OpenStage Studio Development List" and the shared core's
+`CORE-NOTES.md`):
+
+- **The shared core.** Studio's own copy of the capture code is gone; the helper depends on the core's tag
+  `capture-v0.1.0` (identical code). What Studio needs from the core is in `CORE-REQUESTS.md` (C5 for spoken description,
+  C1's description track, "send to", an automation id in the log). PrismQDA's switch to the core's statistics tag was left
+  to PrismQDA's own session (Jason's choice).
+- **Item 1, recordings** (`docs/recordings.md`). `Check Recording.bat` passes: the invented example recording becomes the
+  nine steps it shows, every control found in Practice Planner by its stable id, what was done in another program left
+  out, and the video made from it twice is identical to the pixel (1,016 frames).
+- **Item 2, the description track** (`docs/script-format.md`, format version 3: a step's `describe`). Every video gets
+  `descriptions.vtt` and the transcript carries the descriptions; packages include the file. Spoken description waits for
+  C5.
+- **Item 3, lectures** (`docs/lecture-format.md`). Notes or a manual's chapter become a lecture (fixed rules, or the AI),
+  a person approves it, and Studio draws the slides (helper `slides`) and makes the video through the same `makeVideo`.
+  `Check Lecture.bat` is its acceptance test.
+- The window gains From a recording and Lecture pages. `TESTING-TODO.md` lists what only Jason can check.
 
 ### Phase 3 results, and what the built-in model gets wrong
 
@@ -112,7 +130,7 @@ does what its narration says, and the built-in model's scripts still need a pers
 3. Narration: one clip per line with Kokoro (or a Windows voice) in `studio-helper speak`. A clip's file name comes from
    the voice and the words as spoken, so changing one line makes one new clip.
 4. The take: the program starts full screen in demo mode on the chosen display; `studio-helper take` watches its window
-   with OpenScreen's capture engine; the player (`src/pipeline/player.ts`) performs each step through the hook and saves a
+   with the shared core's capture engine (C1); the player (`src/pipeline/player.ts`) performs each step through the hook and saves a
    still picture after every change, once the window has stopped changing. At each picture it also asks the hook for the
    text on screen (hook version 2), for the frame scan.
 5. The timeline (`src/timeline/build.ts`) places every picture, pointer move, click, callout and clip on a frame, from
@@ -129,8 +147,13 @@ does what its narration says, and the built-in model's scripts still need a pers
 
 Confirmed by Jason:
 
+- **The development list round** (2026-11-15): a recording becomes a script Studio performs again (not narration over the
+  recorded video); the description track is text now, its voice waits for C5 (asked in `CORE-REQUESTS.md`, nothing built
+  in Studio's own speech path for it); Studio draws a lecture's slides itself; PrismQDA's statistics switch is left to its
+  own session. Every lecture is approved by a person before its video, whoever wrote it ("a script you approve").
+
 - **The installer** (2026-11-15): signed the way OpenExplainer is (Azure Artifact Signing with the suite's shared
-  `tools/sign_windows.py`, on Jason's computer only); a person's work in `DocumentsOpenStage Studio`; the first
+  `tools/sign_windows.py`, on Jason's computer only); a person's work in `Documents\OpenStage Studio`; the first
   installer's window does all the jobs. Node.js is carried in the installer (pinned in `tools/node-runtime.json`, v24.22.3,
   the 24 line Studio is developed on); the voice and the model still download on request. First release name
   `0.1.0-alpha.1`; nothing published yet.
@@ -160,10 +183,8 @@ Confirmed by Jason:
     imports are documentation project files and PDFs.
 13. **Plain grey text smoothing in demo mode** (2026-11-15): Studio starts every program in demo mode with its browser
     engine told not to use coloured (subpixel) smoothing, which could switch for a label beside a control drawn in its own
-    layer and made two takes differ. Set at launch (`src/pipeline/programs.ts`), so no program's own code changes. Since
-    the installer work (2026-11-15) the engine also draws in software only (`--disable-gpu`): its move from software to the
-    graphics card happened at a moment that depends on timing, and the two smooth rounded corners one brightness level
-    apart.
+    layer and made two takes differ. Set at launch (`src/pipeline/programs.ts`), so no program's own code changes. Studio's own
+    window starts with the same settings, so the two share one browser data folder (2026-11-15).
 14. **The unattended queue records every script that passes rehearsal** (2026-11-15), including AI-written scripts a
     person has not read; the review gate before export is the person's check.
 15. **The release check reports broken steps only** (2026-11-15), not steps whose pictures merely changed.
@@ -239,6 +260,10 @@ Made by Claude, open to change:
 
 ## Next
 
+- `TESTING-TODO.md`: watch the recording and lecture videos, try a real recording, a screen reader on the new pages, the
+  checks that spend the hosted AI key.
+- When the core publishes C5 (or C1's description track, or "send to"), build on it as `CORE-REQUESTS.md` says.
+
 - OpenStage Author: the hook is on Author's branch `studio-demo-hook` (pushed, not merged). Still to do: name the
   buttons in its panes and dialogs, list its demo projects in `src/pipeline/programs.ts`, write its manual (or import
   one), and make its videos.
@@ -254,7 +279,7 @@ Made by Claude, open to change:
 - **Takes do not depend on the computer's state.** In demo mode the hook rewrites the page's own focus and hover rules to
   follow markers it sets, keeps track of the keyboard focus itself, draws drop-down lists itself, and gives them their own
   layer; the take waits five seconds for a program to finish starting; and the program is started with plain grey text
-  smoothing, drawing in software only, and (the practice program) its own browser-engine data folder. If a repeat check ever fails, the take log shows the first picture that differs.
+  smoothing, the same settings as Studio's own window, so the two share one browser data folder. If a repeat check ever fails, the take log shows the first picture that differs.
 - The built-in AI model and its runtime live in `%LOCALAPPDATA%\org.openstage.studio\ai\` (the voice beside it in `voices\`); writing one script with it takes a
   minute or two on this computer's processor, and a whole chapter's run about 25 minutes. With Claude a whole chapter's
   run took about 10 minutes, most of it rehearsal.

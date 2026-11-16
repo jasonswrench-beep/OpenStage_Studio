@@ -4,6 +4,8 @@
 import type { Redaction } from "./format.ts";
 import { SCRIPT_VERSION } from "./format.ts";
 import { validateScript } from "./validate.ts";
+import { LECTURE_FORMAT } from "../lecture/format.ts";
+import { validateLecture } from "../lecture/validate.ts";
 
 /** One blurred box, on one line. */
 export function redactionLine(r: Redaction): string {
@@ -64,7 +66,10 @@ function valueEnd(text: string, start: number): number {
 /** The script's text with a blurred box added (and brought up to the current version if it was older). The same box over
  * the same steps is not added twice. Throws if the script does not pass the format check afterwards. */
 export function addRedaction(text: string, r: Redaction): string {
-  const parsed = JSON.parse(text) as { redactions?: Redaction[]; version?: number };
+  const parsed = JSON.parse(text) as { redactions?: Redaction[]; version?: number; format?: string };
+  // A lecture (src/lecture/format.ts) keeps its boxes the same way, before its slides, and keeps its own version.
+  const lecture = parsed.format === LECTURE_FORMAT;
+  const anchor = lecture ? "slides" : "steps";
   const existing = parsed.redactions ?? [];
   if (existing.some((e) => e.box.join() === r.box.join() && e.fromStep === r.fromStep && e.toStep === r.toStep)) return text;
   const newline = text.includes("\r\n") ? "\r\n" : "\n";
@@ -74,19 +79,19 @@ export function addRedaction(text: string, r: Redaction): string {
   const span = valueSpan(text, "redactions");
   if (span) out = text.slice(0, span[0]) + block + text.slice(span[1]);
   else {
-    const steps = valueSpan(text, "steps");
-    if (!steps) throw new Error("The script has no steps to put the blurred box before.");
-    // Put the new key on its own line just before "steps", indented as "steps" is.
-    const keyStart = text.lastIndexOf('"steps"', steps[0]);
+    const steps = valueSpan(text, anchor);
+    if (!steps) throw new Error(`The script has no ${anchor} to put the blurred box before.`);
+    // Put the new key on its own line just before "steps" (or "slides"), indented as it is.
+    const keyStart = text.lastIndexOf(`"${anchor}"`, steps[0]);
     const lineStart = text.lastIndexOf("\n", keyStart) + 1;
     const indent = text.slice(lineStart, keyStart).match(/^\s*/)?.[0] ?? "  ";
     out = `${text.slice(0, keyStart)}"redactions": ${block},${newline}${indent}${text.slice(keyStart)}`;
   }
-  if (typeof parsed.version === "number" && parsed.version < SCRIPT_VERSION) {
+  if (!lecture && typeof parsed.version === "number" && parsed.version < SCRIPT_VERSION) {
     const v = valueSpan(out, "version");
     if (v) out = out.slice(0, v[0]) + String(SCRIPT_VERSION) + out.slice(v[1]);
   }
-  const check = validateScript(JSON.parse(out));
+  const check = lecture ? validateLecture(JSON.parse(out)) : validateScript(JSON.parse(out));
   if (!check.ok) throw new Error(`The blurred box could not be added: ${check.errors.map((e) => `${e.path}: ${e.message}`).join(" ")}`);
   return out;
 }

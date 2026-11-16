@@ -1,0 +1,99 @@
+{"t":0,"type":"window","title":"Practice Planner (OpenStage Studio sample program)","process":"openstage-studio.exe","bounds":{"x":0,"y":0,"width":1920,"height":1080}}
+{"t":400,"type":"marker","label":"Start a lesson"}
+{"t":1000,"type":"cursorMove","x":500,"y":72}
+{"t":1300,"type":"cursorMove","x":540,"y":42}
+{"t":1450,"type":"click","x":540,"y":42,"button":"left"}
+{"t":1450,"type":"element","name":"New lesson","role":"button"}
+{"t":2050,"type":"cursorMove","x":860,"y":218}
+{"t":2350,"type":"cursorMove","x":900,"y":188}
+{"t":2500,"type":"click","x":900,"y":188,"button":"left"}
+{"t":2500,"type":"element","name":"Lesson title","role":"edit"}
+{"t":2590,"type":"key","key":"s","modifiers":["shift"]}
+{"t":2680,"type":"key","key":"o","modifiers":[]}
+{"t":2770,"type":"key","key":"r","modifiers":[]}
+{"t":2860,"type":"key","key":"t","modifiers":[]}
+{"t":2950,"type":"key","key":"i","modifiers":[]}
+{"t":3040,"type":"key","key":"n","modifiers":[]}
+{"t":3130,"type":"key","key":"g","modifiers":[]}
+{"t":3220,"type":"key","key":"space","modifiers":[]}
+{"t":3310,"type":"key","key":"l","modifiers":[]}
+{"t":3400,"type":"key","key":"e","modifiers":[]}
+{"t":3490,"type":"key","key":"a","modifiers":[]}
+{"t":3580,"type":"key","key":"v","modifiers":[]}
+{"t":3670,"type":"key","key":"s","modifiers":[]}
+{"t":3870,"type":"key","key":"backspace","modifiers":[]}
+{"t":3960,"type":"key","key":"e","modifiers":[]}
+{"t":4050,"type":"key","key":"s","modifiers":[]}
+{"t":4140,"type":"key","key":"space","modifiers":[]}
+{"t":4230,"type":"key","key":"b","modifiers":[]}
+{"t":4320,"type":"key","key":"y","modifiers":[]}
+{"t":4410,"type":"key","key":"space","modifiers":[]}
+{"t":4500,"type":"key","key":"s","modifiers":[]}
+{"t":4590,"type":"key","key":"h","modifiers":[]}
+{"t":4680,"type":"key","key":"a","modifiers":[]}
+{"t":4770,"type":"key","key":"p","modifiers":[]}
+{"t":4860,"type":"key","key":"e","modifiers":[]}
+{"t":5460,"type":"cursorMove","x":730,"y":336}
+{"t":5760,"type":"cursorMove","x":770,"y":306}
+{"t":5910,"type":"click","x":770,"y":306,"button":"left"}
+{"t":5910,"type":"element","name":"Subject","role":"combo box"}
+{"t":6310,"type":"cursorMove","x":730,"y":450}
+{"t":6610,"type":"cursorMove","x":770,"y":420}
+{"t":6760,"type":"click","x":770,"y":420,"button":"left"}
+{"t":6760,"type":"element","name":"Science","role":"list item"}
+{"t":7360,"type":"cursorMove","x":1310,"y":336}
+{"t":7660,"type":"cursorMove","x":1350,"y":306}
+{"t":7810,"type":"click","x":1350,"y":306,"button":"left"}
+{"t":7810,"type":"element","name":"Length","role":"combo box"}
+{"t":8210,"type":"cursorMove","x":1310,"y":500}
+{"t":8510,"type":"cursorMove","x":1350,"y":470}
+{"t":8660,"type":"click","x":1350,"y":470,"button":"left"}
+{"t":8660,"type":"element","name":"30 minutes","role":"list item"}
+{"t":9260,"type":"marker","label":"Write the plan"}
+{"t":9860,"type":"cursorMove","x":860,"y":480}
+{"t":10160,"type":"cursorMove","x":900,"y":450}
+{"t":10310,"type":"click","x":900,"y":450,"button":"left"}
+{"t":10310,"type":"element","name":"Notes","role":"edit"}
+{"t":10400,"type":"key","key":"c","modifiers":["shift"]}
+{"t":10490,"type":"key","key":"o","modifiers":[]}
+{"t":10580,"type":"key","key":"l","modifiers":[]}
+{"t":10670,"type":"key","key":"l","modifiers":[]}
+{"t":10760,"type":"key","key":"e","modifiers":[]}
+{"t":10850,"type":"key","key":"c","modifiers":[]}
+{"t":10940,"type":"key","key":"t","modifiers":[]}
+{"t":11030,"type":"key","key":"space","modifiers":[]}
+{"t":11120,"type":"key","key":"t","modifiers":[]}
+{"t":11210,"type":"key","key":"e","modifiers":[]}
+{"t":11300,"type":"key","key":"n","modifiers":[]}
+{"t":11390,"type":"key","key":"space","modifiers":[]}
+{"t":11480,"type":"key","key":"l","modifiers":[]}
+{"t":11570,"type":"key","key":"e","modifiers":[]}
+{"t":11660,"type":"key","key":"a","modifiers":[]}
+{"t":11750,"type":"key","key":"v","modifiers":[]}
+{"t":11840,"type":"key","key":"e","modifiers":[]}
+{"t":11930,"type":"key","key":"s","modifiers":[]}
+{"t":12020,"type":"key","key":"period","modifiers":[]}
+{"t":12620,"type":"cursorMove","x":1660,"y":980}
+{"t":12920,"type":"cursorMove","x":1700,"y":950}
+{"t":13070,"type":"click","x":1700,"y":950,"button":"left"}
+{"t":13670,"type":"marker","label":"Share and save"}
+{"t":14270,"type":"cursorMove","x":1070,"y":72}
+{"t":14570,"type":"cursorMove","x":1110,"y":42}
+{"t":14720,"type":"click","x":1110,"y":42,"button":"left"}
+{"t":14720,"type":"element","name":"Lesson settings","role":"button"}
+{"t":15320,"type":"cursorMove","x":860,"y":500}
+{"t":15620,"type":"cursorMove","x":900,"y":470}
+{"t":15770,"type":"click","x":900,"y":470,"button":"left"}
+{"t":15770,"type":"element","name":"Share this lesson with the class page","role":"check box"}
+{"t":16370,"type":"cursorMove","x":1060,"y":670}
+{"t":16670,"type":"cursorMove","x":1100,"y":640}
+{"t":16820,"type":"click","x":1100,"y":640,"button":"left"}
+{"t":16820,"type":"element","name":"OK","role":"button"}
+{"t":17320,"type":"window","title":"Notification","process":"otherapp.exe"}
+{"t":17920,"type":"cursorMove","x":260,"y":330}
+{"t":18220,"type":"cursorMove","x":300,"y":300}
+{"t":18370,"type":"click","x":300,"y":300,"button":"left"}
+{"t":18370,"type":"element","name":"Dismiss","role":"button"}
+{"t":18770,"type":"window","title":"Practice Planner (OpenStage Studio sample program)","process":"openstage-studio.exe","bounds":{"x":0,"y":0,"width":1920,"height":1080}}
+{"t":19570,"type":"key","key":"s","modifiers":["ctrl"]}
+{"t":19970,"type":"cli

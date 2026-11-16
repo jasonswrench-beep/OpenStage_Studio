@@ -1,6 +1,6 @@
 {
   "format": "openstage-studio-script",
-  "version": 2,
+  "version": 3,
   "title": "Guard test: a planted path",
   "goal": "Check that the frame scan flags a file path that appears on screen but not in the script.",
   "program": { "id": "practice-planner", "name": "Practice Planner", "version": "1.0" },

@@ -9,6 +9,8 @@ type Obj = Record<string, unknown>;
 const STEPS: Record<number, { says: string; run: (s: Obj) => Obj }> = {
   // Version 2 added the optional `publish` block and `redactions`. Nothing in a version 1 script changes meaning.
   1: { says: "Version 2 added the publishing details and blurred boxes; nothing in this script changed.", run: (s) => ({ ...s, version: 2 }) },
+  // Version 3 added a step's optional `describe`, for the description track. Nothing in a version 2 script changes meaning.
+  2: { says: "Version 3 added descriptions for viewers who cannot see the screen; nothing in this script changed.", run: (s) => ({ ...s, version: 3 }) },
 };
 
 export interface Migrated {

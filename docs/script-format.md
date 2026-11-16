@@ -1,4 +1,4 @@
-# The tutorial script format (version 2)
+# The tutorial script format (version 3)
 
 A tutorial script is one JSON file that fully describes one video. A person or any AI model can write one, and the player
 performs it without interpretation. `src/script/format.ts` holds the types and `src/script/validate.ts` the validator,
@@ -9,7 +9,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | Field | Required | What it holds |
 |---|---|---|
 | `format` | yes | Always `"openstage-studio-script"`. |
-| `version` | yes | `2`. A version 1 script is read as version 2 (see "Versions" below). A newer number is refused with a message saying a newer Studio made it. |
+| `version` | yes | `3`. A version 1 or 2 script is read as version 3 (see "Versions" below). A newer number is refused with a message saying a newer Studio made it. |
 | `title` | yes | The video's title, at most 100 characters (it goes on the title card). |
 | `goal` | yes | One line: what the viewer can do after watching. |
 | `program` | yes | `{ "id": "practice-planner", "name": "Practice Planner", "version": "1.0" }`. The id is how Studio finds the program to launch (`src/pipeline/programs.ts`); the name goes on the cards. |
@@ -38,6 +38,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | `hold` | Extra pause after the narration, 0 to 10 seconds | `0.5` |
 | `expect` | What must be true afterward, for rehearsal | `A new untitled lesson is selected` |
 | `chapter` | Starts a chapter of the video here | `Share and save` |
+| `describe` | For a viewer who cannot see the screen: what the step shows that the narration does not say, at most 280 characters (version 3). It goes into the video's description track and the transcript | `The new lesson appears at the bottom of the list, highlighted.` |
 
 ### Actions
 
@@ -68,11 +69,12 @@ Any callout may have a `color` (`#E0182D`). Callouts show from the moment of the
   is given (`validateScript(script, { controls })`), any target not in it is an error.
 - `expect` is optional, but a script counts as rehearsed only when every step has one.
 - A blurred box stays inside the 1920 by 1080 picture, and its steps are steps of the script.
+- A step's `describe` is at most 280 characters.
 - Warnings (not errors): narration of more than two sentences, or longer than 280 characters; a description or tags
   longer than video sites usually allow.
 
 The script scan (docs/guard.md) runs when a video is made, not here: it checks the words a viewer will see or hear
-(the title, goal, intro, outro, narration, typed values, callout labels, chapter names, description and tags) against
+(the title, goal, intro, outro, narration, typed values, callout labels, chapter names, a step's `describe`, the description and tags) against
 the blocklist. Notes for people (`startState.note`, `expect`, `writtenBy`, a blurred box's `reason`) are not checked.
 
 ## Project settings
@@ -113,3 +115,13 @@ back unless the review screen adds a blurred box, which also writes the new vers
 |---|---|
 | 1 | The first format (phase 1). |
 | 2 | Added `publish` and `redactions` (phase 2). Nothing in a version 1 script changes meaning. |
+| 3 | Added a step's `describe`, for the description track (2026-11-15). Nothing in a version 2 script changes meaning. |
+
+## The description track
+
+Every video gets `descriptions.vtt` beside its captions: a WebVTT file for a player's descriptions track
+(`kind="descriptions"`), for viewers who cannot see the screen. It is made from the script and the timeline by fixed rules
+(`src/captions/descriptions.ts`): the title card's words, then for each step the words typed (when the narration does not
+say them), the keys pressed, a callout label's words, and the step's `describe`, timed from the step's action to its end;
+then the end card's words. The transcript has each `describe` too. The description is text only for now: speaking it waits
+for the OpenStage shared core's speech engine (C5; `CORE-REQUESTS.md`, S1).

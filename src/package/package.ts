@@ -114,6 +114,8 @@ export function uploadText(r: VideoRecord): string {
     "",
     `Narration: ${r.narration}. It is a generic computer voice describing real footage of the program, not a real person's voice. Set the upload's disclosure question to match.`,
     "",
+    "Descriptions: descriptions.vtt (when present) describes, for viewers who cannot see the screen, what the narration does not say. Add it as the video's descriptions track where the site allows one, and link the transcript, which includes it. Spoken description is not in the video yet.",
+    "",
     "Transcript: transcript.txt, to link from the description or post with the manual.",
     "",
     `Approved for upload by ${r.approvedBy}.`,

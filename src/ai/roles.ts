@@ -7,14 +7,14 @@ import { jsonIn } from "./ask.ts";
 import type { ControlFact } from "../pipeline/program-session.ts";
 import type { ProgramEntry } from "../pipeline/programs.ts";
 import type { Script, Step } from "../script/format.ts";
-import { ACTIONS } from "../script/format.ts";
+import { ACTIONS, SCRIPT_VERSION } from "../script/format.ts";
 
 // Shared rules ---------------------------------------------------------------------------------------------------------
 
-const NEVER = "Never name or compare to other companies' products, and never invent people, places or data beyond the demo project's own.";
+export const NEVER = "Never name or compare to other companies' products, and never invent people, places or data beyond the demo project's own.";
 
 /** Ask for JSON, check it, and ask again (up to `tries` times) with the problems if it does not pass. */
-async function askChecked<T>(a: Answerer, system: string, user: string, check: (v: unknown) => { value?: T; problems: string[] }, tries = 3, maxTokens = 8000): Promise<{ value: T; rounds: number }> {
+export async function askChecked<T>(a: Answerer, system: string, user: string, check: (v: unknown) => { value?: T; problems: string[] }, tries = 3, maxTokens = 8000): Promise<{ value: T; rounds: number }> {
   let prompt = user;
   let last: string[] = [];
   for (let round = 1; round <= tries; round++) {
@@ -145,7 +145,7 @@ export async function writeScript(a: Answerer, w: WriterInput): Promise<{ script
   const { value, rounds } = await askChecked<Script>(a, WRITER, user, (v) => {
     const o = v as Record<string, unknown>;
     const script = {
-      format: "openstage-studio-script", version: 2,
+      format: "openstage-studio-script", version: SCRIPT_VERSION,
       title: o.title, goal: o.goal,
       program: { id: w.program.id, name: w.program.name },
       driver: "hook",

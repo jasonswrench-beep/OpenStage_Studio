@@ -1,3 +1,4 @@
+import { SCRIPT_VERSION } from "../src/script/format.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -6,7 +7,7 @@ import { describeProblems, looksLikePath, sentenceCount, validateScript } from "
 
 const good = () => ({
   format: "openstage-studio-script",
-  version: 2,
+  version: SCRIPT_VERSION,
   title: "Add a lesson",
   goal: "Make a new lesson.",
   program: { id: "practice-planner", name: "Practice Planner" },
@@ -124,7 +125,7 @@ test("a script without expect on every step passes but is not rehearsed", () => 
 
 test("a newer format version says so plainly", () => {
   const s = good();
-  s.version = 3;
+  s.version = SCRIPT_VERSION + 1;
   assert.match(validateScript(s).errors[0].message, /newer OpenStage Studio/);
 });
 
@@ -162,12 +163,12 @@ test("anything that is not an object is refused with a plain message", () => {
   assert.equal(validateScript("script").errors.length, 1);
 });
 
-test("a version 1 script is brought up to version 2 and still passes", () => {
+test("a version 1 script is brought up to the current version and still passes", () => {
   const s = good() as unknown as Record<string, unknown>;
   s.version = 1;
   const v = validateScript(s);
   assert.equal(v.ok, true);
-  assert.equal(v.script?.version, 2);
+  assert.equal(v.script?.version, SCRIPT_VERSION);
   assert.equal(v.warnings[0].path, "version");
 });
 
@@ -195,5 +196,5 @@ test("a blurred box is added to a script without disturbing its layout", async (
   const twice = addRedaction(once, { ...box, box: [10, 10, 50, 20] });
   assert.equal(validateScript(JSON.parse(twice)).script?.redactions?.length, 2);
   const old = JSON.stringify({ ...JSON.parse(text), version: 1 }, null, 2);
-  assert.equal(JSON.parse(addRedaction(old, box)).version, 2, "an older script is brought up to date");
+  assert.equal(JSON.parse(addRedaction(old, box)).version, SCRIPT_VERSION, "an older script is brought up to date");
 });

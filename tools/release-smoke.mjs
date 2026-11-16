@@ -29,6 +29,8 @@ const PAGES = {
   "Make a video": "Make the video",
   Review: "Open a video's folder…",
   "From a manual": "Choose a manual…",
+  "From a recording": "Make a draft script",
+  Lecture: "Write the lecture",
   Queue: "Run the queue",
   "Release check": "Run the release check",
   AI: "Save and try it",

@@ -367,10 +367,13 @@ export function titleCard(script: Script): Card {
   return { kicker: script.program.name, title: script.title, lines: [script.goal] };
 }
 
+/** The program id a lecture's script carries (src/lecture/to-script.ts): a lecture has no program, and no manual. */
+export const LECTURE_PROGRAM = "lecture";
+
 export function endCard(script: Script): Card {
   const lines = [];
   if (script.playlist) lines.push(`More videos in the playlist ${script.playlist.name}`);
-  lines.push(`The ${script.program.name} manual has every step in writing.`);
+  lines.push(script.program.id === LECTURE_PROGRAM ? "The transcript has everything said and shown." : `The ${script.program.name} manual has every step in writing.`);
   return { kicker: script.program.name, title: "Thanks for watching", lines };
 }
 

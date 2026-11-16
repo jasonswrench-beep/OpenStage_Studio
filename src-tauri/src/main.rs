@@ -40,9 +40,20 @@ fn pick_monitor(window: &tauri::WebviewWindow, n: usize) -> tauri::Result<Option
     Ok(others.get(n - 2).cloned().or(primary))
 }
 
+/// The browser engine's settings for every window this program opens, the same as a take's (`demoEnvironment` in
+/// src/pipeline/programs.ts; a test keeps the two equal). Studio's window and the practice program share one browser data
+/// folder, and the engine refuses to share it between two sets of settings: with Studio's window on its own settings, a
+/// take started from the window got a blank practice program. A data folder of the practice program's own was tried
+/// (2026-11-15) and made takes differ by a brightness level on rounded corners from run to run; the shared folder did not.
+const BROWSER_SETTINGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-lcd-text";
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let sample = args.iter().any(|a| a == "--sample-program");
+    // Before any window is made. A take sets the same value itself when it starts the practice program.
+    if std::env::var_os("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").is_none() {
+        std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", BROWSER_SETTINGS);
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -97,12 +108,6 @@ fn main() {
                 .decorations(false)
                 .resizable(false)
                 .visible(false);
-            // Its own browser-engine data folder: the engine is started with the take's settings (grey text smoothing,
-            // src/pipeline/programs.ts), and it refuses to share a data folder with Studio's own window, which runs with the
-            // engine's ordinary settings, so a take started from the window would get a blank program.
-            if let Ok(local) = app.path().app_local_data_dir() {
-                builder = builder.data_directory(local.join("practice-program"));
-            }
             let hooked = hook_settings(&args);
             if let Some((endpoint, token)) = &hooked {
                 let settings = serde_json::json!({ "endpoint": endpoint, "token": token });

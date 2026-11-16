@@ -78,7 +78,7 @@ const jobs: Record<string, (a: Args) => Promise<unknown>> = {
       ai: { choice: ai.choice, preset: ai.preset ?? null, model: ai.model ?? null, address: ai.address ?? null, pictures: ai.pictures ?? null, hasKey: !!ai.key, says: describeChoice(ai), file: settingsFile() },
       presets: PRESETS.map((p) => ({ id: p.id, name: p.name, defaultModel: p.defaultModel ?? null, custom: p.id === "custom" })),
       hostedNote: HOSTED_NOTE,
-      programs: PROGRAMS.map((p) => ({ id: p.id, name: p.name })),
+      programs: PROGRAMS.map((p) => ({ id: p.id, name: p.name, demos: (p.demos ?? []).map((d) => d.name) })),
       connector: readConnector(),
       authorExe: author,
     };
@@ -100,7 +100,17 @@ const jobs: Record<string, (a: Args) => Promise<unknown>> = {
       : [];
     videos.sort((a, b) => b.at - a.at);
     const series = seriesDirs.filter((d) => existsSync(join(d, "plan.json")));
-    return { workspace: ws, scripts, videos, series };
+    const lectureDirs = [join(ws, "lectures"), join(examplesDir(), "lectures")].filter((d) => existsSync(d));
+    const lectures = lectureDirs.flatMap((d) => readdirSync(d).filter((n) => n.toLowerCase().endsWith(".json")).map((n) => join(d, n)))
+      .flatMap((file) => {
+        try {
+          const l = JSON.parse(readFileSync(file, "utf8"));
+          return l.format === "openstage-studio-lecture" ? [{ file, title: String(l.title ?? basename(file)), slides: Array.isArray(l.slides) ? l.slides.length : 0 }] : [];
+        } catch {
+          return [];
+        }
+      });
+    return { workspace: ws, scripts, videos, series, lectures };
   },
 
   async "make-video"(a) {
@@ -179,6 +189,48 @@ const jobs: Record<string, (a: Args) => Promise<unknown>> = {
     } finally {
       await ai.close();
     }
+  },
+
+  /** Notes or a manual's chapter become a lecture (src/lecture/write.ts); a person approves it before the video. */
+  async "write-lecture"(a) {
+    const { writeLecture } = await import("../lecture/write.ts");
+    const r = await writeLecture(need(a, "source"), { chapter: text(a, "chapter"), useAi: a.useAi !== false, log });
+    return { file: r.file, slides: r.lecture.slides.length, ai: r.ai, warnings: r.warnings };
+  },
+
+  /** What a lecture holds, whether it passes the check, and whether a person has approved it. */
+  async "lecture-info"(a) {
+    const { readLecture } = await import("../lecture/make-lecture.ts");
+    const file = resolve(need(a, "file"));
+    const r = readLecture(file);
+    return {
+      file, title: r.lecture.title, goal: r.lecture.goal, writtenBy: r.lecture.writtenBy ?? null, problems: r.problems, approved: r.approved,
+      slides: (r.lecture.slides ?? []).map((s) => ({ title: s.title, points: s.points ?? [], narration: s.narration, picture: s.picture ?? null })),
+    };
+  },
+
+  async "approve-lecture"(a) {
+    const { approveLecture } = await import("../lecture/write.ts");
+    const l = approveLecture(resolve(need(a, "file")), need(a, "by"));
+    log(`Approved by ${l.approval!.by}.`);
+    return { by: l.approval!.by, at: l.approval!.at };
+  },
+
+  async "make-lecture"(a) {
+    const { makeLecture } = await import("../lecture/make-lecture.ts");
+    const made = await makeLecture(need(a, "file"), { log });
+    return { folder: made.folder, video: made.video, seconds: Math.round(made.timeline.durationMs / 100) / 10, flags: made.review?.flags.length ?? 0, frameDigest: made.frameDigest };
+  },
+
+  /** A recording (the shared capture format) becomes a draft script, checked in the program (src/recording/import.ts). */
+  async "import-recording"(a) {
+    const { importRecording } = await import("../recording/import.ts");
+    const take = a.take === undefined || a.take === "" ? undefined : Number(a.take);
+    if (take !== undefined && !Number.isInteger(take)) throw new Error("The take is a whole number.");
+    const r = await importRecording(need(a, "project"), {
+      ...(take !== undefined ? { take } : {}), demoProject: text(a, "demo"), title: text(a, "title"), goal: text(a, "goal"), log,
+    });
+    return { file: r.file, notesFile: r.notesFile, resolved: r.resolved, steps: r.draft.script.steps.length, take: r.draft.take, program: r.draft.program.name, notes: r.draft.notes, problems: r.problems };
   },
 
   async "plan-series"(a) {

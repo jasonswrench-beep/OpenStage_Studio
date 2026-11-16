@@ -102,7 +102,7 @@ export async function checkReach(log: (s: string) => void = console.log): Promis
       for (let turn = 0; turn < 40 && !done; turn++) {
         const r = await client.beta.messages.create({
           model, max_tokens: 16000, tools, messages,
-          system: "You are an outside assistant using OpenStage Studio through its connector. Use the tools; read docs only through them. A script's format: {format: \"openstage-studio-script\", version: 2, title, goal, program: {id, name}, driver, startState: {demoProject}, steps: [{action, target, value, narration, expect}]}. Every step needs narration (one or two sentences).",
+          system: "You are an outside assistant using OpenStage Studio through its connector. Use the tools; read docs only through them. A script's format: {format: \"openstage-studio-script\", version: 3, title, goal, program: {id, name}, driver, startState: {demoProject}, steps: [{action, target, value, narration, expect}]}. Every step needs narration (one or two sentences).",
           betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
         } as Anthropic.Beta.MessageCreateParamsNonStreaming);
         messages.push({ role: "assistant", content: r.content as Anthropic.Beta.BetaContentBlockParam[] });
