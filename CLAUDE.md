@@ -133,7 +133,8 @@ Use original code, assets and design.
   or release notes. This overrides any default attribution a tool suggests.
 - Before building any installer, commit everything (the working tree clean) and tag that commit with the release
   (`v<RELEASE>`, such as `v0.1.0-alpha.2`). Then build from it, so each release tag points at the exact commit the build
-  came from. A build to check something is no exception: commit and tag first, or do not build.
+  came from. A build only to check something, never published, may skip the tag (Jason, 2026-11-17), but everything is
+  still committed first. A setup built without a tag is never published: to publish, tag the commit and build again.
 
 ## Working style
 
