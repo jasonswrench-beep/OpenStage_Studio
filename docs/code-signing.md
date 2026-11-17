@@ -36,15 +36,17 @@ published without the owner's yes.
 
 1. Raise `RELEASE` in `tools/build-installer.mjs` to the new version, such as `0.1.0-alpha.2`.
 2. Run the checks (`Test Everything.bat`, `Check Licences.bat`, `Check Same Video.bat`, and the other acceptance checks),
-   commit, and push the commit to `main` first.
-3. On the owner's computer, signed in to the signing service (`az login`), with the account's details in the environment
+   then commit everything (as `jasonswrench-beep`, with no Co-Authored-By or "Generated with" lines; `CLAUDE.md`), so the
+   working tree is clean. Tag that commit `v<release>` and push the commit and the tag to `main`. The tag comes before
+   the build, so it points at the exact commit the build came from.
+3. On the owner's computer, from that tagged commit, signed in to the signing service (`az login`), with the account's details in the environment
    (the top of `tools/sign_windows.py` names them: `OPENSTAGE_SIGN_ENDPOINT`, `OPENSTAGE_SIGN_ACCOUNT`,
    `OPENSTAGE_SIGN_PROFILE`, and optionally `OPENSTAGE_SIGN_PUBLISHER`): `node tools/build-installer.mjs --sign`. It stops
    on any problem: a Node.js that is not the pinned build, a file that names this computer's user folder, an installer
    that would download the web view's setup, a missing file, or a program in the setup that is not signed and timestamped.
    It writes `src-tauri/target/release-files/OpenStage-Studio-<release>-Setup.exe` and its `.sha256.txt`.
 4. Run `Test Installed App.bat` on the signed setup.
-5. Make the pre-release with exactly those two files, tagged at the pushed commit (the full hash), titled "OpenStage
+5. Make the pre-release with exactly those two files, on the tag pushed in step 2, titled "OpenStage
    Studio X.Y.Z alpha N", with notes in plain words and no em dashes: what changed, who signed it, the SHA-256, what has
    NOT been tried, and the commit.
 6. Check the release: the tag points at the commit, GitHub's own SHA-256 of the setup is the one computed, there are

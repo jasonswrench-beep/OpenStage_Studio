@@ -124,6 +124,17 @@ Use original code, assets and design.
   back with the problems in words until it passes. Prefer a fixed check over asking the AI to judge.
 - Scripts record who wrote them (`writtenBy`) and whether a person edited them, for the guard report.
 
+### Commits and releases (Jason, 2026-11-17)
+
+- Commit as `jasonswrench-beep <324576087+jasonswrench-beep@users.noreply.github.com>`. It is set in this repository's
+  own git config (`git config --local user.name` / `user.email`); check both before every commit, and set them again if
+  they differ.
+- No `Co-Authored-By` lines and no "Generated with Claude Code" lines, ever: not in commit messages, tags, pull requests
+  or release notes. This overrides any default attribution a tool suggests.
+- Before building any installer, commit everything (the working tree clean) and tag that commit with the release
+  (`v<RELEASE>`, such as `v0.1.0-alpha.2`). Then build from it, so each release tag points at the exact commit the build
+  came from. A build to check something is no exception: commit and tag first, or do not build.
+
 ## Working style
 
 - Explain what changed in plain language. Do not assume familiarity with JavaScript or Rust tooling.
