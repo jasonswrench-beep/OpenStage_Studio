@@ -106,6 +106,14 @@ export const PROGRAMS: ProgramEntry[] = [
     demos: [
       { name: "giving-feedback", about: "Giving Feedback: a workshop for new team leads, the program manual's own made-up workshop: three modules, seven lessons of 15, 20, 25, 15, 35, 15 and 5 minutes (130 in all), blocks of many kinds, Handout 2.1: Feedback planning sheet, the facilitator-only Form 2.2: Observer notes for the practice rounds, and a four-question Level Two quiz. It opens as the guide called Giving Feedback." },
     ],
+    appearing: [
+      { pattern: "dialog.ok", about: "the main button of the dialog that is open, whatever its words (Create, Open, OK)" },
+      { pattern: "dialog.cancel", about: "the Cancel button of the dialog that is open" },
+      { pattern: "dialog.close", about: "the Close button of the window that is open: a dialog's X, the Keyboard keys window's Close, the command search's X" },
+      { pattern: "dialog.name", about: "the name box of the New guide dialog" },
+      { pattern: "page.cs-input", about: "the box of Search for a command, once it is open (bar.search or Ctrl+K)" },
+      { pattern: "page.cs-opt-*", about: "the command numbered * in the list Search for a command shows, counting from 0 at the top" },
+    ],
     notes: "The welcome page shows first. A menu's commands show only after its name is clicked (menu.file, menu.edit and the rest); a command is menu.<menu>.<command>, such as menu.file.newGuide or menu.help.about. The buttons on the navy bar while a guide is open are bar.reviewGuide, bar.updateGuide and bar.participantWorkbook; bar.search opens the command search. A dialog's buttons are dialog.ok (its main button, whatever its words), dialog.cancel and dialog.close. Opening a demo guide shows the guide on the left and the tools pane on the right. In demo mode the tools pane's controls are pane.<id> and other page controls page.<id>; a dialog's boxes are dialog.name and dialog.field.<field>, its choices dialog.guide.<guide> and dialog.choice.<choice>, and a guide on the welcome page welcome.guide.<guide>, where <guide> is the guide's name in small letters with hyphens (welcome.guide.giving-feedback).",
   },
 ];
