@@ -365,6 +365,16 @@ function pressKey(target: HTMLElement, key: string, modifiers: string[]) {
     } else if (key === "A" && init.ctrlKey && !init.altKey && (isInput(target) || isTextArea(target))) {
       // Select all of the box's words, so the next typing replaces them.
       target.select();
+    } else if (key === "A" && init.ctrlKey && !init.altKey && target.isContentEditable) {
+      // The same in an editable area (a box that shows bold and italic as it is typed in): all of its words, from its outermost
+      // editable element.
+      let root: HTMLElement = target;
+      while (root.parentElement?.isContentEditable) root = root.parentElement;
+      const range = root.ownerDocument.createRange();
+      range.selectNodeContents(root);
+      const selection = view.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
     }
   }
   target.dispatchEvent(new view.KeyboardEvent("keyup", init));
