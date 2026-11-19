@@ -69,8 +69,10 @@ export interface TextOnScreen {
 }
 
 /** Version 2 added the `text` command. Version 3 added a box's words, whether it takes several lines and whether it
- * has the focus to each control's report, and made Ctrl+A select a box's words. */
-export const HOOK_VERSION = 3;
+ * has the focus to each control's report, and made Ctrl+A select a box's words. Version 4 reaches the program's own
+ * frames (the same origin, such as a tools pane): their named controls are found, pressed and reported, and their text
+ * read, with every place given on the program's page. No command changed. */
+export const HOOK_VERSION = 4;
 
 /** Whether an endpoint is on this computer only. The hook never talks to anything else. */
 export function isLoopback(endpoint: string): boolean {

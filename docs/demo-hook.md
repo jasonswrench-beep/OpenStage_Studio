@@ -11,6 +11,11 @@ sides) and `hook.ts` (the part a program includes).
 - It only talks to this computer (`127.0.0.1`, `localhost` or `[::1]`), and every request carries a one-time token the
   player made for the take. Anything else is refused on both sides.
 - Controls are found by stable names, never by their visible labels. Rewording a button does not break a script.
+- The hook also works inside the program's own frames (the same origin, such as OpenStage Guide's tools pane): their named
+  controls are listed, found, pressed and typed into, their text is read for the frame scan, and every place is reported
+  on the program's page. A frame that opens later is put in demo mode the first time the hook is asked anything after it
+  appears. Frames from other sites cannot be reached and are left out. Tab moves within the page or frame that has the
+  focus.
 - In demo mode the page holds still and ignores the real mouse: transitions and animations are off, the text caret does
   not blink, and pointer events are switched off so a resting or stray mouse cannot change what is recorded. The hook's
   own clicks are unaffected.
@@ -62,8 +67,9 @@ sides) and `hook.ts` (the part a program includes).
 | `settle` | Waits for fonts, any running animations and two drawn frames, so a still picture shows the finished result. |
 | `text` | Lists every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their placeholder), and the choice showing in each drop-down list. Text hidden, scrolled out of view or clipped is left out. For the frame scan (docs/guard.md); it never changes the page. |
 
-The hook's version is 3. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
-`list`, and Ctrl+A. Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
+The hook's version is 4. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
+`list`, and Ctrl+A; version 4 reaches the program's own frames, with no command changed (`Check Same Video.bat` passed
+after it, 2026-11-19: every one of the 3,284 frames identical). Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
 only, and rehearsal skips its check on typing into a box that already holds words (docs/ai.md).
 
 ## Programs with the hook
@@ -72,3 +78,4 @@ only, and rehearsal skips its check on typing into a box that already holds word
 |---|---|
 | Practice Planner (the invented sample in `sample-program/`) | Built in; used for the tests and the example. |
 | OpenStage Author (the first product, chosen 2026-11-14) | On the branch `studio-demo-hook` of Author's repository (pushed; not merged into Author's main): `editor/src/demohook/` (a copy of this folder), `editor/src-tauri/src/demo.rs` (the launch flags), every menu and menu command named from its key in Author's command table (`menu.insert`, `menu.insert.add-text`, `menu.help.keys`), and the examples as its demo library (`minimal`, `lesson-parts` and the rest). `examples/author/first-look.json` is its first script. Buttons in panes and dialogs are not named yet. |
+| OpenStage Guide (chosen 2026-11-19) | On the branch `studio-demo-hook` of Guide's repository (not merged): `program/ui/demo-hook.js` and `demo-protocol.js` are made from this folder by Guide's `scripts/demo-hook-sync.mjs`, never edited by hand; `shell/src-tauri/src/demo.rs` (the launch flags); every menu, menu command and button of the navy bar named from its command's id (`menu.file.newGuide`, `bar.reviewGuide`); its demo guides in `demo/`. Its tools pane is a frame of the page, reached since hook version 4. |

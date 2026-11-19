@@ -45,6 +45,73 @@ select { will-change: transform; appearance: none !important; background-image: 
 // Each list is also drawn on a layer of its own (will-change), which fixes how its words are smoothed: otherwise the browser
 // chose between plain grey and coloured fringes by itself, which made two takes differ.
 
+/** A page the hook works in: the program's own page, or a frame inside it that comes from the program itself (the same
+ * origin), such as a tools pane. `offset` is where the frame's top-left corner is on the program's page, and `clip` the
+ * part of the program's page the frame shows through. Every place the hook reports is on the program's page. Frames from
+ * other sites cannot be reached and are left out. */
+interface Surface {
+  doc: Document;
+  offset: [number, number];
+  clip: DOMRect;
+}
+
+type PageWindow = Window & typeof globalThis;
+
+/** The window an element belongs to: the program's own, or a frame's. Each has its own kinds of element and event. */
+function windowOf(el: Element): PageWindow {
+  return (el.ownerDocument.defaultView ?? window) as PageWindow;
+}
+
+const isInput = (el: Element): el is HTMLInputElement => el instanceof windowOf(el).HTMLInputElement;
+const isTextArea = (el: Element): el is HTMLTextAreaElement => el instanceof windowOf(el).HTMLTextAreaElement;
+const isSelect = (el: Element): el is HTMLSelectElement => el instanceof windowOf(el).HTMLSelectElement;
+const isButton = (el: Element): el is HTMLButtonElement => el instanceof windowOf(el).HTMLButtonElement;
+
+/** The program's page and every frame in it the hook can reach and that shows, outermost first. */
+function surfaces(): Surface[] {
+  const out: Surface[] = [];
+  const visit = (doc: Document, offset: [number, number], clip: DOMRect) => {
+    out.push({ doc, offset, clip });
+    for (const frame of Array.from(doc.querySelectorAll<HTMLIFrameElement>("iframe, frame"))) {
+      let inner: Document | null = null;
+      try {
+        inner = frame.contentDocument;
+      } catch {
+        inner = null; // a frame from another site
+      }
+      if (!inner?.body || !shows(frame)) continue;
+      const r = frame.getBoundingClientRect();
+      const s = windowOf(frame).getComputedStyle(frame);
+      const left = offset[0] + r.left + frame.clientLeft + parseFloat(s.paddingLeft);
+      const top = offset[1] + r.top + frame.clientTop + parseFloat(s.paddingTop);
+      const width = frame.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+      const height = frame.clientHeight - parseFloat(s.paddingTop) - parseFloat(s.paddingBottom);
+      const around = clipOf(frame);
+      if (!around) continue;
+      const box = within(new DOMRect(left, top, width, height), clip);
+      const seen = box && within(new DOMRect(box[0], box[1], box[2], box[3]), shift(around, offset));
+      if (!seen) continue;
+      visit(inner, [left, top], new DOMRect(seen[0], seen[1], seen[2], seen[3]));
+    }
+  };
+  visit(document, [0, 0], new DOMRect(0, 0, innerWidth, innerHeight));
+  return out;
+}
+
+function shift(r: DOMRect, by: [number, number]): DOMRect {
+  return new DOMRect(r.left + by[0], r.top + by[1], r.width, r.height);
+}
+
+/** Every named control, in the program's page and its frames. */
+function named(all = surfaces()): { el: HTMLElement; at: Surface }[] {
+  return all.flatMap((at) => Array.from(at.doc.querySelectorAll<HTMLElement>("[data-demo-id]")).map((el) => ({ el, at })));
+}
+
+/** Where an element's page sits on the program's page. */
+function surfaceOf(el: Element, all = surfaces()): Surface {
+  return all.find((s) => s.doc === el.ownerDocument) ?? all[0];
+}
+
 export function controlLabel(el: Element): string {
   const aria = el.getAttribute("aria-label");
   if (aria) return aria.trim();
@@ -77,21 +144,24 @@ function controlRole(el: Element): string {
   return tag === "button" ? "button" : tag;
 }
 
+/** A named control, in the program's page or in one of its frames (the page first). */
 function find(id: string): HTMLElement {
-  const el = document.querySelector<HTMLElement>(`[data-demo-id="${CSS.escape(id)}"]`);
-  if (!el) throw new Error(`There is no control called "${id}" on screen.`);
-  return el;
+  for (const { doc } of surfaces()) {
+    const el = doc.querySelector<HTMLElement>(`[data-demo-id="${CSS.escape(id)}"]`);
+    if (el) return el;
+  }
+  throw new Error(`There is no control called "${id}" on screen.`);
 }
 
-function info(el: HTMLElement): ControlInfo {
+function info(el: HTMLElement, at = surfaceOf(el)): ControlInfo {
   const r = el.getBoundingClientRect();
-  const style = getComputedStyle(el);
+  const style = windowOf(el).getComputedStyle(el);
   const visible = r.width > 0 && r.height > 0 && style.visibility !== "hidden" && style.display !== "none";
   return {
     id: el.dataset.demoId!,
     label: controlLabel(el),
     role: controlRole(el),
-    rect: [r.left, r.top, r.width, r.height],
+    rect: [r.left + at.offset[0], r.top + at.offset[1], r.width, r.height],
     visible,
     enabled: !(el as HTMLButtonElement).disabled && el.getAttribute("aria-disabled") !== "true",
     ...boxFacts(el),
@@ -101,9 +171,9 @@ function info(el: HTMLElement): ControlInfo {
 
 /** For a box: the words in it now, and whether it takes several lines. A password box's words are never reported. */
 function boxFacts(el: HTMLElement): { value?: string; multiline?: boolean } {
-  if (el instanceof HTMLSelectElement) return { value: el.selectedOptions[0]?.text ?? "", multiline: false };
-  if (el instanceof HTMLTextAreaElement) return { value: el.value, multiline: true };
-  if (el instanceof HTMLInputElement) {
+  if (isSelect(el)) return { value: el.selectedOptions[0]?.text ?? "", multiline: false };
+  if (isTextArea(el)) return { value: el.value, multiline: true };
+  if (isInput(el)) {
     if (["checkbox", "radio", "range", "color", "file", "hidden", "button", "submit", "reset"].includes(el.type)) return {};
     return el.type === "password" ? { multiline: false } : { value: el.value, multiline: false };
   }
@@ -117,18 +187,38 @@ function boxFacts(el: HTMLElement): { value?: string; multiline?: boolean } {
  * whether or not its window is in front. */
 let lastFocus: HTMLElement | null = null;
 
-/** In demo mode, note every focus() and blur() call the page makes. */
-function watchFocus() {
-  const realFocus = HTMLElement.prototype.focus;
-  const realBlur = HTMLElement.prototype.blur;
-  HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions) {
+/** The element kinds whose focus() and blur() are already watched, one per page or frame (a frame that loads a new page
+ * gets new ones). */
+const watched = new WeakSet<object>();
+
+/** In demo mode, note every focus() and blur() call a page makes. */
+function watchFocus(win: PageWindow) {
+  const proto = win.HTMLElement.prototype;
+  if (watched.has(proto)) return;
+  watched.add(proto);
+  const realFocus = proto.focus;
+  const realBlur = proto.blur;
+  proto.focus = function (this: HTMLElement, options?: FocusOptions) {
     lastFocus = this;
     return realFocus.call(this, options);
   };
-  HTMLElement.prototype.blur = function (this: HTMLElement) {
+  proto.blur = function (this: HTMLElement) {
     if (lastFocus === this) lastFocus = null;
     return realBlur.call(this);
   };
+}
+
+/** Put a page or frame into demo mode once: the steady look, focus watched, its style rules rewritten. A frame that opens
+ * later (a tools pane, say) is put in demo mode the first time the hook is asked anything after it appears. */
+function steady(doc: Document) {
+  if (doc.documentElement.dataset.demoMode === "on") return;
+  const style = doc.createElement("style");
+  style.dataset.demoHook = "steady";
+  style.textContent = STEADY_CSS;
+  (doc.head ?? doc.documentElement).append(style);
+  doc.documentElement.dataset.demoMode = "on";
+  watchFocus((doc.defaultView ?? window) as PageWindow);
+  steadySheets(doc);
 }
 
 /** Give a control the keyboard focus, and remember it. */
@@ -150,17 +240,18 @@ const STATE_MARKS = ["data-demo-focus", "data-demo-focus-visible", "data-demo-fo
 
 /** Rewrite the page's style rules so focus and hover follow the hook's markers (see steadySelector). Rules added since the
  * last time are rewritten too; rules from other sites cannot be read and are left as they are. */
-function steadySheets() {
+function steadySheets(doc: Document) {
+  const view = (doc.defaultView ?? window) as PageWindow;
   const rewrite = (rules: CSSRuleList) => {
     for (const rule of Array.from(rules)) {
-      if (rule instanceof CSSStyleRule) {
+      if (rule instanceof view.CSSStyleRule) {
         const next = steadySelector(rule.selectorText);
         if (next !== rule.selectorText) rule.selectorText = next;
       }
       if ("cssRules" in rule && (rule as CSSGroupingRule).cssRules) rewrite((rule as CSSGroupingRule).cssRules);
     }
   };
-  for (const sheet of [...Array.from(document.styleSheets), ...(document.adoptedStyleSheets ?? [])]) {
+  for (const sheet of [...Array.from(doc.styleSheets), ...(doc.adoptedStyleSheets ?? [])]) {
     try {
       rewrite(sheet.cssRules);
     } catch {
@@ -170,19 +261,24 @@ function steadySheets() {
 }
 
 /** Put the focus markers on the control that has the focus and on what holds it. */
-function markFocus() {
-  for (const name of STATE_MARKS) document.querySelectorAll(`[${name}]`).forEach((el) => el.removeAttribute(name));
+function markFocus(all = surfaces()) {
+  for (const { doc } of all) {
+    for (const name of STATE_MARKS) doc.querySelectorAll(`[${name}]`).forEach((el) => el.removeAttribute(name));
+  }
   const el = focused();
   if (!el) return;
   el.setAttribute("data-demo-focus", "");
   if (focusByKey || takesText(el)) el.setAttribute("data-demo-focus-visible", "");
-  for (let p: Element | null = el; p; p = p.parentElement) p.setAttribute("data-demo-focus-within", "");
+  // What holds the focus, up through the frame it is in and what holds that frame.
+  for (let p: Element | null = el; p; p = p.parentElement ?? (p.ownerDocument.defaultView?.frameElement ?? null)) {
+    p.setAttribute("data-demo-focus-within", "");
+  }
 }
 
 /** Whether typing can go into this control. */
 function takesText(el: HTMLElement): boolean {
-  return el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || el.isContentEditable ||
-    (el instanceof HTMLInputElement && !["button", "checkbox", "radio", "submit", "reset", "file", "image", "range", "color"].includes(el.type));
+  return isTextArea(el) || isSelect(el) || el.isContentEditable ||
+    (isInput(el) && !["button", "checkbox", "radio", "submit", "reset", "file", "image", "range", "color"].includes(el.type));
 }
 
 const frames = (n: number) => new Promise<void>((done) => {
@@ -192,85 +288,97 @@ const frames = (n: number) => new Promise<void>((done) => {
 
 /** Put text into a text field or editable area as if typed: one character at a time, with the events a keyboard sends. */
 function typeInto(el: HTMLElement, text: string) {
+  const view = windowOf(el);
   for (const ch of text) {
     const init = { key: ch, bubbles: true, cancelable: true };
-    const go = el.dispatchEvent(new KeyboardEvent("keydown", init));
+    const go = el.dispatchEvent(new view.KeyboardEvent("keydown", init));
     if (go) {
-      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      if (isInput(el) || isTextArea(el)) {
         const start = el.selectionStart ?? el.value.length;
         const end = el.selectionEnd ?? el.value.length;
         el.setRangeText(ch, start, end, "end");
-        el.dispatchEvent(new InputEvent("input", { bubbles: true, data: ch, inputType: "insertText" }));
+        el.dispatchEvent(new view.InputEvent("input", { bubbles: true, data: ch, inputType: "insertText" }));
       } else if (el.isContentEditable) {
-        document.execCommand("insertText", false, ch);
+        el.ownerDocument.execCommand("insertText", false, ch);
       }
     }
-    el.dispatchEvent(new KeyboardEvent("keyup", init));
+    el.dispatchEvent(new view.KeyboardEvent("keyup", init));
   }
 }
 
-function focusables(): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1']), [contenteditable='true']")]
+/** The controls Tab moves between, in the page or frame the focus is in. */
+function focusables(doc: Document): HTMLElement[] {
+  return [...doc.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1']), [contenteditable='true']")]
     .filter((el) => !(el as HTMLButtonElement).disabled && el.getClientRects().length > 0);
 }
 
 function pressKey(target: HTMLElement, key: string, modifiers: string[]) {
+  const view = windowOf(target);
   const name = key === "Space" ? " " : key.length === 1 ? key.toLowerCase() : key;
   const init: KeyboardEventInit = {
     key: name, bubbles: true, cancelable: true,
     ctrlKey: modifiers.includes("Ctrl"), altKey: modifiers.includes("Alt"), shiftKey: modifiers.includes("Shift"),
   };
-  const go = target.dispatchEvent(new KeyboardEvent("keydown", init));
+  const go = target.dispatchEvent(new view.KeyboardEvent("keydown", init));
   if (go) {
     // What the browser would do itself for these keys when nothing handled them.
     if (key === "Tab") {
-      const list = focusables();
-      const i = list.indexOf(document.activeElement as HTMLElement);
+      const list = focusables(target.ownerDocument);
+      const i = list.indexOf(target.ownerDocument.activeElement as HTMLElement);
       const next = list[(i + (init.shiftKey ? -1 : 1) + list.length) % list.length];
       next?.focus();
-    } else if ((key === "Enter" || key === "Space") && (target instanceof HTMLButtonElement || target.getAttribute("role") === "button")) {
+    } else if ((key === "Enter" || key === "Space") && (isButton(target) || target.getAttribute("role") === "button")) {
       target.click();
-    } else if (key === "Backspace" && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+    } else if (key === "Backspace" && (isInput(target) || isTextArea(target))) {
       const s = target.selectionStart ?? 0;
       const e = target.selectionEnd ?? 0;
       if (s !== e) target.setRangeText("", s, e, "end");
       else if (s > 0) target.setRangeText("", s - 1, s, "end");
-      target.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "deleteContentBackward" }));
-    } else if (key === "Enter" && target instanceof HTMLTextAreaElement) {
+      target.dispatchEvent(new view.InputEvent("input", { bubbles: true, inputType: "deleteContentBackward" }));
+    } else if (key === "Enter" && isTextArea(target)) {
       typeInto(target, "\n");
-    } else if (key === "A" && init.ctrlKey && !init.altKey && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+    } else if (key === "A" && init.ctrlKey && !init.altKey && (isInput(target) || isTextArea(target))) {
       // Select all of the box's words, so the next typing replaces them.
       target.select();
     }
   }
-  target.dispatchEvent(new KeyboardEvent("keyup", init));
+  target.dispatchEvent(new view.KeyboardEvent("keyup", init));
+}
+
+/** Take every hover look off, in the page and its frames. */
+function clearHover(all = surfaces()) {
+  for (const { doc } of all) doc.querySelectorAll("[data-demo-hover]").forEach((el) => el.removeAttribute("data-demo-hover"));
 }
 
 async function perform(command: Command, options: DemoHookOptions): Promise<unknown> {
+  // A frame that has appeared since the last command is put in demo mode before anything else.
+  const all = surfaces();
+  for (const { doc } of all) steady(doc);
   switch (command.cmd) {
     case "hello": {
       const hello: Hello = {
         program: options.program, hookVersion: HOOK_VERSION, viewport: [innerWidth, innerHeight],
-        devicePixelRatio, controls: document.querySelectorAll("[data-demo-id]").length,
+        devicePixelRatio, controls: named(all).length,
       };
       return hello;
     }
     case "list":
-      return { viewport: [innerWidth, innerHeight], controls: [...document.querySelectorAll<HTMLElement>("[data-demo-id]")].map(info) };
+      return { viewport: [innerWidth, innerHeight], controls: named(all).map(({ el, at }) => info(el, at)) };
     case "position":
       return { viewport: [innerWidth, innerHeight], control: info(find(command.id)) };
     case "hover": {
-      document.querySelectorAll("[data-demo-hover]").forEach((el) => el.removeAttribute("data-demo-hover"));
+      clearHover(all);
       if (command.id) find(command.id).setAttribute("data-demo-hover", "");
       return null;
     }
     case "click": {
       const el = find(command.id);
       if (!info(el).enabled) throw new Error(`The control "${command.id}" is switched off and cannot be clicked.`);
-      document.querySelectorAll("[data-demo-hover]").forEach((h) => h.removeAttribute("data-demo-hover"));
+      clearHover(all);
       focusOn(el);
+      const view = windowOf(el);
       for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup"]) {
-        el.dispatchEvent(new (type.startsWith("pointer") ? PointerEvent : MouseEvent)(type, { bubbles: true, cancelable: true, button: 0 }));
+        el.dispatchEvent(new (type.startsWith("pointer") ? view.PointerEvent : view.MouseEvent)(type, { bubbles: true, cancelable: true, button: 0 }));
       }
       el.click();
       return null;
@@ -282,15 +390,15 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
       const el = command.id ? find(command.id) : focused();
       if (!el) throw new Error("Nothing has the keyboard focus to type into. Give the step a target.");
       if (!takesText(el)) throw new Error(`The control with the keyboard focus (${el.dataset.demoId ?? el.tagName.toLowerCase()}) cannot take typing. Give the step a target.`);
-      if (command.id || document.activeElement !== el) focusOn(el);
-      if (el instanceof HTMLSelectElement) {
+      if (command.id || el.ownerDocument.activeElement !== el) focusOn(el);
+      if (isSelect(el)) {
         // A drop-down list: typing its option's words chooses it, as typing does on a focused list.
         const wanted = command.text.trim().toLowerCase();
         const option = [...el.options].find((o) => o.text.trim().toLowerCase() === wanted) ?? [...el.options].find((o) => o.text.trim().toLowerCase().startsWith(wanted));
         if (!option) throw new Error(`The list "${el.dataset.demoId}" has no choice called "${command.text}".`);
         el.value = option.value;
-        el.dispatchEvent(new Event("input", { bubbles: true }));
-        el.dispatchEvent(new Event("change", { bubbles: true }));
+        el.dispatchEvent(new (windowOf(el).Event)("input", { bubbles: true }));
+        el.dispatchEvent(new (windowOf(el).Event)("change", { bubbles: true }));
         return null;
       }
       typeInto(el, command.text);
@@ -315,25 +423,29 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
       await options.reset();
       return null;
     case "settle":
-      steadySheets();
-      markFocus();
-      await document.fonts.ready;
-      await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)));
+      for (const { doc } of all) steadySheets(doc);
+      markFocus(all);
+      for (const { doc } of all) {
+        await doc.fonts.ready;
+        await Promise.all(doc.getAnimations().map((a) => a.finished.catch(() => undefined)));
+      }
       await frames(2);
       return null;
     case "text":
-      return { viewport: [innerWidth, innerHeight], items: textOnScreen() };
+      return { viewport: [innerWidth, innerHeight], items: all.flatMap(textOnScreen) };
   }
 }
 
 /** Elements whose text never shows as it is (or shows only when opened, such as a drop-down list's choices). */
 const NO_TEXT = new Set(["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT", "SELECT", "OPTION", "OPTGROUP", "DATALIST", "TEXTAREA"]);
 
-/** The part of the page an element can show through: the window, cut down by every scrolling or clipping box around it. */
+/** The part of its own page an element can show through: that page's window (or frame), cut down by every scrolling or
+ * clipping box around it. In that page's own coordinates. */
 function clipOf(el: Element): DOMRect | null {
-  let [left, top, right, bottom] = [0, 0, innerWidth, innerHeight];
+  const view = windowOf(el);
+  let [left, top, right, bottom] = [0, 0, view.innerWidth, view.innerHeight];
   for (let p = el.parentElement; p; p = p.parentElement) {
-    const s = getComputedStyle(p);
+    const s = view.getComputedStyle(p);
     if (s.overflowX !== "visible" || s.overflowY !== "visible") {
       const r = p.getBoundingClientRect();
       left = Math.max(left, r.left);
@@ -346,8 +458,9 @@ function clipOf(el: Element): DOMRect | null {
 }
 
 function shows(el: Element): boolean {
+  const view = windowOf(el);
   for (let p: Element | null = el; p; p = p.parentElement) {
-    const s = getComputedStyle(p);
+    const s = view.getComputedStyle(p);
     if (s.display === "none" || s.visibility === "hidden" || s.opacity === "0") return false;
   }
   return true;
@@ -360,16 +473,23 @@ function within(r: DOMRect, clip: DOMRect): [number, number, number, number] | n
   return right - left >= 1 && bottom - top >= 1 ? [left, top, right - left, bottom - top] : null;
 }
 
-/** Every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their
- * placeholder when empty), and the choice showing in each drop-down list. Used by the frame scan, never by the take. */
-function textOnScreen(): TextOnScreen[] {
+/** Every piece of text the viewer can see in one page or frame, with where it is on the program's page: the words, what is
+ * typed in fields (or their placeholder when empty), and the choice showing in each drop-down list. Used by the frame
+ * scan, never by the take. */
+function textOnScreen({ doc, offset, clip: frameClip }: Surface): TextOnScreen[] {
   const out: TextOnScreen[] = [];
   const clips = new Map<Element, DOMRect | null>();
+  // An element's clip on the program's page: its own page's clip, moved to where the frame is and cut to what the frame shows.
   const clip = (el: Element) => {
-    if (!clips.has(el)) clips.set(el, shows(el) ? clipOf(el) : null);
+    if (!clips.has(el)) {
+      const own = shows(el) ? clipOf(el) : null;
+      const seen = own && within(shift(own, offset), frameClip);
+      clips.set(el, seen ? new DOMRect(seen[0] - offset[0], seen[1] - offset[1], seen[2], seen[3]) : null);
+    }
     return clips.get(el)!;
   };
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+  const place = (r: [number, number, number, number]): [number, number, number, number] => [r[0] + offset[0], r[1] + offset[1], r[2], r[3]];
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
     acceptNode: (n) => {
       for (let p = n.parentElement; p; p = p.parentElement) if (NO_TEXT.has(p.tagName)) return NodeFilter.FILTER_REJECT;
       return n.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
@@ -379,20 +499,20 @@ function textOnScreen(): TextOnScreen[] {
     const el = n.parentElement!;
     const c = clip(el);
     if (!c) continue;
-    const range = document.createRange();
+    const range = doc.createRange();
     range.selectNodeContents(n);
     // One piece per line the text wraps onto, so each has its own place.
-    const lines = [...range.getClientRects()].map((r) => within(r, c)).filter((r): r is [number, number, number, number] => r !== null);
+    const lines = [...range.getClientRects()].map((r) => within(r, c)).filter((r): r is [number, number, number, number] => r !== null).map(place);
     if (!lines.length) continue;
     const text = n.textContent!.replace(/\s+/g, " ").trim();
     const left = Math.min(...lines.map((r) => r[0])), top = Math.min(...lines.map((r) => r[1]));
     const right = Math.max(...lines.map((r) => r[0] + r[2])), bottom = Math.max(...lines.map((r) => r[1] + r[3]));
     out.push({ text, rect: [left, top, right - left, bottom - top] });
   }
-  for (const el of document.querySelectorAll<HTMLElement>("input, textarea, select")) {
+  for (const el of doc.querySelectorAll<HTMLElement>("input, textarea, select")) {
     let text = "";
-    if (el instanceof HTMLSelectElement) text = el.selectedOptions[0]?.text ?? "";
-    else if (el instanceof HTMLInputElement && ["checkbox", "radio", "range", "color", "file", "hidden"].includes(el.type)) continue;
+    if (isSelect(el)) text = el.selectedOptions[0]?.text ?? "";
+    else if (isInput(el) && ["checkbox", "radio", "range", "color", "file", "hidden"].includes(el.type)) continue;
     else {
       const field = el as HTMLInputElement | HTMLTextAreaElement;
       text = field.type === "password" ? "" : field.value || field.placeholder;
@@ -400,7 +520,7 @@ function textOnScreen(): TextOnScreen[] {
     if (!text.trim()) continue;
     const c = clip(el);
     const r = c && within(el.getBoundingClientRect(), c);
-    if (r) out.push({ text: text.replace(/\s+/g, " ").trim(), rect: r });
+    if (r) out.push({ text: text.replace(/\s+/g, " ").trim(), rect: place(r) });
   }
   return out;
 }
@@ -409,13 +529,8 @@ function textOnScreen(): TextOnScreen[] {
 export function startDemoHook(options: DemoHookOptions): DemoHook | null {
   const settings = options.settings ?? readSettings(globalThis as unknown as Record<string, unknown>, location.search);
   if (!settings) return null;
-  const style = document.createElement("style");
-  style.dataset.demoHook = "steady";
-  style.textContent = STEADY_CSS;
-  document.head.append(style);
-  document.documentElement.dataset.demoMode = "on";
-  steadySheets();
-  watchFocus();
+  // The program's page now; each frame from the program as it is first seen (see perform).
+  steady(document);
 
   let stopped = false;
   const url = (path: string) => `${settings.endpoint}/hook/${path}?token=${encodeURIComponent(settings.token)}`;
@@ -450,8 +565,10 @@ export function startDemoHook(options: DemoHookOptions): DemoHook | null {
   return {
     stop() {
       stopped = true;
-      style.remove();
-      delete document.documentElement.dataset.demoMode;
+      for (const { doc } of surfaces()) {
+        doc.querySelectorAll('style[data-demo-hook="steady"]').forEach((s) => s.remove());
+        delete doc.documentElement.dataset.demoMode;
+      }
     },
   };
 }
