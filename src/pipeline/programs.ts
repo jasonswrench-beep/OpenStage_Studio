@@ -19,6 +19,15 @@ export function authorExe(root: string, env: NodeJS.ProcessEnv = process.env): s
   return places.find((p): p is string => !!p && existsSync(p)) ?? null;
 }
 
+/** OpenStage Guide's window with the demo hook: where OPENSTAGE_GUIDE_EXE says, else a build of Guide's branch
+ * `studio-demo-hook` beside this repository (its own checkout, OpenStageGuide-demo, or Guide's main checkout when that branch is
+ * there). The installed Guide has no hook yet, so it is never used. Null if none is there. */
+export function guideExe(root: string, env: NodeJS.ProcessEnv = process.env): string | null {
+  const build = "shell/src-tauri/target/release/openstage-guide-shell.exe";
+  const places = [env.OPENSTAGE_GUIDE_EXE, resolve(root, "../OpenStageGuide-demo", build), resolve(root, "../OpenStageGuide", build)];
+  return places.find((p): p is string => !!p && existsSync(p)) ?? null;
+}
+
 export interface ProgramEntry {
   id: string;
   name: string;
@@ -79,6 +88,25 @@ export const PROGRAMS: ProgramEntry[] = [
       return { exe, args: ["--demo-hook", endpoint, "--demo-token", token, "--demo-workspace", workspace, "--monitor", String(monitor)] };
     },
     windowTitle: "openstage-editor",
+  },
+  {
+    id: "openstage-guide",
+    name: "OpenStage Guide",
+    launch(root, endpoint, token, monitor) {
+      const exe = guideExe(root);
+      if (!exe) throw new Error("OpenStage Guide with the demo hook was not found. Build the window of Guide's branch studio-demo-hook (in its shell folder: npm run build:exe), or set OPENSTAGE_GUIDE_EXE.");
+      // A clean guides folder for this take, always at the same place, so two takes look the same. Guide copies a demo guide into it when
+      // a script opens one, and never touches the person's own guides in demo mode.
+      const workspace = resolve(studioWorkspace(), "work", "demo-workspace", "openstage-guide");
+      rmSync(workspace, { recursive: true, force: true });
+      mkdirSync(workspace, { recursive: true });
+      return { exe, args: ["--demo-hook", endpoint, "--demo-token", token, "--demo-workspace", workspace, "--monitor", String(monitor)] };
+    },
+    windowTitle: "OpenStage Guide (demo mode)",
+    demos: [
+      { name: "harbor-lane-onboarding", about: "Volunteer Onboarding at Harbor Lane Library: an invented half-day workshop for new library volunteers, two modules of two lessons each, with Say, Ask, Activity and Debrief blocks, timings and a handout." },
+    ],
+    notes: "The welcome page shows first. A menu's commands show only after its name is clicked (menu.file, menu.edit and the rest); a command is menu.<menu>.<command>, such as menu.file.newGuide or menu.help.about. The buttons on the navy bar while a guide is open are bar.reviewGuide, bar.updateGuide and bar.participantWorkbook; bar.search opens the command search. A dialog's buttons are dialog.ok (its main button, whatever its words), dialog.cancel and dialog.close. Opening a demo guide shows the guide on the left and the tools pane on the right.",
   },
 ];
 
