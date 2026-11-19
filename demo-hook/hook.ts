@@ -311,6 +311,17 @@ const frames = (n: number) => new Promise<void>((done) => {
   tick(n);
 });
 
+/** Number boxes and the like have no text selection: the boxes whose words Ctrl+A chose, so the next typing replaces them. */
+const allChosen = new WeakSet<HTMLInputElement>();
+/** Whether a box has a text selection (a number box does not, and refuses setRangeText). */
+function hasSelection(el: HTMLInputElement): boolean {
+  try {
+    return el.selectionStart !== null;
+  } catch {
+    return false;
+  }
+}
+
 /** Put text into a text field or editable area as if typed: one character at a time, with the events a keyboard sends. */
 function typeInto(el: HTMLElement, text: string) {
   const view = windowOf(el);
@@ -318,7 +329,12 @@ function typeInto(el: HTMLElement, text: string) {
     const init = { key: ch, bubbles: true, cancelable: true };
     const go = el.dispatchEvent(new view.KeyboardEvent("keydown", init));
     if (go) {
-      if (isInput(el) || isTextArea(el)) {
+      if (isInput(el) && !hasSelection(el)) {
+        // A box with no text selection (a number box): the character goes at the end, or replaces all after Ctrl+A.
+        el.value = (allChosen.has(el) ? "" : el.value) + ch;
+        allChosen.delete(el);
+        el.dispatchEvent(new view.InputEvent("input", { bubbles: true, data: ch, inputType: "insertText" }));
+      } else if (isInput(el) || isTextArea(el)) {
         const start = el.selectionStart ?? el.value.length;
         const end = el.selectionEnd ?? el.value.length;
         el.setRangeText(ch, start, end, "end");
@@ -354,6 +370,10 @@ function pressKey(target: HTMLElement, key: string, modifiers: string[]) {
       next?.focus();
     } else if ((key === "Enter" || key === "Space") && (isButton(target) || target.getAttribute("role") === "button")) {
       target.click();
+    } else if (key === "Backspace" && isInput(target) && !hasSelection(target)) {
+      target.value = allChosen.has(target) ? "" : target.value.slice(0, -1);
+      allChosen.delete(target);
+      target.dispatchEvent(new view.InputEvent("input", { bubbles: true, inputType: "deleteContentBackward" }));
     } else if (key === "Backspace" && (isInput(target) || isTextArea(target))) {
       const s = target.selectionStart ?? 0;
       const e = target.selectionEnd ?? 0;
@@ -365,6 +385,7 @@ function pressKey(target: HTMLElement, key: string, modifiers: string[]) {
     } else if (key === "A" && init.ctrlKey && !init.altKey && (isInput(target) || isTextArea(target))) {
       // Select all of the box's words, so the next typing replaces them.
       target.select();
+      if (isInput(target) && !hasSelection(target)) allChosen.add(target);
     } else if (key === "A" && init.ctrlKey && !init.altKey && target.isContentEditable) {
       // The same in an editable area (a box that shows bold and italic as it is typed in): all of its words, from its outermost
       // editable element.

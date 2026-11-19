@@ -60,7 +60,7 @@ sides) and `hook.ts` (the part a program includes).
 | `click` | Presses a control, with the pointer and mouse events a click sends. |
 | `focus` | Gives a control the keyboard focus. |
 | `type` | Types text one character at a time with key events, or chooses a drop-down option by its words. |
-| `key` | Presses a key or chord on the focused control; Tab, Enter, Space and Backspace do what a browser would, and Ctrl+A selects all of a box's words (a text box, or an editable area such as OpenStage Guide's box for a paragraph's words), so the next typing replaces them. |
+| `key` | Presses a key or chord on the focused control; Tab, Enter, Space and Backspace do what a browser would, and Ctrl+A selects all of a box's words (a text box, a number box, or an editable area such as OpenStage Guide's box for a paragraph's words), so the next typing replaces them. |
 | `scroll` | Scrolls a control or the page by a number of pixels. |
 | `loadDemo` | Opens a demo project from the program's demo library, by name. |
 | `reset` | Puts the program back to a known state. |
