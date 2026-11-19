@@ -115,6 +115,8 @@ export const PROGRAMS: ProgramEntry[] = [
       { pattern: "page.welcome-open", about: "Open guide... on the welcome page" },
       { pattern: "welcome.guide.giving-feedback", about: "the Giving Feedback guide in the card Your guides on the welcome page; a click opens it" },
       { pattern: "dialog.guide.giving-feedback", about: "Giving Feedback in the list of the Open guide window" },
+      { pattern: "dialog.field.text", about: "the box The lines of the Paste text window (File > Paste text); each line is typed with a new line (\\n in the script's JSON) between them" },
+      { pattern: "guide.para.*", about: "the row of the guide's paragraph number * on the page, counting from 0 at the guide's title; a click puts the cursor there. page.guide is the page that scrolls" },
       { pattern: "page.cs-input", about: "the box of Search for a command, once it is open (bar.search or Ctrl+K)" },
       { pattern: "page.cs-opt-*", about: "the command numbered * in the list Search for a command shows, counting from 0 at the top" },
     ],

@@ -64,7 +64,7 @@ sides) and `hook.ts` (the part a program includes).
 | `scroll` | Scrolls a control or the page by a number of pixels. |
 | `loadDemo` | Opens a demo project from the program's demo library, by name. |
 | `reset` | Puts the program back to a known state. |
-| `settle` | Waits for fonts, any running animations and two drawn frames, so a still picture shows the finished result. |
+| `settle` | Waits for fonts, any running animations, the page (and its frames) to stop changing for 150 ms (at most 1.5 seconds, for a program that draws a moment after a click on a timer of its own), and two drawn frames, so a still picture shows the finished result. |
 | `text` | Lists every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their placeholder), and the choice showing in each drop-down list. Text hidden, scrolled out of view or clipped is left out. For the frame scan (docs/guard.md); it never changes the page. |
 
 The hook's version is 4. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to

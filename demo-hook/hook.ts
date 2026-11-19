@@ -281,6 +281,31 @@ function takesText(el: HTMLElement): boolean {
     (isInput(el) && !["button", "checkbox", "radio", "submit", "reset", "file", "image", "range", "color"].includes(el.type));
 }
 
+/** Resolves once none of the documents has changed for `still` milliseconds, or after `most` milliseconds whatever happens. */
+function quiet(docs: Document[], still = 150, most = 1500): Promise<void> {
+  return new Promise((done) => {
+    const watchers: MutationObserver[] = [];
+    let timer = setTimeout(finish, still);
+    const cap = setTimeout(finish, most);
+    function finish() {
+      clearTimeout(timer);
+      clearTimeout(cap);
+      for (const w of watchers) w.disconnect();
+      done();
+    }
+    for (const doc of docs) {
+      const view = doc.defaultView;
+      if (!view || !doc.body) continue;
+      const w = new view.MutationObserver(() => {
+        clearTimeout(timer);
+        timer = setTimeout(finish, still);
+      });
+      w.observe(doc.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class", "hidden", "style", "open", "data-index"] });
+      watchers.push(w);
+    }
+  });
+}
+
 const frames = (n: number) => new Promise<void>((done) => {
   const tick = (k: number) => (k <= 0 ? done() : requestAnimationFrame(() => tick(k - 1)));
   tick(n);
@@ -429,6 +454,9 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
         await doc.fonts.ready;
         await Promise.all(doc.getAnimations().map((a) => a.finished.catch(() => undefined)));
       }
+      // A program may draw a moment after a click, on a timer of its own (OpenStage Guide draws a guide's page a little after it opens):
+      // wait until the page and its frames have stopped changing for a short while, so the picture and the next step see the result.
+      await quiet(all.map((s) => s.doc));
       await frames(2);
       return null;
     case "text":
