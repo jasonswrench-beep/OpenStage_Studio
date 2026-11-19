@@ -223,6 +223,7 @@ function steady(doc: Document) {
 
 /** Give a control the keyboard focus, and remember it. */
 function focusOn(el: HTMLElement, byKey = false) {
+  if (lastFocus && lastFocus !== el) commitBox(lastFocus);
   el.focus({ preventScroll: true });
   lastFocus = el;
   focusByKey = byKey;
@@ -311,6 +312,15 @@ const frames = (n: number) => new Promise<void>((done) => {
   tick(n);
 });
 
+/** The boxes typed into since they got the focus. As in a browser, such a box tells the page it changed (a change event) when the
+ * focus leaves it, or when Enter is pressed in a one-line box. */
+const typedIn = new WeakSet<HTMLElement>();
+function commitBox(el: HTMLElement) {
+  if (!typedIn.has(el)) return;
+  typedIn.delete(el);
+  el.dispatchEvent(new (windowOf(el).Event)("change", { bubbles: true }));
+}
+
 /** Number boxes and the like have no text selection: the boxes whose words Ctrl+A chose, so the next typing replaces them. */
 const allChosen = new WeakSet<HTMLInputElement>();
 /** Whether a box has a text selection (a number box does not, and refuses setRangeText). */
@@ -329,6 +339,7 @@ function typeInto(el: HTMLElement, text: string) {
     const init = { key: ch, bubbles: true, cancelable: true };
     const go = el.dispatchEvent(new view.KeyboardEvent("keydown", init));
     if (go) {
+      if (isInput(el) || isTextArea(el)) typedIn.add(el);
       if (isInput(el) && !hasSelection(el)) {
         // A box with no text selection (a number box): the character goes at the end, or replaces all after Ctrl+A.
         el.value = (allChosen.has(el) ? "" : el.value) + ch;
@@ -364,17 +375,22 @@ function pressKey(target: HTMLElement, key: string, modifiers: string[]) {
   if (go) {
     // What the browser would do itself for these keys when nothing handled them.
     if (key === "Tab") {
+      commitBox(target);
       const list = focusables(target.ownerDocument);
       const i = list.indexOf(target.ownerDocument.activeElement as HTMLElement);
       const next = list[(i + (init.shiftKey ? -1 : 1) + list.length) % list.length];
       next?.focus();
     } else if ((key === "Enter" || key === "Space") && (isButton(target) || target.getAttribute("role") === "button")) {
       target.click();
+    } else if (key === "Enter" && isInput(target)) {
+      commitBox(target);
     } else if (key === "Backspace" && isInput(target) && !hasSelection(target)) {
+      typedIn.add(target);
       target.value = allChosen.has(target) ? "" : target.value.slice(0, -1);
       allChosen.delete(target);
       target.dispatchEvent(new view.InputEvent("input", { bubbles: true, inputType: "deleteContentBackward" }));
     } else if (key === "Backspace" && (isInput(target) || isTextArea(target))) {
+      typedIn.add(target);
       const s = target.selectionStart ?? 0;
       const e = target.selectionEnd ?? 0;
       if (s !== e) target.setRangeText("", s, e, "end");
