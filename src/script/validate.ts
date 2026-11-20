@@ -44,7 +44,7 @@ const COLOUR = /^#[0-9A-Fa-f]{6}$/;
 const SIDES = ["left", "right", "above", "below"];
 
 const HEADER_KEYS = ["format", "version", "title", "goal", "program", "driver", "startState", "playlist", "intro", "outro", "writtenBy", "publish", "redactions", "steps"];
-const STEP_KEYS = ["action", "target", "fallback", "value", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter", "describe"];
+const STEP_KEYS = ["action", "target", "fallback", "value", "words", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter", "describe"];
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -189,6 +189,12 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
       if ((action === "open" || action === "wait") && step.target !== undefined) err(`${at}.target`, `A ${action} step has no target.`);
       const value = step.value;
       if (value !== undefined && typeof value !== "string") err(`${at}.value`, "The value is text.");
+      if (step.words !== undefined) {
+        if (action !== "click") err(`${at}.words`, "Words to click on go with a click step.");
+        else if (accessible) err(`${at}.words`, "The accessibility driver cannot click on words inside a control. Use the hook.");
+        else if (!isText(step.words)) err(`${at}.words`, "Say which words inside the control to click on.");
+        else if (step.words.length > 200) err(`${at}.words`, "Click on at most 200 characters of words.");
+      }
       switch (action) {
         case "drag":
           err(`${at}.action`, "Drag is not performed in this version. Canvas actions will get their own hook commands later.");

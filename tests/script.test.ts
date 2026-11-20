@@ -89,6 +89,18 @@ test("each action checks what it needs", () => {
   assert.deepEqual(paths(validateScript(s)), ["steps[0].target", "steps[1].value", "steps[2].value", "steps[3].value", "steps[4].action", "steps[5].value", "steps[6].action"]);
 });
 
+test("a click may name words inside its control, and only a click with the hook may", () => {
+  const s = good();
+  s.steps.push({ action: "click", target: "editor.notes", words: "ten leaves", narration: "Select ten leaves." } as never);
+  assert.equal(validateScript(s).ok, true, describeProblems(validateScript(s)).join("\n"));
+  s.steps.push({ action: "type", target: "editor.title", value: "x", words: "Leaves", narration: "Type." } as never);
+  s.steps.push({ action: "click", target: "editor.notes", words: "  ", narration: "Select." } as never);
+  assert.deepEqual(paths(validateScript(s)), ["steps[3].words", "steps[4].words"]);
+  const a = { ...good(), driver: "accessibility" };
+  a.steps = [{ action: "click", target: "editor.notes", words: "ten", narration: "Select ten." } as never];
+  assert.deepEqual(paths(validateScript(a)), ["steps[0].words"]);
+});
+
 test("targets must be stable names, and must exist when the program's control list is given", () => {
   const s = good();
   s.steps[0].target = "New lesson button";

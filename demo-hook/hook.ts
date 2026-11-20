@@ -13,7 +13,7 @@
 // program's demo-project loader. See docs/demo-hook.md.
 
 import {
-  HOOK_VERSION, readSettings, steadySelector, type Command, type ControlInfo, type Envelope, type Hello, type HookSettings, type Reply,
+  findWords, HOOK_VERSION, readSettings, steadySelector, type Command, type ControlInfo, type Envelope, type Hello, type HookSettings, type Reply,
   type TextOnScreen,
 } from "./protocol.ts";
 
@@ -167,6 +167,40 @@ function info(el: HTMLElement, at = surfaceOf(el)): ControlInfo {
     ...boxFacts(el),
     focused: focused() === el,
   };
+}
+
+/** Some words inside a control's text, as a range of the page (for clicking on words). A text box's or list's words are
+ * not page text, so only text on the page and in editable areas can be clicked on this way. */
+function wordsRange(el: HTMLElement, words: string): Range {
+  if (isInput(el) || isTextArea(el) || isSelect(el)) throw new Error(`Clicking on words works on a page's text and in editable areas, not in the box "${el.dataset.demoId}".`);
+  const doc = el.ownerDocument;
+  const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n as Text);
+  const at = findWords(nodes.map((n) => n.data).join(""), words);
+  if (!at) throw new Error(`The words "${words}" are not in the control "${el.dataset.demoId}".`);
+  const range = doc.createRange();
+  let pos = 0;
+  let started = false;
+  for (const n of nodes) {
+    const end = pos + n.data.length;
+    if (!started && at[0] < end) {
+      range.setStart(n, at[0] - pos);
+      started = true;
+    }
+    if (started && at[1] <= end) {
+      range.setEnd(n, at[1] - pos);
+      break;
+    }
+    pos = end;
+  }
+  return range;
+}
+
+/** Where some words are on the program's page: the first line they are on. */
+function wordsRect(range: Range, at: Surface): [number, number, number, number] {
+  const r = range.getClientRects()[0] ?? range.getBoundingClientRect();
+  return [r.left + at.offset[0], r.top + at.offset[1], r.width, r.height];
 }
 
 /** For a box: the words in it now, and whether it takes several lines. A password box's words are never reported. */
@@ -396,6 +430,9 @@ function pressKey(target: HTMLElement, key: string, modifiers: string[]) {
       if (s !== e) target.setRangeText("", s, e, "end");
       else if (s > 0) target.setRangeText("", s - 1, s, "end");
       target.dispatchEvent(new view.InputEvent("input", { bubbles: true, inputType: "deleteContentBackward" }));
+    } else if ((key === "Backspace" || key === "Delete") && target.isContentEditable) {
+      // In an editable area: the selected words, or the character before (Backspace) or after (Delete) the cursor.
+      target.ownerDocument.execCommand(key === "Backspace" ? "delete" : "forwardDelete");
     } else if (key === "Enter" && isTextArea(target)) {
       typeInto(target, "\n");
     } else if (key === "A" && init.ctrlKey && !init.altKey && (isInput(target) || isTextArea(target))) {
@@ -436,8 +473,12 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
     }
     case "list":
       return { viewport: [innerWidth, innerHeight], controls: named(all).map(({ el, at }) => info(el, at)) };
-    case "position":
-      return { viewport: [innerWidth, innerHeight], control: info(find(command.id)) };
+    case "position": {
+      const el = find(command.id);
+      const control = info(el);
+      if (command.words) control.rect = wordsRect(wordsRange(el, command.words), surfaceOf(el));
+      return { viewport: [innerWidth, innerHeight], control };
+    }
     case "hover": {
       clearHover(all);
       if (command.id) find(command.id).setAttribute("data-demo-hover", "");
@@ -447,12 +488,22 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
       const el = find(command.id);
       if (!info(el).enabled) throw new Error(`The control "${command.id}" is switched off and cannot be clicked.`);
       clearHover(all);
+      // On words: the events carry the words' place, and the words are selected as the button goes down, as in a browser.
+      const range = command.words ? wordsRange(el, command.words) : null;
       focusOn(el);
       const view = windowOf(el);
+      const r = range ? (range.getClientRects()[0] ?? range.getBoundingClientRect()) : null;
+      const init: MouseEventInit = { bubbles: true, cancelable: true, button: 0, ...(r ? { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 } : {}) };
       for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup"]) {
-        el.dispatchEvent(new (type.startsWith("pointer") ? view.PointerEvent : view.MouseEvent)(type, { bubbles: true, cancelable: true, button: 0 }));
+        el.dispatchEvent(new (type.startsWith("pointer") ? view.PointerEvent : view.MouseEvent)(type, init));
+        if (type === "mousedown" && range) {
+          const selection = view.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
       }
-      el.click();
+      if (range) el.dispatchEvent(new view.MouseEvent("click", init));
+      else el.click();
       return null;
     }
     case "focus":

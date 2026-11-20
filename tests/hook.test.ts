@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isLoopback, readSettings, SETTINGS_GLOBAL, steadySelector, toFrame } from "../demo-hook/protocol.ts";
+import { findWords, isLoopback, readSettings, SETTINGS_GLOBAL, steadySelector, toFrame } from "../demo-hook/protocol.ts";
 import { HookServer } from "../src/pipeline/hook-server.ts";
 import { wavDurationMs } from "../src/pipeline/helper.ts";
 
@@ -112,4 +112,12 @@ test("in demo mode focus and hover follow the hook's markers, not the window's s
   assert.equal(steadySelector("input:not(:focus)"), "input:not([data-demo-focus])");
   assert.equal(steadySelector(".focused-item:hover-ish"), ".focused-item:hover-ish", "only the real pseudo-classes");
   assert.equal(steadySelector("button.primary"), "button.primary");
+});
+
+test("words inside a control are found where they first appear, as written or else ignoring case", () => {
+  assert.deepEqual(findWords("Email mostly at D Akafer at Riverside.edu", "D Akafer"), [16, 24]);
+  assert.deepEqual(findWords("at Riverside, then at riverside", "riverside"), [22, 31]);
+  assert.deepEqual(findWords("Yes, exactly. yes", "YES"), [0, 3]);
+  assert.equal(findWords("nothing here", "Akafer"), null);
+  assert.equal(findWords("text", ""), null);
 });

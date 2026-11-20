@@ -16,9 +16,12 @@ export interface HookSettings {
 export type Command =
   | { cmd: "hello" }
   | { cmd: "list" }
-  | { cmd: "position"; id: string }
+  /** `words`: the place of those words inside the control instead of the whole control (hook version 5). */
+  | { cmd: "position"; id: string; words?: string }
   | { cmd: "hover"; id: string | null }
-  | { cmd: "click"; id: string }
+  /** `words`: click on those words inside the control and select them, as a double-click on a word or a drag across
+   * several would, so the next typing replaces them (hook version 5). */
+  | { cmd: "click"; id: string; words?: string }
   | { cmd: "focus"; id: string }
   | { cmd: "type"; id?: string; text: string }
   | { cmd: "key"; id?: string; key: string; modifiers: string[] }
@@ -71,8 +74,18 @@ export interface TextOnScreen {
 /** Version 2 added the `text` command. Version 3 added a box's words, whether it takes several lines and whether it
  * has the focus to each control's report, and made Ctrl+A select a box's words. Version 4 reaches the program's own
  * frames (the same origin, such as a tools pane): their named controls are found, pressed and reported, and their text
- * read, with every place given on the program's page. No command changed. */
-export const HOOK_VERSION = 4;
+ * read, with every place given on the program's page. No command changed. Version 5 clicks on words inside a control
+ * (`click` and `position` with `words`), and Backspace and Delete remove text in an editable area. */
+export const HOOK_VERSION = 5;
+
+/** Where some words are in a control's text: the first place they appear as written, else the first ignoring case.
+ * Null when they are not there. */
+export function findWords(text: string, words: string): [number, number] | null {
+  if (!words) return null;
+  let at = text.indexOf(words);
+  if (at < 0) at = text.toLowerCase().indexOf(words.toLowerCase());
+  return at < 0 ? null : [at, at + words.length];
+}
 
 /** Whether an endpoint is on this computer only. The hook never talks to anything else. */
 export function isLoopback(endpoint: string): boolean {

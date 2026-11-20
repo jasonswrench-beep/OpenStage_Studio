@@ -69,8 +69,8 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
     }
     return id;
   };
-  const where = async (id: string): Promise<{ rect: Rect; label: string; role: string }> => {
-    const answer = await hook.send<{ viewport: [number, number]; control: ControlInfo }>({ cmd: "position", id });
+  const where = async (id: string, words?: string): Promise<{ rect: Rect; label: string; role: string }> => {
+    const answer = await hook.send<{ viewport: [number, number]; control: ControlInfo }>({ cmd: "position", id, ...(words ? { words } : {}) });
     if (!answer.control.visible) throw new Error(`The control "${id}" is not on screen.`);
     return { rect: toFrame(answer.control.rect, answer.viewport, options.frame), label: answer.control.label, role: answer.control.role };
   };
@@ -96,8 +96,12 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
   async function playStep(index: number, step: Step): Promise<TakeStep> {
     const out: TakeStep = { index, changes: [] };
     const calloutId = step.callout ? ("around" in step.callout ? step.callout.around : "to" in step.callout ? step.callout.to : step.callout.near) : undefined;
+    if (step.words && !(hello.hookVersion >= 5)) {
+      throw new Error(`${hello.hookVersion ? "This program's demo hook is older than version 5 and cannot" : "The accessibility driver cannot"} click on words inside a control.`);
+    }
     if (step.target && step.action !== "open" && step.action !== "wait") {
-      out.target = await where(step.target);
+      // On words, the pointer goes to the words rather than the middle of the control.
+      out.target = await where(step.target, step.words);
       // The pointer arrives over the control: show the program's hover look.
       await hook.send({ cmd: "hover", id: step.target });
       out.hover = await shot();
@@ -106,7 +110,7 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
 
     switch (step.action) {
       case "click":
-        await hook.send({ cmd: "click", id: step.target! });
+        await hook.send({ cmd: "click", id: step.target!, ...(step.words ? { words: step.words } : {}) });
         out.changes.push(await shot());
         break;
       case "type": {
