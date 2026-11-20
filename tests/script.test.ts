@@ -101,6 +101,24 @@ test("a click may name words inside its control, and only a click with the hook 
   assert.deepEqual(paths(validateScript(a)), ["steps[0].words"]);
 });
 
+test("a click on words may put the cursor before or after them instead of selecting them", () => {
+  const s = good();
+  s.steps.push({ action: "click", target: "editor.notes", words: "leaves", caret: "after", narration: "Click after leaves." } as never);
+  assert.equal(validateScript(s).ok, true, describeProblems(validateScript(s)).join("\n"));
+  s.steps.push({ action: "click", target: "editor.notes", caret: "before", narration: "Click." } as never);
+  s.steps.push({ action: "click", target: "editor.notes", words: "ten", caret: "inside", narration: "Click." } as never);
+  assert.deepEqual(paths(validateScript(s)), ["steps[3].caret", "steps[4].caret"]);
+});
+
+test("a wait may name a control to wait for; an open step may not name one", () => {
+  const s = good();
+  s.steps.push({ action: "wait", target: "editor.title", value: "1", narration: "It is done." } as never);
+  assert.equal(validateScript(s).ok, true, describeProblems(validateScript(s)).join("\n"));
+  s.steps.push({ action: "wait", target: "not a name", narration: "Wait." } as never);
+  s.steps.push({ action: "open", target: "editor.title", value: "demo-empty", narration: "Open." } as never);
+  assert.deepEqual(paths(validateScript(s)), ["steps[3].target", "steps[4].target"]);
+});
+
 test("targets must be stable names, and must exist when the program's control list is given", () => {
   const s = good();
   s.steps[0].target = "New lesson button";

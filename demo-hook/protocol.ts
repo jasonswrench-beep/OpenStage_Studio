@@ -17,11 +17,12 @@ export type Command =
   | { cmd: "hello" }
   | { cmd: "list" }
   /** `words`: the place of those words inside the control instead of the whole control (hook version 5). */
-  | { cmd: "position"; id: string; words?: string }
+  | { cmd: "position"; id: string; words?: string; caret?: "before" | "after" }
   | { cmd: "hover"; id: string | null }
   /** `words`: click on those words inside the control and select them, as a double-click on a word or a drag across
-   * several would, so the next typing replaces them (hook version 5). */
-  | { cmd: "click"; id: string; words?: string }
+   * several would, so the next typing replaces them (hook version 5). With `caret`, the click puts the cursor just before or
+   * after those words instead, selecting nothing. */
+  | { cmd: "click"; id: string; words?: string; caret?: "before" | "after" }
   | { cmd: "focus"; id: string }
   | { cmd: "type"; id?: string; text: string }
   | { cmd: "key"; id?: string; key: string; modifiers: string[] }

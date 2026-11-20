@@ -32,6 +32,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | `fallback` | Another way to find it: with the accessibility driver, a control with no automation id is found by `role` and `name` (and the step needs no target) | `{ "role": "button", "name": "New lesson" }` or `{ "x": 0.2, "y": 0.05 }` |
 | `value` | Text to type, a key, a demo project, a scroll, or seconds to wait | `Sorting leaves by shape`, `Ctrl+S`, `down 400` |
 | `words` | For a click: words inside the control to click on (the hook, version 5). They are selected, so a key or typing that follows works on them | `Akafer` |
+| `caret` | With `words`: `before` or `after` puts the cursor just before or after the words instead of selecting them | `after` |
 | `narration` | One or two sentences spoken over the step | `Select New lesson on the toolbar.` |
 | `silent` | `true` for a step with no narration on purpose | |
 | `callout` | A box, arrow or label drawn on the frame | `{ "type": "box", "around": "toolbar.lesson.new" }` |
@@ -46,7 +47,9 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 - `click`: needs a `target`. The pointer travels to it, the program's hover look shows, then the click. With `words`, the
   pointer goes to those words inside the control (the first place they appear) and the click selects them, as a
   double-click on a word or a drag across several would; then `type` with no target replaces them, and Backspace removes
-  them. This works on a page's text and in editable areas (such as a transcript's turn), not inside a text box.
+  them. With `caret` (`before` or `after`) the click puts the cursor just before or after the words and selects nothing,
+  for a key that inserts at the cursor. This works on a page's text and in editable areas (such as a transcript's
+  turn), not inside a text box.
 - `type`: needs a `value`. With a `target`, the pointer clicks into the field first; without one, it types into whatever
   has the focus. A drop-down list is chosen by typing the option's words (`"30 minutes"`).
 - `key`: a key or chord: letters, digits, F1 to F12, Enter, Escape, Tab, Backspace, Delete, Space, Home, End, PageUp,
@@ -54,7 +57,9 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 - `scroll`: `up`, `down`, `left` or `right` and a distance in page pixels (`down 400`, the default `down 300`). With a
   `target`, that control scrolls; otherwise the page.
 - `open`: `value` is a demo project to open.
-- `wait`: `value` is seconds (up to 30; default 1).
+- `wait`: `value` is seconds (up to 30; default 1). With a `target`, the take first waits until that control is on screen,
+  for at most a minute, as when a program finishes work of its own (Prism Transcribe's Edit button appears when a
+  transcription is done). Only the picture taken afterward is used, so the real wait never shows in the video.
 
 ### Callouts
 

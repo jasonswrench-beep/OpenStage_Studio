@@ -171,7 +171,7 @@ function info(el: HTMLElement, at = surfaceOf(el)): ControlInfo {
 
 /** Some words inside a control's text, as a range of the page (for clicking on words). A text box's or list's words are
  * not page text, so only text on the page and in editable areas can be clicked on this way. */
-function wordsRange(el: HTMLElement, words: string): Range {
+function wordsRange(el: HTMLElement, words: string, caret?: "before" | "after"): Range {
   if (isInput(el) || isTextArea(el) || isSelect(el)) throw new Error(`Clicking on words works on a page's text and in editable areas, not in the box "${el.dataset.demoId}".`);
   const doc = el.ownerDocument;
   const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -194,6 +194,8 @@ function wordsRange(el: HTMLElement, words: string): Range {
     }
     pos = end;
   }
+  // The cursor alone, just before or after the words.
+  if (caret) range.collapse(caret === "before");
   return range;
 }
 
@@ -476,7 +478,7 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
     case "position": {
       const el = find(command.id);
       const control = info(el);
-      if (command.words) control.rect = wordsRect(wordsRange(el, command.words), surfaceOf(el));
+      if (command.words) control.rect = wordsRect(wordsRange(el, command.words, command.caret), surfaceOf(el));
       return { viewport: [innerWidth, innerHeight], control };
     }
     case "hover": {
@@ -489,7 +491,7 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
       if (!info(el).enabled) throw new Error(`The control "${command.id}" is switched off and cannot be clicked.`);
       clearHover(all);
       // On words: the events carry the words' place, and the words are selected as the button goes down, as in a browser.
-      const range = command.words ? wordsRange(el, command.words) : null;
+      const range = command.words ? wordsRange(el, command.words, command.caret) : null;
       focusOn(el);
       const view = windowOf(el);
       const r = range ? (range.getClientRects()[0] ?? range.getBoundingClientRect()) : null;

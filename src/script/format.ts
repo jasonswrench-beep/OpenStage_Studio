@@ -53,6 +53,8 @@ export interface Step {
   /** For a click: words inside the control to click on. They are selected, as a double-click on a word or a drag across
    * several would, so a key or typing that follows works on them (the hook driver, hook version 5). */
   words?: string;
+  /** With words: put the cursor just before or after them instead of selecting them. */
+  caret?: "before" | "after";
   /** One or two sentences spoken over the step. */
   narration?: string;
   /** Set when a step has no narration on purpose. */

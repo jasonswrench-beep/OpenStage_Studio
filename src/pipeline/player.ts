@@ -32,7 +32,15 @@ export interface PlayOptions {
   readText?: boolean;
   /** Called just before each step; an error it throws fails that step (rehearsal checks steps with it). Takes never use it. */
   beforeStep?: (index: number) => Promise<void>;
+  /** The pause after the window settles, before each picture (AFTER_SETTLE_MS unless given; tests give 0). */
+  afterSettleMs?: number;
 }
+
+/** The pause after the window settles and before each picture, for what Windows fades in by itself. */
+export const AFTER_SETTLE_MS = 400;
+
+/** How long a wait step with a target waits for its control to appear. */
+export const WAIT_FOR_CONTROL_MS = 60_000;
 
 export class StepFailed extends Error {
   readonly step: number;
@@ -57,6 +65,10 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
   if (options.readText !== false && !readText) log(`${hello.hookVersion ? "This program's demo hook cannot" : "The accessibility driver does not"} report the text on screen; the frame scan will read the pictures only.`);
   const shot = async () => {
     await settle();
+    // Windows draws some parts itself, outside the page, and fades them in (a scroller's scroll bar, when a list first appears):
+    // the page has settled before they have. A short pause lets them finish, so the picture is the same in every take
+    // (2026-11-20: Prism Transcribe's editor, one take caught the scroll bar's arrow a shade lighter).
+    await new Promise((r) => setTimeout(r, options.afterSettleMs ?? AFTER_SETTLE_MS));
     const id = await camera.grab();
     if (readText && !pageText[id]) {
       try {
@@ -69,10 +81,25 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
     }
     return id;
   };
-  const where = async (id: string, words?: string): Promise<{ rect: Rect; label: string; role: string }> => {
-    const answer = await hook.send<{ viewport: [number, number]; control: ControlInfo }>({ cmd: "position", id, ...(words ? { words } : {}) });
+  const where = async (id: string, words?: string, caret?: "before" | "after"): Promise<{ rect: Rect; label: string; role: string }> => {
+    const answer = await hook.send<{ viewport: [number, number]; control: ControlInfo }>({ cmd: "position", id, ...(words ? { words, ...(caret ? { caret } : {}) } : {}) });
     if (!answer.control.visible) throw new Error(`The control "${id}" is not on screen.`);
     return { rect: toFrame(answer.control.rect, answer.viewport, options.frame), label: answer.control.label, role: answer.control.role };
+  };
+
+  /** Wait until a control is on screen, at most WAIT_FOR_CONTROL_MS. */
+  const until = async (id: string) => {
+    const end = Date.now() + WAIT_FOR_CONTROL_MS;
+    for (;;) {
+      try {
+        const answer = await hook.send<{ control: ControlInfo }>({ cmd: "position", id });
+        if (answer.control.visible) return;
+      } catch {
+        // Not on screen yet.
+      }
+      if (Date.now() > end) throw new Error(`The control "${id}" did not appear within ${WAIT_FOR_CONTROL_MS / 1000} seconds.`);
+      await new Promise((r) => setTimeout(r, 200));
+    }
   };
 
   await hook.send({ cmd: "reset" });
@@ -101,7 +128,7 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
     }
     if (step.target && step.action !== "open" && step.action !== "wait") {
       // On words, the pointer goes to the words rather than the middle of the control.
-      out.target = await where(step.target, step.words);
+      out.target = await where(step.target, step.words, step.caret);
       // The pointer arrives over the control: show the program's hover look.
       await hook.send({ cmd: "hover", id: step.target });
       out.hover = await shot();
@@ -110,7 +137,7 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
 
     switch (step.action) {
       case "click":
-        await hook.send({ cmd: "click", id: step.target!, ...(step.words ? { words: step.words } : {}) });
+        await hook.send({ cmd: "click", id: step.target!, ...(step.words ? { words: step.words, ...(step.caret ? { caret: step.caret } : {}) } : {}) });
         out.changes.push(await shot());
         break;
       case "type": {
@@ -157,6 +184,9 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
         out.changes.push(await shot());
         break;
       case "wait":
+        // With a target: until that control is on screen (the program finishing work of its own). Only the picture afterward is
+        // used, so how long it took never shows in the video.
+        if (step.target) await until(step.target);
         out.changes.push(await shot());
         break;
       case "drag":

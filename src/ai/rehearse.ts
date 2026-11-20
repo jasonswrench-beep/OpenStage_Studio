@@ -78,7 +78,7 @@ export async function rehearse(session: ProgramSession, start: Script, o: Rehear
     const steps = script.steps;
     try {
       await play(script, session.hook, { grab: async () => `rehearsal-${n++}` }, {
-        frame: o.frame, readText: false,
+        frame: o.frame, readText: false, afterSettleMs: 0,
         ...(canCheckBoxes ? {
           beforeStep: async (i: number) => {
             const step = steps[i];

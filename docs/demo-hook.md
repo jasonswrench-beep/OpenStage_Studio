@@ -57,7 +57,7 @@ sides) and `hook.ts` (the part a program includes).
 | `list` | Lists every named control: name, label, role, place, whether it is visible and switched on, whether it has the keyboard focus, and for a box, the words in it now (never a password box's) and whether it takes several lines. |
 | `position` | The place of one control, for the pointer, the click circle and callouts; with `words`, the place of those words inside it. |
 | `hover` | Gives a control its hover look (`data-demo-hover`), or clears it. |
-| `click` | Presses a control, with the pointer and mouse events a click sends. With `words`, the click lands on those words inside the control and selects them (on a page's text or in an editable area), so the next typing replaces them. |
+| `click` | Presses a control, with the pointer and mouse events a click sends. With `words`, the click lands on those words inside the control and selects them (on a page's text or in an editable area), so the next typing replaces them; with `caret` (`before` or `after`) it puts the cursor beside them instead. |
 | `focus` | Gives a control the keyboard focus. |
 | `type` | Types text one character at a time with key events, or chooses a drop-down option by its words. |
 | `key` | Presses a key or chord on the focused control; Tab, Enter, Space and Backspace do what a browser would (Backspace and Delete also in an editable area), and Ctrl+A selects all of a box's words (a text box, a number box, or an editable area such as OpenStage Guide's box for a paragraph's words), so the next typing replaces them. A box typed into tells the page it changed (a `change` event) when Tab or Enter leaves it, or when another control gets the focus, as in a browser. |
@@ -70,7 +70,7 @@ sides) and `hook.ts` (the part a program includes).
 The hook's version is 5. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
 `list`, and Ctrl+A; version 4 reaches the program's own frames, with no command changed (`Check Same Video.bat` passed
 after it, 2026-11-19: every one of the 3,284 frames identical); version 5 clicks on words inside a control (`click` and
-`position` with `words`, a script step's `words`), and Backspace and Delete work in an editable area. A script that
+`position` with `words` and `caret`, a script step's `words` and `caret`), and Backspace and Delete work in an editable area. A script that
 clicks on words needs version 5; the player refuses it with an older hook. Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
 only, and rehearsal skips its check on typing into a box that already holds words (docs/ai.md).
 

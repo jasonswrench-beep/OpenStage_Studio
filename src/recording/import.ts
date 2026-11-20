@@ -52,7 +52,7 @@ export async function resolveTargets(session: ProgramSession, draft: Script, log
   const script: Script = JSON.parse(JSON.stringify(draft));
   try {
     await play(script, session.hook, { grab: async () => "rehearsal" }, {
-      frame: FRAME, readText: false, log,
+      frame: FRAME, readText: false, log, afterSettleMs: 0,
       beforeStep: async (i: number) => {
         const step = script.steps[i];
         if (step.target || !step.fallback?.name) return;
