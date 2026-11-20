@@ -44,7 +44,7 @@ const COLOUR = /^#[0-9A-Fa-f]{6}$/;
 const SIDES = ["left", "right", "above", "below"];
 
 const HEADER_KEYS = ["format", "version", "title", "goal", "program", "driver", "startState", "playlist", "intro", "outro", "writtenBy", "publish", "redactions", "steps"];
-const STEP_KEYS = ["action", "target", "fallback", "value", "words", "caret", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter", "describe"];
+const STEP_KEYS = ["action", "target", "fallback", "value", "words", "caret", "until", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter", "describe"];
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -195,6 +195,10 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
         else if (accessible) err(`${at}.words`, "The accessibility driver cannot click on words inside a control. Use the hook.");
         else if (!isText(step.words)) err(`${at}.words`, "Say which words inside the control to click on.");
         else if (step.words.length > 200) err(`${at}.words`, "Click on at most 200 characters of words.");
+      }
+      if (step.until !== undefined) {
+        if (action !== "click" && action !== "key") err(`${at}.until`, "until goes with a click or a key: the control that shows the work it started is done.");
+        else checkControl(`${at}.until`, step.until);
       }
       if (step.caret !== undefined) {
         if (step.words === undefined) err(`${at}.caret`, "caret goes with words: it puts the cursor before or after them.");

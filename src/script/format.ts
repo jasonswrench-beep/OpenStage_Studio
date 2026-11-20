@@ -55,6 +55,9 @@ export interface Step {
   words?: string;
   /** With words: put the cursor just before or after them instead of selecting them. */
   caret?: "before" | "after";
+  /** For a click or a key that starts work of the program's own (sealing, unlocking): the control that shows it is done. The
+   * step's picture waits until it is on screen, at most a minute, so it never catches the work halfway. */
+  until?: string;
   /** One or two sentences spoken over the step. */
   narration?: string;
   /** Set when a step has no narration on purpose. */

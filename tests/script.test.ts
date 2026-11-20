@@ -110,6 +110,16 @@ test("a click on words may put the cursor before or after them instead of select
   assert.deepEqual(paths(validateScript(s)), ["steps[3].caret", "steps[4].caret"]);
 });
 
+test("a click or a key may name the control that shows its work is done", () => {
+  const s = good();
+  s.steps.push({ action: "click", target: "toolbar.lesson.new", until: "editor.title", narration: "Select New lesson." } as never);
+  s.steps.push({ action: "key", value: "Enter", until: "editor.title", narration: "Press Enter." } as never);
+  assert.equal(validateScript(s).ok, true, describeProblems(validateScript(s)).join("\n"));
+  s.steps.push({ action: "type", target: "editor.title", value: "x", until: "editor.title", narration: "Type." } as never);
+  s.steps.push({ action: "click", target: "toolbar.lesson.new", until: "not a name", narration: "Select." } as never);
+  assert.deepEqual(paths(validateScript(s)), ["steps[4].until", "steps[5].until"]);
+});
+
 test("a wait may name a control to wait for; an open step may not name one", () => {
   const s = good();
   s.steps.push({ action: "wait", target: "editor.title", value: "1", narration: "It is done." } as never);

@@ -33,6 +33,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | `value` | Text to type, a key, a demo project, a scroll, or seconds to wait | `Sorting leaves by shape`, `Ctrl+S`, `down 400` |
 | `words` | For a click: words inside the control to click on (the hook, version 5). They are selected, so a key or typing that follows works on them | `Akafer` |
 | `caret` | With `words`: `before` or `after` puts the cursor just before or after the words instead of selecting them | `after` |
+| `until` | For a click or a key that starts work of the program's own: the control that shows it is done; the step's picture waits for it (at most a minute) | `privacy.lock` |
 | `narration` | One or two sentences spoken over the step | `Select New lesson on the toolbar.` |
 | `silent` | `true` for a step with no narration on purpose | |
 | `callout` | A box, arrow or label drawn on the frame | `{ "type": "box", "around": "toolbar.lesson.new" }` |

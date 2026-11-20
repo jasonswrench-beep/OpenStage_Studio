@@ -138,6 +138,7 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
     switch (step.action) {
       case "click":
         await hook.send({ cmd: "click", id: step.target!, ...(step.words ? { words: step.words, ...(step.caret ? { caret: step.caret } : {}) } : {}) });
+        if (step.until) await until(step.until);
         out.changes.push(await shot());
         break;
       case "type": {
@@ -163,6 +164,7 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
       case "key": {
         const key = parseKey(step.value ?? "")!;
         await hook.send({ cmd: "key", ...(step.target ? { id: step.target } : {}), key: key.key, modifiers: key.modifiers });
+        if (step.until) await until(step.until);
         out.changes.push(await shot());
         break;
       }
