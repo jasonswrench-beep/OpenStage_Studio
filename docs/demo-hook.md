@@ -75,7 +75,10 @@ after it, 2026-11-19: every one of the 3,284 frames identical); version 5 clicks
 clicks on words needs version 5; the player refuses it with an older hook. Version 6 (2026-11-20) also sends the focus
 and blur events (and focusin, focusout) that a window which is not the active one never gets, when the focus moves by the
 hook or by the program's own focus() and blur(): without them Prism Transcribe's editor never learned which turn had the
-cursor, so a note or a timestamp went nowhere. No command changed. Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
+cursor, so a note or a timestamp went nowhere. In version 6 a click's pointer and mouse events also carry what a real
+click's carry: the point they land on (the middle of the control, or the words) and the mouse as the kind of pointer. React
+Aria's tick boxes count a press only when the button comes up over them, and ignore a click with no pointer, so Prism
+Transcribe's tick boxes never ticked before. No command changed. Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
 only, and rehearsal skips its check on typing into a box that already holds words (docs/ai.md).
 
 ## Programs with the hook

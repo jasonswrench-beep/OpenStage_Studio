@@ -536,10 +536,18 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
       const range = command.words ? wordsRange(el, command.words, command.caret) : null;
       focusOn(el);
       const view = windowOf(el);
-      const r = range ? (range.getClientRects()[0] ?? range.getBoundingClientRect()) : null;
-      const init: MouseEventInit = { bubbles: true, cancelable: true, button: 0, ...(r ? { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 } : {}) };
+      // The events carry what a mouse click carries: the point it lands on (the words, or the middle of the control) and the
+      // mouse as the kind of pointer. A program may count a press only when the button comes up over the control, as React
+      // Aria's tick boxes do (version 6, 2026-11-20: Prism Transcribe's I understand box never ticked without them).
+      const r = range ? (range.getClientRects()[0] ?? range.getBoundingClientRect()) : el.getBoundingClientRect();
+      const init: PointerEventInit = {
+        bubbles: true, cancelable: true, composed: true, button: 0, detail: 1, view,
+        clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, pointerId: 1, pointerType: "mouse", isPrimary: true,
+      };
       for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup"]) {
-        el.dispatchEvent(new (type.startsWith("pointer") ? view.PointerEvent : view.MouseEvent)(type, init));
+        const down = type.endsWith("down");
+        const event = { ...init, buttons: down ? 1 : 0, ...(type.startsWith("pointer") ? { pressure: down ? 0.5 : 0 } : {}) };
+        el.dispatchEvent(new (type.startsWith("pointer") ? view.PointerEvent : view.MouseEvent)(type, event));
         if (type === "mousedown" && range) {
           const selection = view.getSelection();
           selection?.removeAllRanges();

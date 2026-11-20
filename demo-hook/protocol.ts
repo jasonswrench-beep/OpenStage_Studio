@@ -77,8 +77,8 @@ export interface TextOnScreen {
  * frames (the same origin, such as a tools pane): their named controls are found, pressed and reported, and their text
  * read, with every place given on the program's page. No command changed. Version 5 clicks on words inside a control
  * (`click` and `position` with `words`), and Backspace and Delete remove text in an editable area. Version 6 sends the
- * focus and blur events a window that is not the active one does not get, so a program knows what has the focus. No command
- * changed. */
+ * focus and blur events a window that is not the active one does not get, so a program knows what has the focus, and a click's
+ * events carry the point they land on and the mouse as the pointer, as a real click's do. No command changed. */
 export const HOOK_VERSION = 6;
 
 /** Where some words are in a control's text: the first place they appear as written, else the first ignoring case.
