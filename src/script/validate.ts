@@ -29,13 +29,12 @@ export interface ValidateOptions {
   controlPatterns?: readonly string[];
 }
 
-/** Whether a control name fits a pattern such as `sidebar.lesson.*`, where * is a number. */
+/** Whether a control name fits a pattern such as `sidebar.lesson.*`, where each * is a number (`speaker.*.attr.*.name`). */
 export function fitsPattern(name: string, pattern: string): boolean {
   const parts = pattern.split("*");
-  if (parts.length !== 2) return name === pattern;
-  const [head, tail] = parts;
-  return name.length > head.length + tail.length && name.startsWith(head) && name.endsWith(tail)
-    && /^[0-9]{1,4}$/.test(name.slice(head.length, name.length - tail.length));
+  if (parts.length === 1) return name === pattern;
+  const quote = (s: string) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${parts.map(quote).join("[0-9]{1,4}")}$`).test(name);
 }
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/;

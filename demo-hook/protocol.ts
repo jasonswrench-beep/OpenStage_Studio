@@ -76,8 +76,10 @@ export interface TextOnScreen {
  * has the focus to each control's report, and made Ctrl+A select a box's words. Version 4 reaches the program's own
  * frames (the same origin, such as a tools pane): their named controls are found, pressed and reported, and their text
  * read, with every place given on the program's page. No command changed. Version 5 clicks on words inside a control
- * (`click` and `position` with `words`), and Backspace and Delete remove text in an editable area. */
-export const HOOK_VERSION = 5;
+ * (`click` and `position` with `words`), and Backspace and Delete remove text in an editable area. Version 6 sends the
+ * focus and blur events a window that is not the active one does not get, so a program knows what has the focus. No command
+ * changed. */
+export const HOOK_VERSION = 6;
 
 /** Where some words are in a control's text: the first place they appear as written, else the first ignoring case.
  * Null when they are not there. */

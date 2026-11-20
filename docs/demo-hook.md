@@ -19,7 +19,8 @@ sides) and `hook.ts` (the part a program includes).
 - In demo mode the page holds still and ignores the real mouse: transitions and animations are off, the text caret does
   not blink, and pointer events are switched off so a resting or stray mouse cannot change what is recorded. The hook's
   own clicks are unaffected.
-- In demo mode the page also looks the same whether or not its window is the active one: the hook rewrites the page's own
+- In demo mode the page also behaves the same whether or not its window is the active one: the focus and blur events a
+  window that is not in front never gets are sent by the hook (version 6). And it looks the same: the hook rewrites the page's own
   `:focus`, `:focus-visible`, `:focus-within` and `:hover` rules to follow markers it sets (`data-demo-focus` and the
   rest), keeps track of the keyboard focus itself from every focus() and blur() call, and draws drop-down lists itself
   (same box and colours, a plain arrow). A program does not need to do anything
@@ -67,11 +68,14 @@ sides) and `hook.ts` (the part a program includes).
 | `settle` | Waits for fonts, any running animations, the page (and its frames) to stop changing for 150 ms (at most 1.5 seconds, for a program that draws a moment after a click on a timer of its own), and two drawn frames, so a still picture shows the finished result. |
 | `text` | Lists every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their placeholder), and the choice showing in each drop-down list. Text hidden, scrolled out of view or clipped is left out. For the frame scan (docs/guard.md); it never changes the page. |
 
-The hook's version is 5. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
+The hook's version is 6. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
 `list`, and Ctrl+A; version 4 reaches the program's own frames, with no command changed (`Check Same Video.bat` passed
 after it, 2026-11-19: every one of the 3,284 frames identical); version 5 clicks on words inside a control (`click` and
 `position` with `words` and `caret`, a script step's `words` and `caret`), and Backspace and Delete work in an editable area. A script that
-clicks on words needs version 5; the player refuses it with an older hook. Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
+clicks on words needs version 5; the player refuses it with an older hook. Version 6 (2026-11-20) also sends the focus
+and blur events (and focusin, focusout) that a window which is not the active one never gets, when the focus moves by the
+hook or by the program's own focus() and blur(): without them Prism Transcribe's editor never learned which turn had the
+cursor, so a note or a timestamp went nowhere. No command changed. Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
 only, and rehearsal skips its check on typing into a box that already holds words (docs/ai.md).
 
 ## Programs with the hook

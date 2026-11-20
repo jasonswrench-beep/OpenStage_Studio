@@ -235,13 +235,55 @@ function watchFocus(win: PageWindow) {
   const realFocus = proto.focus;
   const realBlur = proto.blur;
   proto.focus = function (this: HTMLElement, options?: FocusOptions) {
+    const before = lastFocus;
+    const delivered = heard(this, "focus", () => realFocus.call(this, options));
     lastFocus = this;
-    return realFocus.call(this, options);
+    // A window that is not the active one gets no focus events: send them, so the program knows what has the focus, as it
+    // would in the active window (Prism Transcribe's editor learns which turn has the cursor from them).
+    if (!delivered && before !== this && canTakeFocus(this)) moveFocusEvents(before, this);
+    return undefined;
   };
   proto.blur = function (this: HTMLElement) {
-    if (lastFocus === this) lastFocus = null;
-    return realBlur.call(this);
+    const had = lastFocus === this;
+    if (had) lastFocus = null;
+    const delivered = heard(this, "blur", () => realBlur.call(this));
+    if (!delivered && had) moveFocusEvents(this, null);
+    return undefined;
   };
+}
+
+/** Whether calling `act` made the browser send `type` to the element. */
+function heard(el: HTMLElement, type: "focus" | "blur", act: () => void): boolean {
+  let got = false;
+  const mark = () => (got = true);
+  el.addEventListener(type, mark);
+  try {
+    act();
+  } finally {
+    el.removeEventListener(type, mark);
+  }
+  return got;
+}
+
+/** Whether focus() would give an element the focus in an active window. */
+function canTakeFocus(el: HTMLElement): boolean {
+  if ((el as HTMLButtonElement).disabled || !el.isConnected) return false;
+  return el.tabIndex >= 0 || el.isContentEditable || /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(el.tagName) || (el.tagName === "A" && el.hasAttribute("href"));
+}
+
+/** The events a browser sends when the focus moves from one element to another: blur and focusout on the one that had it,
+ * focus and focusin on the one that gets it. */
+function moveFocusEvents(from: HTMLElement | null, to: HTMLElement | null) {
+  if (from?.isConnected) {
+    const view = windowOf(from);
+    from.dispatchEvent(new view.FocusEvent("blur", { relatedTarget: to }));
+    from.dispatchEvent(new view.FocusEvent("focusout", { bubbles: true, relatedTarget: to }));
+  }
+  if (to) {
+    const view = windowOf(to);
+    to.dispatchEvent(new view.FocusEvent("focus", { relatedTarget: from }));
+    to.dispatchEvent(new view.FocusEvent("focusin", { bubbles: true, relatedTarget: from }));
+  }
 }
 
 /** Put a page or frame into demo mode once: the steady look, focus watched, its style rules rewritten. A frame that opens

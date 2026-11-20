@@ -123,6 +123,9 @@ test("numbered controls that appear later count as real", () => {
   assert.ok(fitsPattern("sidebar.lesson.12", "sidebar.lesson.*"));
   assert.equal(fitsPattern("sidebar.lesson.x", "sidebar.lesson.*"), false);
   assert.equal(fitsPattern("sidebar.lesson.", "sidebar.lesson.*"), false);
+  assert.ok(fitsPattern("speaker.2.attr.1.name", "speaker.*.attr.*.name"), "several numbers");
+  assert.equal(fitsPattern("speaker.2.attr.x.name", "speaker.*.attr.*.name"), false);
+  assert.equal(fitsPattern("speakerX2.attr.1.name", "speaker.*.attr.*.name"), false, "a dot is a dot");
   assert.match(controlLines(controls, program), /sidebar\.lesson\.\*: lesson number \* in the list/);
 });
 
