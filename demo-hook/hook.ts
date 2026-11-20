@@ -37,8 +37,12 @@ export interface DemoHook {
 const STEADY_CSS = `
 *, *::before, *::after { transition: none !important; animation: none !important; caret-color: transparent !important; scroll-behavior: auto !important; pointer-events: none !important; }
 :focus-visible { outline-style: none; }
+::selection { background-color: Highlight; color: HighlightText; }
 select { will-change: transform; appearance: none !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 6l4.5 4.5L12.5 6' fill='none' stroke='%23444' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 0.7em center !important; background-size: 1em !important; padding-right: 2.2em !important; }
 `;
+// Selected text is drawn grey when the window is not the active one and blue when it is, and which window is in front can change
+// during a take, so in demo mode a selection always has the active look (2026-11-20: a selected word in Prism Transcribe's editor
+// came out grey in one take and blue in the next).
 // Windows draws some controls itself and draws them differently when the program's window is not the active one. A
 // drop-down list is the one that shows in pictures, so in demo mode it is drawn by the page instead (the same box and
 // colours, with a plain arrow), and its look no longer depends on which window is active.
