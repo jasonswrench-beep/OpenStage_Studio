@@ -25,16 +25,18 @@ export interface Validation {
 export interface ValidateOptions {
   /** The program's real control names from the demo-mode hook. When given, any target not in the list is an error. */
   controls?: readonly string[];
-  /** Controls that appear only after an action, with * for their number (such as `sidebar.lesson.*`); they count as real. */
+  /** Controls that appear only after an action, with * for their number (such as `sidebar.lesson.*`) and ** for the rest of a
+   * name (such as `prop.**`); they count as real. */
   controlPatterns?: readonly string[];
 }
 
-/** Whether a control name fits a pattern such as `sidebar.lesson.*`, where each * is a number (`speaker.*.attr.*.name`). */
+/** Whether a control name fits a pattern such as `sidebar.lesson.*`, where each * is a number (`speaker.*.attr.*.name`) and each **
+ * is the rest of a name, dots and all (`prop.**` fits `prop.size` and `prop.slide-narration-1-voice`). */
 export function fitsPattern(name: string, pattern: string): boolean {
-  const parts = pattern.split("*");
-  if (parts.length === 1) return name === pattern;
+  if (!pattern.includes("*")) return name === pattern;
   const quote = (s: string) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`^${parts.map(quote).join("[0-9]{1,4}")}$`).test(name);
+  const re = pattern.split("**").map((piece) => piece.split("*").map(quote).join("[0-9]{1,4}")).join("[A-Za-z0-9_.-]+");
+  return new RegExp(`^${re}$`).test(name);
 }
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/;

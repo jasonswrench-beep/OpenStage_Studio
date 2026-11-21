@@ -111,6 +111,37 @@ export const PROGRAMS: ProgramEntry[] = [
       return { exe, args: ["--demo-hook", endpoint, "--demo-token", token, "--demo-workspace", workspace, "--monitor", String(monitor)] };
     },
     windowTitle: "openstage-editor",
+    demos: [
+      { name: "minimal", about: "What Is Organizational Communication?, the smallest example: a Welcome slide (heading, body, a Continue button, an accent bar) and a Knowledge check slide." },
+      { name: "lesson-parts", about: "Giving feedback: the parts, a short lesson made from the ready-made lesson slides." },
+      { name: "interactions", about: "Interactions demo, one slide for each of the sixteen interactions." },
+      { name: "labeled-graphic", about: "Labeled graphic, a picture with numbered markers." },
+      { name: "question-types", about: "Question types, one slide for each kind of question." },
+      { name: "question-bank", about: "Question bank and timer example, a bank that draws questions, and a countdown timer." },
+      { name: "sliders", about: "Sliders and dials, inputs that save a number." },
+      { name: "looks", about: "Looks, a step marked as done and a button that starts disabled." },
+      { name: "timed-media", about: "Notes that follow a video, things that come and go with a clip." },
+      { name: "quiz-board", about: "Quiz board: accessibility basics, the quiz board game." },
+      { name: "prize-ladder", about: "Prize ladder: general knowledge, the prize ladder game." },
+      { name: "escape-room", about: "Escape room: your first day, the escape room game." },
+      { name: "order-challenge", about: "Order challenge: steps at work, the order challenge game." },
+      { name: "branching", about: "Branching demo, a story that branches." },
+      { name: "scenario", about: "A Missed Deadline, a branching scenario with a cast of three, a choice of character, two meters and an ending." },
+      { name: "conversation", about: "A Word in the Hallway, a conversation between characters." },
+      { name: "lms-test-lesson", about: "Choosing the Right Channel at Work, the full 24-slide lesson made for trying a course in a learning system." },
+      { name: "broken", about: "Deliberately Broken Fixture, a course with problems on purpose, for the Problems list." },
+    ],
+    // Author names its controls from its own code in demo mode (editor/src/demonames.ts on its studio-demo-hook branch), so most of
+    // them appear only once their panel or window is open. Run the course's tools/controls.ts to see the names on screen.
+    appearing: [
+      { pattern: "slides.item.*", about: "slide number * in the Slides list, counting from 1 at the top" },
+      { pattern: "slides.section.*", about: "the heading of section number * in the Slides list" },
+      { pattern: "objects.item.*", about: "object number * in the Objects list of the layer being edited, counting from 1 at the top" },
+      { pattern: "props-tab.**", about: "a tab of the Properties panel: props-tab.content, props-tab.style, props-tab.behaviour" },
+      { pattern: "props-sec.**", about: "the heading of a section of the Properties panel that opens and closes, by its tab and title, such as props-sec.style.Appearance" },
+      { pattern: "prop.**", about: "a field of the Properties panel, by its key in the code, such as prop.name, prop.size, prop.font, prop.decorative" },
+      { pattern: "**", about: "a control in a window or panel that opens later: by its element id (te-box, the Edit text window's text) or by its place, the id or heading of the part it is in, its group, its kind and its number there (tp.dialog-actions.button.1, the theme window's Apply theme)" },
+    ],
   },
   {
     id: "openstage-guide",

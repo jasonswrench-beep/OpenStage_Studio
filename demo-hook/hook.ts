@@ -70,6 +70,10 @@ const isInput = (el: Element): el is HTMLInputElement => el instanceof windowOf(
 const isTextArea = (el: Element): el is HTMLTextAreaElement => el instanceof windowOf(el).HTMLTextAreaElement;
 const isSelect = (el: Element): el is HTMLSelectElement => el instanceof windowOf(el).HTMLSelectElement;
 const isButton = (el: Element): el is HTMLButtonElement => el instanceof windowOf(el).HTMLButtonElement;
+/** A tick box or a radio button. */
+const isTickable = (el: Element): el is HTMLInputElement => isInput(el) && (el.type === "checkbox" || el.type === "radio");
+/** Controls of other kinds that Space chooses, by their role. */
+const TICKABLE_ROLES = new Set(["checkbox", "radio", "switch", "menuitemcheckbox", "menuitemradio", "option", "tab"]);
 
 /** The program's page and every frame in it the hook can reach and that shows, outermost first. */
 function surfaces(): Surface[] {
@@ -174,6 +178,7 @@ function info(el: HTMLElement, at = surfaceOf(el)): ControlInfo {
     visible,
     enabled: !(el as HTMLButtonElement).disabled && el.getAttribute("aria-disabled") !== "true",
     ...boxFacts(el),
+    ...(isTickable(el) ? { checked: el.checked } : TICKABLE_ROLES.has(el.getAttribute("role") ?? "") && el.hasAttribute("aria-checked") ? { checked: el.getAttribute("aria-checked") === "true" } : {}),
     focused: focused() === el,
   };
 }
@@ -469,8 +474,16 @@ function pressKey(target: HTMLElement, key: string, modifiers: string[]) {
       next?.focus();
     } else if ((key === "Enter" || key === "Space") && (isButton(target) || target.getAttribute("role") === "button")) {
       target.click();
+    } else if (key === "Space" && (isTickable(target) || TICKABLE_ROLES.has(target.getAttribute("role") ?? ""))) {
+      // Space ticks or unticks a tick box and chooses a radio button, as it does for a person.
+      target.click();
     } else if (key === "Enter" && isInput(target)) {
       commitBox(target);
+      // Enter in a form's box sends the form, as a browser does when the form has a button that sends it or only one box.
+      const form = target.form;
+      if (form && !isTickable(target) && (form.querySelector("button:not([type]), button[type=submit], input[type=submit]") || form.querySelectorAll("input").length === 1)) {
+        form.requestSubmit();
+      }
     } else if (key === "Backspace" && isInput(target) && !hasSelection(target)) {
       typedIn.add(target);
       target.value = allChosen.has(target) ? "" : target.value.slice(0, -1);

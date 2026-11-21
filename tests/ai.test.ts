@@ -126,6 +126,12 @@ test("numbered controls that appear later count as real", () => {
   assert.ok(fitsPattern("speaker.2.attr.1.name", "speaker.*.attr.*.name"), "several numbers");
   assert.equal(fitsPattern("speaker.2.attr.x.name", "speaker.*.attr.*.name"), false);
   assert.equal(fitsPattern("speakerX2.attr.1.name", "speaker.*.attr.*.name"), false, "a dot is a dot");
+  assert.ok(fitsPattern("prop.slide-narration-1-voice", "prop.**"), "** is the rest of a name");
+  assert.ok(fitsPattern("tp.dialog-actions.button.1", "**"));
+  assert.equal(fitsPattern("prop.", "prop.**"), false, "** is at least one character");
+  assert.equal(fitsPattern("props.size", "prop.**"), false);
+  assert.ok(fitsPattern("slides.item.3", "slides.item.*"), "one * is still only a number");
+  assert.equal(fitsPattern("slides.item.x", "slides.item.*"), false);
   assert.match(controlLines(controls, program), /sidebar\.lesson\.\*: lesson number \* in the list/);
 });
 

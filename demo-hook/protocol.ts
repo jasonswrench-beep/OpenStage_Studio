@@ -56,6 +56,8 @@ export interface ControlInfo {
   multiline?: boolean;
   /** Whether it has the keyboard focus. (Hook version 3.) */
   focused?: boolean;
+  /** For a tick box, a radio button or a control with aria-checked: whether it is ticked or chosen. (Hook version 7.) */
+  checked?: boolean;
 }
 
 export interface Hello {
@@ -78,8 +80,10 @@ export interface TextOnScreen {
  * read, with every place given on the program's page. No command changed. Version 5 clicks on words inside a control
  * (`click` and `position` with `words`), and Backspace and Delete remove text in an editable area. Version 6 sends the
  * focus and blur events a window that is not the active one does not get, so a program knows what has the focus, and a click's
- * events carry the point they land on and the mouse as the pointer, as a real click's do. No command changed. */
-export const HOOK_VERSION = 6;
+ * events carry the point they land on and the mouse as the pointer, as a real click's do. No command changed. Version 7 makes
+ * Space tick a tick box or choose a radio button and Enter in a form's box send the form, as they do for a person, reports
+ * radio buttons and sliders by their own roles, and says whether a tick box is ticked. No command changed. */
+export const HOOK_VERSION = 7;
 
 /** Where some words are in a control's text: the first place they appear as written, else the first ignoring case.
  * Null when they are not there. */
