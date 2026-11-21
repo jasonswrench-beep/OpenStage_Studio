@@ -45,6 +45,13 @@ test("a blurred box over every frame it shows covers it; a box over part of the 
   assert.deepEqual(redactionSpans(part, timeline), [{ from: 90, to: 150, box: [860, 390, 220, 40] }], "cards are never blurred");
 });
 
+test("a blurred box lasts until the picture changes, when the next step starts before its picture", () => {
+  // Step 2 starts at frame 135, but its action's picture (p2) only shows from frame 150: p1 is still on screen until then.
+  const early = { ...timeline, steps: [timeline.steps[0], { ...timeline.steps[1], startMs: 4500 }] } as Timeline;
+  const part = { steps: [{}, {}], redactions: [{ box: [860, 390, 220, 40], fromStep: 1, toStep: 1 }] } as unknown as Script;
+  assert.deepEqual(redactionSpans(part, early), [{ from: 90, to: 150, box: [860, 390, 220, 40] }]);
+});
+
 test("steps and times are said the way people count them", () => {
   assert.deepEqual(stepsAt(0, 90, timeline), [0, 0]);
   assert.deepEqual(stepsAt(150, 240, timeline), [2, 2]);

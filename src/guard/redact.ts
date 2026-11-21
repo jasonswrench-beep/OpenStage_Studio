@@ -1,6 +1,7 @@
 // Blurred boxes (redactions): where on the timeline each one applies. A redaction names steps; the video shows the take's
-// pictures, so a box covers every frame that shows a picture from the start of its first step to the start of the step
-// after its last. Title and end cards are never blurred.
+// pictures, so a box covers every frame that shows a picture from the start of its first step until the picture first changes
+// after the step after its last has begun. (The picture of a step's action comes a moment after the step starts, so what the
+// box hides stays on screen into the next step until then.) Title and end cards are never blurred.
 
 import type { Redaction, Script } from "../script/format.ts";
 import type { Rect, Timeline } from "../timeline/build.ts";
@@ -26,7 +27,11 @@ export function redactionFrames(r: Redaction, timeline: Timeline): [number, numb
   const [first, end] = pictureFrames(timeline);
   const steps = timeline.steps;
   const from = r.fromStep <= 0 ? first : frameOf(steps[r.fromStep - 1]?.startMs ?? 0, timeline.fps);
-  const to = r.toStep < steps.length ? frameOf(steps[r.toStep].startMs, timeline.fps) : end;
+  let to = end;
+  if (r.toStep < steps.length) {
+    const next = frameOf(steps[r.toStep].startMs, timeline.fps);
+    to = timeline.segments.find((s) => s.picture && s.from >= next)?.from ?? end;
+  }
   return [Math.max(first, from), Math.min(end, to)];
 }
 
