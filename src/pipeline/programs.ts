@@ -6,13 +6,15 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { readStudioSettings, studioExe, workspace as studioWorkspace } from "../paths.ts";
 
-/** OpenStage Author's program: where OPENSTAGE_AUTHOR_EXE or Studio's Settings say, else a build in Author's repository
- * beside this one (which has the demo hook), else its usual per-user install. Null if none is there. */
+/** OpenStage Author's program: where OPENSTAGE_AUTHOR_EXE or Studio's Settings say, else a build of Author's branch
+ * `studio-demo-hook` beside this repository (its own checkout, openstage-author-demo, or Author's main checkout), else its usual
+ * per-user install. Null if none is there. */
 export function authorExe(root: string, env: NodeJS.ProcessEnv = process.env): string | null {
   const local = env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local");
   const places = [
     env.OPENSTAGE_AUTHOR_EXE,
     readStudioSettings().authorExe,
+    resolve(root, "../openstage-author-demo/editor/src-tauri/target/release/openstage-editor.exe"),
     resolve(root, "../openstage-author/editor/src-tauri/target/release/openstage-editor.exe"),
     join(local, "OpenStage Author", "openstage-editor.exe"),
   ];
