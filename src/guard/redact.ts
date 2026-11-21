@@ -1,7 +1,7 @@
 // Blurred boxes (redactions): where on the timeline each one applies. A redaction names steps; the video shows the take's
-// pictures, so a box covers every frame that shows a picture from the start of its first step until the picture first changes
-// after the step after its last has begun. (The picture of a step's action comes a moment after the step starts, so what the
-// box hides stays on screen into the next step until then.) Title and end cards are never blurred.
+// pictures, so a box covers every frame that shows a picture from the start of its first step until the next step's action
+// shows. (That step's narration starts first, and a click shows the press before the program changes, so what the box hides
+// stays on screen into the next step until the picture taken at its action.) Title and end cards are never blurred.
 
 import type { Redaction, Script } from "../script/format.ts";
 import type { Rect, Timeline } from "../timeline/build.ts";
@@ -29,8 +29,11 @@ export function redactionFrames(r: Redaction, timeline: Timeline): [number, numb
   const from = r.fromStep <= 0 ? first : frameOf(steps[r.fromStep - 1]?.startMs ?? 0, timeline.fps);
   let to = end;
   if (r.toStep < steps.length) {
-    const next = frameOf(steps[r.toStep].startMs, timeline.fps);
-    to = timeline.segments.find((s) => s.picture && s.from >= next)?.from ?? end;
+    const next = steps[r.toStep];
+    const start = frameOf(next.startMs, timeline.fps), action = frameOf(next.actionMs, timeline.fps);
+    const after = timeline.segments.filter((s) => s.picture && s.from >= start);
+    // The first picture taken at or after the action; if the step's pictures all came before it, its first picture.
+    to = (after.find((s) => s.from >= action) ?? after[0])?.from ?? end;
   }
   return [Math.max(first, from), Math.min(end, to)];
 }

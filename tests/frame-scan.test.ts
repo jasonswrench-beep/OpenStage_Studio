@@ -52,6 +52,17 @@ test("a blurred box lasts until the picture changes, when the next step starts b
   assert.deepEqual(redactionSpans(part, early), [{ from: 90, to: 150, box: [860, 390, 220, 40] }]);
 });
 
+test("a blurred box covers the press picture of the next step's click, which still shows the old screen", () => {
+  // Step 2 starts at frame 140; its click shows the press (p1b, the old screen) from 150, and the result (p2) from 158, after the action at 156.
+  const press = {
+    ...timeline,
+    segments: [timeline.segments[0], { from: 90, to: 150, picture: "p1" }, { from: 150, to: 158, picture: "p1b" }, { from: 158, to: 240, picture: "p2" }, timeline.segments[3]],
+    steps: [timeline.steps[0], { ...timeline.steps[1], startMs: 4667, actionMs: 5200 }],
+  } as Timeline;
+  const part = { steps: [{}, {}], redactions: [{ box: [860, 390, 220, 40], fromStep: 1, toStep: 1 }] } as unknown as Script;
+  assert.deepEqual(redactionSpans(part, press), [{ from: 90, to: 158, box: [860, 390, 220, 40] }]);
+});
+
 test("steps and times are said the way people count them", () => {
   assert.deepEqual(stepsAt(0, 90, timeline), [0, 0]);
   assert.deepEqual(stepsAt(150, 240, timeline), [2, 2]);
