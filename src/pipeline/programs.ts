@@ -114,6 +114,7 @@ export const PROGRAMS: ProgramEntry[] = [
     demos: [
       { name: "minimal", about: "What Is Organizational Communication?, the smallest example: a Welcome slide (heading, body, a Continue button, an accent bar) and a Knowledge check slide." },
       { name: "lesson-parts", about: "Giving feedback: the parts, a short lesson made from the ready-made lesson slides." },
+      { name: "giving-feedback", about: "Giving Feedback, the Author video course's demo course: six slides in three sections (Welcome, Objectives, What feedback is, The three-part model, a Knowledge check, a Summary)." },
       { name: "interactions", about: "Interactions demo, one slide for each of the sixteen interactions." },
       { name: "labeled-graphic", about: "Labeled graphic, a picture with numbered markers." },
       { name: "question-types", about: "Question types, one slide for each kind of question." },
