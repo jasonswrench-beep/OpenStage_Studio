@@ -113,7 +113,8 @@ function named(all = surfaces()): { el: HTMLElement; at: Surface }[] {
 
 /** Where an element's page sits on the program's page. */
 function surfaceOf(el: Element, all = surfaces()): Surface {
-  return all.find((s) => s.doc === el.ownerDocument) ?? all[0];
+  // The program's own page is always first, so all[0] is there.
+  return all.find((s) => s.doc === el.ownerDocument) ?? all[0]!;
 }
 
 export function controlLabel(el: Element): string {
