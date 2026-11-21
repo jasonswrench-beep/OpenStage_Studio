@@ -142,7 +142,11 @@ function controlRole(el: Element): string {
   const role = el.getAttribute("role");
   if (role) return role;
   const tag = el.tagName.toLowerCase();
-  if (tag === "input") return (el as HTMLInputElement).type === "checkbox" ? "checkbox" : "textbox";
+  if (tag === "input") {
+    const type = (el as HTMLInputElement).type;
+    // A radio button and a slider say what they are (hook version 6), so a script clicks them rather than typing into them.
+    return type === "checkbox" ? "checkbox" : type === "radio" ? "radio" : type === "range" ? "slider" : "textbox";
+  }
   if (tag === "textarea") return "textbox";
   if (tag === "select") return "combobox";
   if (tag === "a") return "link";
