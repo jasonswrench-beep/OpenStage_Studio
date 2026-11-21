@@ -26,7 +26,13 @@ export interface DemoHookOptions {
   reset(): void | Promise<void>;
   /** Settings to use instead of reading them from the page (for tests). */
   settings?: HookSettings;
+  /** Whether the program still has work of its own to finish on a timer after a step (OpenStage Author checks the course for
+   * problems a moment after each change). Settle waits until it has none, at most BUSY_MOST_MS, so the picture shows the result. */
+  busy?(): boolean;
 }
+
+/** The longest settle waits for a program's own work (DemoHookOptions.busy). */
+const BUSY_MOST_MS = 5000;
 
 export interface DemoHook {
   stop(): void;
@@ -629,6 +635,13 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
       // A program may draw a moment after a click, on a timer of its own (OpenStage Guide draws a guide's page a little after it opens):
       // wait until the page and its frames have stopped changing for a short while, so the picture and the next step see the result.
       await quiet(all.map((s) => s.doc));
+      if (options.busy?.()) {
+        // Work the program does a moment later, on a timer, changes nothing yet, so quiet() cannot see it coming: wait for it,
+        // then for the page to show its result.
+        const end = Date.now() + BUSY_MOST_MS;
+        while (options.busy() && Date.now() < end) await new Promise((r) => setTimeout(r, 50));
+        await quiet(all.map((s) => s.doc));
+      }
       await frames(2);
       return null;
     case "text":
