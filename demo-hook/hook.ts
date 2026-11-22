@@ -657,7 +657,12 @@ const NO_TEXT = new Set(["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT", "SELECT", "O
 function clipOf(el: Element): DOMRect | null {
   const view = windowOf(el);
   let [left, top, right, bottom] = [0, 0, view.innerWidth, view.innerHeight];
+  const doc = el.ownerDocument;
   for (let p = el.parentElement; p; p = p.parentElement) {
+    // The overflow of <html> and <body> belongs to the window itself, which is already the start (CSS carries it to the viewport).
+    // A page that sets overflow: hidden on a body with nothing in its flow (PrismQDA's, whose content is in a fixed #root) would
+    // otherwise clip every word away.
+    if (p === doc.body || p === doc.documentElement) continue;
     const s = view.getComputedStyle(p);
     if (s.overflowX !== "visible" || s.overflowY !== "visible") {
       const r = p.getBoundingClientRect();

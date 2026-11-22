@@ -408,7 +408,9 @@ export const PROGRAMS: ProgramEntry[] = [
       // A clean workspace for this take, always at the same place, so two takes look the same and the folders on screen never name the
       // person. PrismQDA keeps its window's settings, the demo projects, the files its boxes offer and every file it saves there.
       const workspace = resolve(studioWorkspace(), "work", "demo-workspace", "prismqda");
-      rmSync(workspace, { recursive: true, force: true });
+      // The last start's project file can still be held for a moment while that program ends (it is stopped, not closed), so the
+      // clearing tries again for a few seconds.
+      rmSync(workspace, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
       mkdirSync(workspace, { recursive: true });
       return { exe, args: ["--demo-hook", endpoint, "--demo-token", token, "--demo-workspace", workspace, "--monitor", String(monitor)] };
     },
