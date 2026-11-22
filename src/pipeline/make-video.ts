@@ -38,7 +38,7 @@ import { loadBlocklist, type LoadedBlocklist } from "../guard/load.ts";
 import { scanFrames, type OcrResult } from "../guard/frame-scan.ts";
 import { redactionSpans } from "../guard/redact.ts";
 import { carryDecisions, gate, guardReport, REVIEW_FORMAT, type Review } from "../guard/review.ts";
-import { makeDraft, thumbnailPlan, type ProjectPublishSettings } from "../package/package.ts";
+import { cardLook, makeDraft, thumbnailPlan, type ProjectPublishSettings } from "../package/package.ts";
 import { isMain } from "../util/is-main.ts";
 
 /** The project folder in the repository; installed, Studio's workspace. Kept for the tools that name it. */
@@ -74,6 +74,9 @@ export function readProjectSettings(scriptPath: string): ProjectSettings {
   const settings: ProjectSettings = { voice: { ...DEFAULT_VOICE }, pronunciations: {} };
   if (!existsSync(file)) return settings;
   const data = JSON.parse(readFileSync(file, "utf8")) as Partial<ProjectSettings>;
+  // The product's mark is named from the settings file's folder.
+  const mark = data.publish?.thumbnail?.mark;
+  if (mark && data.publish?.thumbnail) data.publish.thumbnail.mark = resolve(dirname(file), mark);
   return { voice: { ...settings.voice, ...data.voice }, pronunciations: data.pronunciations ?? {}, paces: data.paces, publish: data.publish };
 }
 
@@ -170,6 +173,9 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
 
   // 4. The timeline.
   const timeline = buildTimeline({ script, take, clips, fps: FPS, paces: settings.paces });
+  // The title and end cards in the product's look, when its template has one.
+  const look = cardLook(settings.publish?.thumbnail);
+  if (look) for (const s of timeline.segments) if (s.card) Object.assign(s.card, look);
   // Prepared pictures (slides) have nothing to point at.
   if (options.prepared) timeline.pointer = timeline.pointer.map(() => null);
   writeFileSync(join(outFolder, "timeline.json"), JSON.stringify(timeline));

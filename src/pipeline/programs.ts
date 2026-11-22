@@ -38,6 +38,13 @@ export function transcribeExe(root: string, env: NodeJS.ProcessEnv = process.env
   return places.find((p): p is string => !!p && existsSync(p)) ?? null;
 }
 
+/** PrismQDA's window with the demo hook: where PRISMQDA_EXE says, else a build of PrismQDA's branch `studio-demo-hook` beside this
+ * repository (its own checkout, prismqda-demo). The installed PrismQDA has no hook, so it is never used. Null if none is there. */
+export function prismqdaExe(root: string, env: NodeJS.ProcessEnv = process.env): string | null {
+  const places = [env.PRISMQDA_EXE, resolve(root, "../prismqda-demo/app/src-tauri/target/release/prismqda-app.exe")];
+  return places.find((p): p is string => !!p && existsSync(p)) ?? null;
+}
+
 /** The names of one recording's controls in Prism Transcribe, by the slug of its label (INT-01 is int-01). */
 function transcribeFile(slug: string, label: string): { pattern: string; about: string }[] {
   return [
@@ -391,6 +398,31 @@ export const PROGRAMS: ProgramEntry[] = [
       { pattern: "speakers.done", about: "Done, which closes the Speakers panel" },
     ],
     notes: "Prism Transcribe has no menus: the bar along the top holds bar.deidentify and bar.privacy (with a project open), bar.newProject, bar.openProject, bar.settings and bar.help (F1 also opens Help). With a project open, Recordings is on the left, one card per recording (file.int-01, file.fg-01 and their buttons), and the transcript of the chosen recording on the right. The status bar names are status.models, status.ffmpeg and status.cleanUp. In demo mode no Windows box ever opens: a box for choosing a file or folder answers at once with a place in the workspace, a file is saved in the workspace's Exports, nothing is downloaded, no Windows notification is shown, Check for updates acts as if Offline were on, and PrismQDA is never started. The Windows account name the program shows (in the de-identification log) is the invented researcher. The clock stands still in demo mode (Saved 10:30:00 AM, the same date everywhere). A recording being transcribed shows its progress line with the words Starting… until it is done, whatever the computer's speed: to show a transcription finishing, wait for the card's Edit button (a wait step with the target file.int-01.edit), which waits as long as the work takes and never shows the time in the video.",
+  },
+  {
+    id: "prismqda",
+    name: "PrismQDA",
+    launch(root, endpoint, token, monitor) {
+      const exe = prismqdaExe(root);
+      if (!exe) throw new Error("PrismQDA with the demo hook was not found. Build the window of PrismQDA's branch studio-demo-hook (npm run build in app\\ui, then in app: node ui\\node_modules\\@tauri-apps\\cli\\tauri.js build --no-bundle), or set PRISMQDA_EXE.");
+      // A clean workspace for this take, always at the same place, so two takes look the same and the folders on screen never name the
+      // person. PrismQDA keeps its window's settings, the demo projects, the files its boxes offer and every file it saves there.
+      const workspace = resolve(studioWorkspace(), "work", "demo-workspace", "prismqda");
+      rmSync(workspace, { recursive: true, force: true });
+      mkdirSync(workspace, { recursive: true });
+      return { exe, args: ["--demo-hook", endpoint, "--demo-token", token, "--demo-workspace", workspace, "--monitor", String(monitor)] };
+    },
+    windowTitle: "PrismQDA (demo mode)",
+    demos: [
+      { name: "none", about: "No project open: the start page. The files of the invented Campus Commuting Study wait in the workspace's Files, for the boxes that choose files to offer." },
+      { name: "empty", about: "The start page, with no project, export or class packet left in the workspace from an earlier step." },
+    ],
+    // PrismQDA names its controls from its own code in demo mode (app/ui/src/demonames.ts on its studio-demo-hook branch), so most of
+    // them appear only once their page or window is open. Run the course's tools/controls.ts to see the names on screen.
+    appearing: [
+      { pattern: "**", about: "a control on a page or in a window that opens later: by its element id (pane-sources, the Documents pane) or, for an item of a list or tree, the id of the part it is in, item and its key (codebook-tree.item.12), or by its place: the id of the part it is in, its group, its kind and its number there" },
+    ],
+    notes: "In demo mode no Windows box ever opens: a box for choosing a file answers at once with the next file of the workspace's Files folder for that kind (Files/documents, Files/image, Files/media, Files/reference, Files/web, Files/email; a folder there is offered as several files at once), a folder to import is the next of Files/folder, a project is saved in the workspace's Projects, and a file in its Exports. Open project opens the demo project opened last. Check for updates acts as if the offline lock were on, and the program never hands itself to a PrismQDA the person has open. The coder is the invented Riley. The clock stands still in demo mode (18 March 2026, 14:30 UTC).",
   },
 ];
 

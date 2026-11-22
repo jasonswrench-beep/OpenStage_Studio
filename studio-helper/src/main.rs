@@ -24,6 +24,7 @@
 
 mod assemble;
 mod awake;
+mod brand;
 mod compare;
 mod kokoro;
 mod ocr;
@@ -70,6 +71,7 @@ fn main() -> ExitCode {
         "awake" => awake::run(),
         "uia" => uia::run(),
         "thumbnail" => thumbnail::run(&args),
+        "card" => assemble::card_preview(&args),
         "recording" => recording::run(&args),
         "slides" => slides::run(&args),
         other => Err(format!("\"{other}\" is not something this helper does. Use windows, take, voices, speak, assemble, compare, ocr or thumbnail.")),

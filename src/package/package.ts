@@ -29,9 +29,26 @@ export interface ThumbnailTemplate {
   kicker?: string;
   /** A line at the foot, such as the playlist's name. Left out if empty. */
   footer?: string;
+  /** The product's spectrum: two or more colours blended one into the next, drawn instead of the accent in the bars of the
+   * thumbnail and the cards (PrismQDA's prism: cyan, violet, pink, orange). Left out: the accent. */
+  spectrum?: string[];
+  /** The product's mark, a PNG with see-through parts, drawn above the words of the thumbnail and the cards. In
+   * studio-project.json a path from that file's folder; Studio makes it a full path when it reads the settings. */
+  mark?: string;
 }
 
-export const DEFAULT_TEMPLATE: Required<Omit<ThumbnailTemplate, "kicker" | "footer">> = {
+/** The product's look for the title and end cards, from its template: its colours, spectrum and mark. Null when the template
+ * sets none of them, so the cards keep Studio's own look. */
+export function cardLook(template: ThumbnailTemplate | undefined): { background?: string; accent?: string; color?: string; spectrum?: string[]; mark?: string } | null {
+  if (!template) return null;
+  const look: { background?: string; accent?: string; color?: string; spectrum?: string[]; mark?: string } = {};
+  for (const key of ["background", "accent", "color"] as const) if (template[key] && COLOUR.test(template[key]!)) look[key] = template[key];
+  if (template.spectrum?.length && template.spectrum.every((c) => COLOUR.test(c))) look.spectrum = template.spectrum;
+  if (template.mark) look.mark = template.mark;
+  return Object.keys(look).length ? look : null;
+}
+
+export const DEFAULT_TEMPLATE: Required<Omit<ThumbnailTemplate, "kicker" | "footer" | "spectrum" | "mark">> = {
   background: "#102037",
   accent: "#FF7BCC",
   color: "#FFFFFF",
@@ -178,6 +195,8 @@ export function thumbnailPlan(script: Script, template: ThumbnailTemplate | unde
       width: 1280, height: 720, background: t.background, accent: t.accent, color: t.color,
       kicker: template?.kicker ?? script.program.name, title: script.title, footer: template?.footer ?? (script.playlist ? script.playlist.name : ""),
       ...(picture ? { picture } : {}), ...(focus ? { focus } : {}), redactions,
+      ...(template?.spectrum?.length && template.spectrum.every((c) => COLOUR.test(c)) ? { spectrum: template.spectrum } : {}),
+      ...(template?.mark ? { mark: template.mark } : {}),
     },
     warnings,
   };

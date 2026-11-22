@@ -91,6 +91,12 @@ pub struct Card {
     pub accent: String,
     #[serde(default = "white")]
     pub color: String,
+    /// The product's spectrum for the bar above the words, instead of the accent (brand.rs). Empty: the accent.
+    #[serde(default)]
+    pub spectrum: Vec<String>,
+    /// The product's mark, a PNG drawn above the bar. None: no mark.
+    #[serde(default)]
+    pub mark: Option<String>,
 }
 
 fn navy() -> String {
@@ -556,6 +562,26 @@ fn draw_mark(canvas: &mut Canvas, m: &Mark, text: &dyn TextRenderer) -> Result<(
     Ok(())
 }
 
+/// `card --card <file> --out <png>`: one title or end card as a 1920 by 1080 picture, from the same JSON a plan's card has, to see a
+/// product's look before a video is made.
+pub fn card_preview(args: &[String]) -> Result<(), String> {
+    let file = arg(args, "--card").ok_or("Say where the card is with --card.")?;
+    let out = PathBuf::from(arg(args, "--out").ok_or("Say where the picture goes with --out.")?);
+    let card: Card = serde_json::from_slice(&std::fs::read(&file).map_err(|e| format!("Could not read {file}: {e}"))?)
+        .map_err(|e| format!("The card in {file} is not right: {e}"))?;
+    #[cfg(windows)]
+    let text: Box<dyn TextRenderer> = Box::new(openstage_capture_windows::WindowsText);
+    #[cfg(not(windows))]
+    return Err("Text is drawn only on Windows.".into());
+    #[cfg(windows)]
+    {
+        let c = draw_card(&card, 1920, 1080, text.as_ref())?;
+        pngio::write_png(&out, 1920, 1080, &c.bgra)?;
+        say(json!({ "event": "card", "file": out.display().to_string() }));
+        Ok(())
+    }
+}
+
 /// A title or end card: the product in the accent colour, the title large, and up to three lines under it.
 fn draw_card(card: &Card, w: u32, h: u32, text: &dyn TextRenderer) -> Result<Canvas, String> {
     let bg = Rgb::parse(&card.background).unwrap_or(Rgb(16, 32, 55));
@@ -566,8 +592,13 @@ fn draw_card(card: &Card, w: u32, h: u32, text: &dyn TextRenderer) -> Result<Can
     let s = h as f32 / 1080.0;
     let left = (160.0 * s) as i32;
     let width = w as i32 - 2 * left;
-    // A short bar in the accent colour above the words.
-    c.fill_rect(PixelRect::new(left + (12.0 * s) as i32, (330.0 * s) as i32, (120.0 * s) as i32, (10.0 * s) as i32), accent);
+    // The product's mark, when it has one, above the bar.
+    if let Some(mark) = &card.mark {
+        crate::brand::draw_mark(&mut c, Path::new(mark), left + (12.0 * s) as i32, (180.0 * s) as i32, (120.0 * s) as i32)?;
+    }
+    // A short bar in the accent colour (or the product's spectrum) above the words.
+    let spectrum = crate::brand::spectrum_of(&card.spectrum);
+    crate::brand::bar(&mut c, PixelRect::new(left + (12.0 * s) as i32, (330.0 * s) as i32, (120.0 * s) as i32, (10.0 * s) as i32), spectrum.as_deref(), accent, true);
     let mut y = (360.0 * s) as i32;
     if !card.kicker.is_empty() {
         let fit = text.draw(&mut c, &req(&card.kicker, left, y, width, (70.0 * s) as i32, 40.0 * s, true, accent))?;

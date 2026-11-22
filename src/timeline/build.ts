@@ -39,6 +39,12 @@ export interface Card {
   kicker?: string;
   title: string;
   lines?: string[];
+  /** The product's look (package.ts cardLook); Studio's own navy and pink when left out. */
+  background?: string;
+  accent?: string;
+  color?: string;
+  spectrum?: string[];
+  mark?: string;
 }
 
 export interface Segment {

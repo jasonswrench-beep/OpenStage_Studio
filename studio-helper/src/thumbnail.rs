@@ -30,6 +30,12 @@ struct Plan {
     /// Blurred boxes on that picture (from review), in its pixels.
     #[serde(default)]
     redactions: Vec<[i32; 4]>,
+    /// The product's spectrum for the bars, instead of the accent (brand.rs). Empty: the accent.
+    #[serde(default)]
+    spectrum: Vec<String>,
+    /// The product's mark, a PNG drawn above the words. None: no mark.
+    #[serde(default)]
+    mark: Option<String>,
 }
 
 fn text_renderer() -> Box<dyn TextRenderer> {
@@ -66,6 +72,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
     let accent = Rgb::parse(&plan.accent).map_err(|_| format!("\"{}\" is not a colour.", plan.accent))?;
     let fg = Rgb::parse(&plan.color).map_err(|_| format!("\"{}\" is not a colour.", plan.color))?;
     let text = text_renderer();
+    let spectrum = crate::brand::spectrum_of(&plan.spectrum);
     let mut c = Canvas::new(w, h);
     c.clear(bg);
 
@@ -88,13 +95,17 @@ pub fn run(args: &[String]) -> Result<(), String> {
         let sx = (fx - sw / 2.0).clamp(0.0, pw as f32 - sw);
         let sy = (fy - sh / 2.0).clamp(0.0, ph as f32 - sh);
         c.draw_picture(&picture, SourceRect { x: sx as f64, y: sy as f64, w: sw as f64, h: sh as f64 }, PixelRect::new(panel_x, 0, tw, th));
-        c.fill_rect(PixelRect::new(panel_x - (10.0 * s) as i32, 0, (10.0 * s) as i32, th), accent);
+        crate::brand::bar(&mut c, PixelRect::new(panel_x - (10.0 * s) as i32, 0, (10.0 * s) as i32, th), spectrum.as_deref(), accent, false);
     }
 
     // The words, on the left.
     let left = (64.0 * s) as i32;
     let width = panel_x - left - (48.0 * s) as i32;
-    c.fill_rect(PixelRect::new(left, (150.0 * s) as i32, (96.0 * s) as i32, (10.0 * s) as i32), accent);
+    if let Some(mark) = &plan.mark {
+        let path = if Path::new(mark).is_absolute() { PathBuf::from(mark) } else { base.join(mark) };
+        crate::brand::draw_mark(&mut c, &path, left, (44.0 * s) as i32, (90.0 * s) as i32)?;
+    }
+    crate::brand::bar(&mut c, PixelRect::new(left, (150.0 * s) as i32, (96.0 * s) as i32, (10.0 * s) as i32), spectrum.as_deref(), accent, true);
     let mut y = (180.0 * s) as i32;
     let kicker = text.draw(&mut c, &req(&plan.kicker, left, y, width, (60.0 * s) as i32, 36.0 * s, true, accent))?;
     y += (72.0 * s) as i32;
