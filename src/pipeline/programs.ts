@@ -418,13 +418,17 @@ export const PROGRAMS: ProgramEntry[] = [
     demos: [
       { name: "none", about: "No project open: the start page. The files of the invented Campus Commuting Study wait in the workspace's Files, for the boxes that choose files to offer." },
       { name: "empty", about: "The start page, with no project, export or class packet left in the workspace from an earlier step." },
+      { name: "study-imported", about: "The Campus Commuting Study (Riverbend Community College) with all its material imported: the survey of 30 students as cases with their variables, six interviews (P19 with its recording), the parking and transit policy (PDF), field notes, the bike rack picture and the focus group recording; the interviews in cases P02 to P19. No codes yet." },
+      { name: "study-coded", about: "The study as coded by Riley: 19 codes (Cost, Time and waiting, Safety, Wishes for change and their sub-codes, and others), 53 coded passages, an area of the bike rack picture, two stretches of the focus group, and two memos about the project. No themes, links or memos on passages yet." },
+      { name: "study-merged", about: "The coded study with the second coder Jordan's work merged in (24 codings of the survey and four interviews), for measuring agreement and settling disagreements." },
+      { name: "class-returned", about: "The coded study after a class exercise: three students' packets of the interviews of Maya Okafor and Priya Nair, coded and sent back, wait in the class folder beside the project (not yet brought in)." },
     ],
     // PrismQDA names its controls from its own code in demo mode (app/ui/src/demonames.ts on its studio-demo-hook branch), so most of
     // them appear only once their page or window is open. Run the course's tools/controls.ts to see the names on screen.
     appearing: [
       { pattern: "**", about: "a control on a page or in a window that opens later: by its element id (pane-sources, the Documents pane) or, for an item of a list or tree, the id of the part it is in, item and its key (codebook-tree.item.12), or by its place: the id of the part it is in, its group, its kind and its number there" },
     ],
-    notes: "In demo mode no Windows box ever opens: a box for choosing a file answers at once with the next file of the workspace's Files folder for that kind (Files/documents, Files/image, Files/media, Files/reference, Files/web, Files/email; a folder there is offered as several files at once), a folder to import is the next of Files/folder, a project is saved in the workspace's Projects, and a file in its Exports. Open project opens the demo project opened last. Check for updates acts as if the offline lock were on, and the program never hands itself to a PrismQDA the person has open. The coder is the invented Riley. The clock stands still in demo mode (18 March 2026, 14:30 UTC).",
+    notes: "In demo mode no Windows box ever opens: a box for choosing a file answers at once with the next file of the workspace's Files folder for that kind (Files/documents, Files/image, Files/media, Files/reference, Files/web, Files/email; a folder there is offered as several files at once), a folder to import is the next of Files/folder, a project is saved in the workspace's Projects, and a file in its Exports. Open project opens the demo project opened last; the project to merge on the Team page is the next of Files/packets (Jordan's coded packet). Check for updates acts as if the offline lock were on, and the program never hands itself to a PrismQDA the person has open. The coder is the invented Riley. The clock stands still in demo mode (18 March 2026, 14:30 UTC).",
   },
 ];
 
