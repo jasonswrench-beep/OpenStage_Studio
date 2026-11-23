@@ -439,6 +439,8 @@ export const PROGRAMS: ProgramEntry[] = [
       { name: "part4-codebook", about: "The study as Riley has coded it (study-coded), with Maya Okafor's late bus marked as an example of Late or full bus. Import a codebook's Browse offers Transit access codebook.qdc, a colleague's codebook from another program." },
       { name: "part4-feelings", about: "The Part 4 codebook with How the trip feels and its codes The trip feels fine (Priya) and The trip is a struggle (Maya, Daniel), not yet in a group." },
       { name: "part4-tidy", about: "The Part 4 codebook with Late train (two codings: Samira Haddad, the survey) to merge, and Carpooling, never used, to retire." },
+      // Themes.
+      { name: "part7-themes", about: "The coded study with the manual's three themes: Money decides the mode (Cost, Parking), Waiting and not knowing (Time and waiting, Weather) and Feeling safe on the way (Safety)." },
     ],
     // PrismQDA names its controls from its own code in demo mode (app/ui/src/demonames.ts on its studio-demo-hook branch), so most of
     // them appear only once their page or window is open. Run the course's tools/controls.ts to see the names on screen.
