@@ -13,7 +13,7 @@
 // program's demo-project loader. See docs/demo-hook.md.
 
 import {
-  findWords, HOOK_VERSION, readSettings, steadySelector, type Command, type ControlInfo, type Envelope, type Hello, type HookSettings, type Reply,
+  findWords, HOOK_VERSION, readSettings, shownRect, steadySelector, type Command, type ControlInfo, type Envelope, type Hello, type HookSettings, type Reply,
   type TextOnScreen,
 } from "./protocol.ts";
 
@@ -173,7 +173,12 @@ function find(id: string): HTMLElement {
 }
 
 function info(el: HTMLElement, at = surfaceOf(el)): ControlInfo {
-  const r = el.getBoundingClientRect();
+  const own = el.getBoundingClientRect();
+  // A hidden tick box or choice is where its label is drawn.
+  const label = isTickable(el) ? (el.labels?.[0] ?? el.closest("label")) : null;
+  const lr = label?.getBoundingClientRect();
+  const [left, top, width, height] = shownRect([own.left, own.top, own.width, own.height], lr ? [lr.left, lr.top, lr.width, lr.height] : null);
+  const r = { left, top, width, height };
   const style = windowOf(el).getComputedStyle(el);
   const visible = r.width > 0 && r.height > 0 && style.visibility !== "hidden" && style.display !== "none";
   return {

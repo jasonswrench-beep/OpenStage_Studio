@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { findWords, isLoopback, readSettings, SETTINGS_GLOBAL, steadySelector, toFrame } from "../demo-hook/protocol.ts";
+import { findWords, isLoopback, readSettings, SETTINGS_GLOBAL, shownRect, steadySelector, toFrame } from "../demo-hook/protocol.ts";
 import { HookServer } from "../src/pipeline/hook-server.ts";
 import { wavDurationMs } from "../src/pipeline/helper.ts";
 
@@ -21,6 +21,12 @@ test("the hook only ever talks to this computer, with a proper token", () => {
   assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://10.0.0.2:5000", token: TOKEN } }, ""), null);
   assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000", token: "short" } }, ""), null);
   assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000", token: "has spaces in it ok?" } }, ""), null);
+});
+
+test("a tick box whose input is hidden is where its label is, so the pointer goes to what is drawn", () => {
+  assert.deepEqual(shownRect([74, 1811, 1, 32], [70, 700, 400, 24]), [70, 700, 400, 24]);
+  assert.deepEqual(shownRect([74, 700, 18, 18], [70, 700, 400, 24]), [74, 700, 18, 18], "a tick box that shows is where it is");
+  assert.deepEqual(shownRect([74, 1811, 1, 32], null), [74, 1811, 1, 32], "with no label, the input's own place");
 });
 
 test("a control's place on the page is scaled to the captured frame", () => {

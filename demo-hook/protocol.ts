@@ -118,6 +118,14 @@ export function readSettings(global: Record<string, unknown>, search: string): H
   return { endpoint: endpoint.replace(/\/+$/, ""), token, ...(typeof workspace === "string" && workspace ? { workspace } : {}) };
 }
 
+/** Where a control shows. A tick box or a choice whose own input is hidden (drawn as a mark beside its words, as React Aria and many
+ * others draw them) is a dot of a pixel or two, often far from what is drawn; a person clicks its label, so the label's place is
+ * given, and the pointer goes there (2026-11-23: PrismQDA's tick boxes of a photograph's facts were reported 1,000 pixels below). */
+export function shownRect(own: [number, number, number, number], label: [number, number, number, number] | null): [number, number, number, number] {
+  const hidden = own[2] <= 2 || own[3] <= 2;
+  return hidden && label && label[2] > 2 && label[3] > 2 ? label : own;
+}
+
 /** Scale a control's CSS rectangle to pixels of a captured frame of `frame` size. */
 export function toFrame(rect: [number, number, number, number], viewport: [number, number], frame: [number, number]): [number, number, number, number] {
   const sx = frame[0] / viewport[0];
