@@ -422,6 +422,15 @@ export const PROGRAMS: ProgramEntry[] = [
       { name: "study-coded", about: "The study as coded by Riley: 19 codes (Cost, Time and waiting, Safety, Wishes for change and their sub-codes, and others), 53 coded passages, an area of the bike rack picture, two stretches of the focus group, and two memos about the project. No themes, links or memos on passages yet." },
       { name: "study-merged", about: "The coded study with the second coder Jordan's work merged in (24 codings of the survey and four interviews), for measuring agreement and settling disagreements." },
       { name: "class-returned", about: "The coded study after a class exercise: three students' packets of the interviews of Maya Okafor and Priya Nair, coded and sent back, wait in the class folder beside the project (not yet brought in)." },
+      // Bringing the material in, one kind at a time. Each of these stages says what Windows' file box answers in its takes (its
+      // offers.json): the files its video chooses.
+      { name: "study-new", about: "The Campus Commuting Study just made, from the reflexive thematic analysis template with its research question, and nothing in it yet. Choose files offers Tom Brandt's (Word) and Samira Haddad's (Markdown) interviews, then Priya Nair's field notes (text) and the parking policy (PDF)." },
+      { name: "part2-transcripts", about: "The study with those four documents in Interviews and Documents. Choose files offers the interviews of Maya Okafor, Daniel Reyes and Priya Nair, as plain text transcripts." },
+      { name: "part2-survey", about: "The study with the three transcripts too (Maya's in case P02). Choose files offers Survey answers (CSV, 30 rows)." },
+      { name: "part2-folder", about: "The study with the survey answers too (30 cases with variables). Add Folder's Browse offers the folder Field notes (a folder for each campus, and a copy of Priya Nair's field notes); Choose files offers Priya's field notes again." },
+      { name: "part2-pictures", about: "The study with the field notes too. Images offers the bike rack picture (PNG) and the photograph Bus stop in the rain (JPEG, with when, the camera and a place)." },
+      { name: "part2-recordings", about: "The study with the two pictures too. Audio / Video offers Eli Washington's interview with its captions beside it, and the focus group recording, with none." },
+      { name: "part2-more", about: "The study as coded by Riley (study-coded). Reference Library offers a library of four articles (RIS) and Prism Reference Manager's exchange file; Web / News a saved page about Route 52; Documents a PrismStatistics evaluation of the bus pass pilot, then Samira Haddad's interview checked against the recording (a newer version)." },
     ],
     // PrismQDA names its controls from its own code in demo mode (app/ui/src/demonames.ts on its studio-demo-hook branch), so most of
     // them appear only once their page or window is open. Run the course's tools/controls.ts to see the names on screen.
