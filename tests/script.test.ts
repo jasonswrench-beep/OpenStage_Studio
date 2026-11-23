@@ -238,3 +238,14 @@ test("a blurred box is added to a script without disturbing its layout", async (
   const old = JSON.stringify({ ...JSON.parse(text), version: 1 }, null, 2);
   assert.equal(JSON.parse(addRedaction(old, box)).version, SCRIPT_VERSION, "an older script is brought up to date");
 });
+
+test("a key can be pressed several times in one step, and only a key", () => {
+  const s = good() as { steps: Record<string, unknown>[] };
+  s.steps.push({ action: "key", value: "Shift+ArrowDown", repeat: 5, narration: "Move it down.", expect: "It moved" });
+  assert.equal(validateScript(s).ok, true);
+  s.steps[2].repeat = 1;
+  assert.deepEqual(paths(validateScript(s)), ["steps[2].repeat"], "once is a plain key step");
+  s.steps[2].repeat = 3;
+  s.steps[0].repeat = 3;
+  assert.deepEqual(paths(validateScript(s)), ["steps[0].repeat"], "a click is not repeated");
+});

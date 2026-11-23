@@ -55,6 +55,9 @@ export interface Step {
   words?: string;
   /** With words: put the cursor just before or after them instead of selecting them. */
   caret?: "before" | "after";
+  /** For a key: how many times it is pressed, one press after another (2 to 30), shown as one key badge with the count. A
+   * person taps an arrow key a few times to move something; one step says so instead of a step for each press. */
+  repeat?: number;
   /** For a click or a key that starts work of the program's own (sealing, unlocking): the control that shows it is done. The
    * step's picture waits until it is on screen, at most a minute, so it never catches the work halfway. */
   until?: string;

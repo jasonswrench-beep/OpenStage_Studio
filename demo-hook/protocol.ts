@@ -82,8 +82,9 @@ export interface TextOnScreen {
  * focus and blur events a window that is not the active one does not get, so a program knows what has the focus, and a click's
  * events carry the point they land on and the mouse as the pointer, as a real click's do. No command changed. Version 7 makes
  * Space tick a tick box or choose a radio button and Enter in a form's box send the form, as they do for a person, reports
- * radio buttons and sliders by their own roles, and says whether a tick box is ticked. No command changed. */
-export const HOOK_VERSION = 7;
+ * radio buttons and sliders by their own roles, and says whether a tick box is ticked. No command changed. Version 8 moves the cursor in an editable area with the arrow keys,
+ * Home and End, and selects with Shift, as they do for a person. No command changed. */
+export const HOOK_VERSION = 8;
 
 /** Where some words are in a control's text: the first place they appear as written, else the first ignoring case.
  * Null when they are not there. */
@@ -116,6 +117,29 @@ export function readSettings(global: Record<string, unknown>, search: string): H
   if (!isLoopback(endpoint)) return null;
   if (!/^[A-Za-z0-9_-]{16,128}$/.test(token)) return null;
   return { endpoint: endpoint.replace(/\/+$/, ""), token, ...(typeof workspace === "string" && workspace ? { workspace } : {}) };
+}
+
+/** What an arrow key, Home or End does to the cursor in an editable area when nothing handled the key: the browser does it only for a
+ * real key, never for one a script sends, so the hook does it with Selection.modify. Shift extends the selection instead of moving the
+ * cursor, Ctrl moves a word at a time (Left and Right) or a paragraph (Up and Down), and Home and End go to the start or end of the line.
+ * Null for any other key, or with Alt (2026-11-23: PrismQDA's reader is selected with Shift and the arrow keys). */
+export function caretMove(key: string, modifiers: string[]): { alter: "move" | "extend"; direction: "forward" | "backward"; granularity: "character" | "word" | "line" | "paragraph" | "lineboundary" } | null {
+  if (modifiers.includes("Alt") || modifiers.includes("Meta")) return null;
+  const alter = modifiers.includes("Shift") ? "extend" : "move";
+  const ctrl = modifiers.includes("Ctrl");
+  switch (key) {
+    case "ArrowLeft":
+    case "ArrowRight":
+      return { alter, direction: key === "ArrowRight" ? "forward" : "backward", granularity: ctrl ? "word" : "character" };
+    case "ArrowUp":
+    case "ArrowDown":
+      return { alter, direction: key === "ArrowDown" ? "forward" : "backward", granularity: ctrl ? "paragraph" : "line" };
+    case "Home":
+    case "End":
+      return ctrl ? null : { alter, direction: key === "End" ? "forward" : "backward", granularity: "lineboundary" };
+    default:
+      return null;
+  }
 }
 
 /** Where a control shows. A tick box or a choice whose own input is hidden (drawn as a mark beside its words, as React Aria and many

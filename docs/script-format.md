@@ -33,6 +33,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | `value` | Text to type, a key, a demo project, a scroll, or seconds to wait | `Sorting leaves by shape`, `Ctrl+S`, `down 400` |
 | `words` | For a click: words inside the control to click on (the hook, version 5). They are selected, so a key or typing that follows works on them | `Akafer` |
 | `caret` | With `words`: `before` or `after` puts the cursor just before or after the words instead of selecting them | `after` |
+| `repeat` | For a key: how many times it is pressed, 2 to 30, one after another, with one key badge showing the count | `5` |
 | `until` | For a click or a key that starts work of the program's own: the control that shows it is done; the step's picture waits for it (at most a minute) | `privacy.lock` |
 | `narration` | One or two sentences spoken over the step | `Select New lesson on the toolbar.` |
 | `silent` | `true` for a step with no narration on purpose | |
@@ -55,6 +56,8 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
   has the focus. A drop-down list is chosen by typing the option's words (`"30 minutes"`).
 - `key`: a key or chord: letters, digits, F1 to F12, Enter, Escape, Tab, Backspace, Delete, Space, Home, End, PageUp,
   PageDown and the arrows, with Ctrl, Alt or Shift joined by `+`. A badge with the keys shows at the bottom of the video.
+  With `repeat`, the key is pressed that many times in quick succession (moving a shape with the arrow keys), and the
+  badge shows the count (`Shift + ArrowDown × 5`).
 - `scroll`: `up`, `down`, `left` or `right` and a distance in page pixels (`down 400`, the default `down 300`). With a
   `target`, that control scrolls; otherwise the page.
 - `open`: `value` is a demo project to open.

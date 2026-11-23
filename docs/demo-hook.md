@@ -68,7 +68,7 @@ sides) and `hook.ts` (the part a program includes).
 | `settle` | Waits for fonts, any running animations, the page (and its frames) to stop changing for 150 ms (at most 1.5 seconds, for a program that draws a moment after a click on a timer of its own), and two drawn frames, so a still picture shows the finished result. |
 | `text` | Lists every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their placeholder), and the choice showing in each drop-down list. Text hidden, scrolled out of view or clipped is left out. For the frame scan (docs/guard.md); it never changes the page. |
 
-The hook's version is 6. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
+The hook's version is 8. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
 `list`, and Ctrl+A; version 4 reaches the program's own frames, with no command changed (`Check Same Video.bat` passed
 after it, 2026-11-19: every one of the 3,284 frames identical); version 5 clicks on words inside a control (`click` and
 `position` with `words` and `caret`, a script step's `words` and `caret`), and Backspace and Delete work in an editable area. A script that
@@ -79,7 +79,11 @@ cursor, so a note or a timestamp went nowhere. In version 6 a click's pointer an
 click's carry: the point they land on (the middle of the control, or the words) and the mouse as the kind of pointer. React
 Aria's tick boxes count a press only when the button comes up over them, and ignore a click with no pointer, so Prism
 Transcribe's tick boxes never ticked before. No command changed. Studio asks a program with an older hook for nothing it lacks: the frame scan then reads the pictures
-only, and rehearsal skips its check on typing into a box that already holds words (docs/ai.md).
+only, and rehearsal skips its check on typing into a box that already holds words (docs/ai.md). Version 7 makes Space tick a
+tick box and Enter in a form's box send the form, and reports radio buttons, sliders and whether a tick box is ticked. Version 8
+(2026-11-23) moves the cursor in an editable area with the arrow keys, Home and End, and selects with Shift (Ctrl moves a word
+at a time), with Selection.modify: a browser does that only for a real key, so PrismQDA's reader could not be selected from the
+keyboard before. No command changed in either.
 
 ## Programs with the hook
 

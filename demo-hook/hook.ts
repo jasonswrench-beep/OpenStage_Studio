@@ -13,7 +13,7 @@
 // program's demo-project loader. See docs/demo-hook.md.
 
 import {
-  findWords, HOOK_VERSION, readSettings, shownRect, steadySelector, type Command, type ControlInfo, type Envelope, type Hello, type HookSettings, type Reply,
+  caretMove, findWords, HOOK_VERSION, readSettings, shownRect, steadySelector, type Command, type ControlInfo, type Envelope, type Hello, type HookSettings, type Reply,
   type TextOnScreen,
 } from "./protocol.ts";
 
@@ -510,6 +510,11 @@ function pressKey(target: HTMLElement, key: string, modifiers: string[]) {
     } else if ((key === "Backspace" || key === "Delete") && target.isContentEditable) {
       // In an editable area: the selected words, or the character before (Backspace) or after (Delete) the cursor.
       target.ownerDocument.execCommand(key === "Backspace" ? "delete" : "forwardDelete");
+    } else if (target.isContentEditable && caretMove(key, modifiers)) {
+      // The arrow keys, Home and End move the cursor in an editable area (a read-only one too), and with Shift select, as a person's do.
+      const move = caretMove(key, modifiers)!;
+      const selection = view.getSelection() as (Selection & { modify?: (alter: string, direction: string, granularity: string) => void }) | null;
+      selection?.modify?.(move.alter, move.direction, move.granularity);
     } else if (key === "Enter" && isTextArea(target)) {
       typeInto(target, "\n");
     } else if (key === "A" && init.ctrlKey && !init.altKey && (isInput(target) || isTextArea(target))) {

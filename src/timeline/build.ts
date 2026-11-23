@@ -112,6 +112,7 @@ export interface Paces {
   typeCharMs: number;
   keyLeadMs: number;
   keyBadgeMs: number;
+  keyRepeatMs: number;
   scrollStepMs: number;
   afterActionMs: number;
   tailMs: number;
@@ -129,6 +130,7 @@ export const DEFAULT_PACES: Paces = {
   typeCharMs: 65,
   keyLeadMs: 500,
   keyBadgeMs: 1300,
+  keyRepeatMs: 180,
   scrollStepMs: 90,
   afterActionMs: 400,
   tailMs: 700,
@@ -257,14 +259,15 @@ export function buildTimeline(input: BuildInput): Timeline {
         if (log.target) goTo(log.target.rect);
         actionMs = start + P.keyLeadMs;
         const key = parseKey(step.value ?? "");
-        const text = key ? [...key.modifiers, key.key].join(" + ") : (step.value ?? "");
+        const text = (key ? [...key.modifiers, key.key].join(" + ") : (step.value ?? "")) + (step.repeat ? ` × ${step.repeat}` : "");
         const w = Math.round((80 + text.length * 22) * scale);
         const h = Math.round(84 * scale);
         marksMs.push({
-          kind: "key", fromMs: actionMs, toMs: actionMs + P.keyBadgeMs, text, fontPx: Math.round(40 * scale),
+          kind: "key", fromMs: actionMs, toMs: actionMs + P.keyBadgeMs + Math.max(0, changes.length - 1) * P.keyRepeatMs, text, fontPx: Math.round(40 * scale),
           rect: [Math.round(width / 2 - w / 2), Math.round(height - 150 * scale), w, h],
         });
-        actionEnd = showChanges(actionMs + P.responseMs, 0);
+        // A repeated key: one picture a press, as quickly as a person taps.
+        actionEnd = showChanges(actionMs + P.responseMs, step.repeat ? P.keyRepeatMs : 0);
         break;
       }
       case "scroll": {

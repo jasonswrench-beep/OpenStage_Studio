@@ -163,9 +163,12 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
       }
       case "key": {
         const key = parseKey(step.value ?? "")!;
-        await hook.send({ cmd: "key", ...(step.target ? { id: step.target } : {}), key: key.key, modifiers: key.modifiers });
-        if (step.until) await until(step.until);
-        out.changes.push(await shot());
+        // A repeated key is pressed that many times, with a picture after each press.
+        for (let n = 0; n < (step.repeat ?? 1); n++) {
+          await hook.send({ cmd: "key", ...(step.target ? { id: step.target } : {}), key: key.key, modifiers: key.modifiers });
+          if (step.until && n === (step.repeat ?? 1) - 1) await until(step.until);
+          out.changes.push(await shot());
+        }
         break;
       }
       case "scroll": {

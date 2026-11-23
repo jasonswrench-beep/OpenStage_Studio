@@ -431,6 +431,10 @@ export const PROGRAMS: ProgramEntry[] = [
       { name: "part2-pictures", about: "The study with the field notes too. Images offers the bike rack picture (PNG) and the photograph Bus stop in the rain (JPEG, with when, the camera and a place)." },
       { name: "part2-recordings", about: "The study with the two pictures too. Audio / Video offers Eli Washington's interview with its captions beside it, and the focus group recording, with none." },
       { name: "part2-more", about: "The study as coded by Riley (study-coded). Reference Library offers a library of four articles (RIS) and Prism Reference Manager's exchange file; Web / News a saved page about Route 52; Documents a PrismStatistics evaluation of the bus pass pilot, then Samira Haddad's interview checked against the recording (a newer version)." },
+      // Reading and coding.
+      { name: "part3-codebook", about: "The imported study with Riley's codebook (19 codes) made and only two passages of Priya Nair's interview coded (Weather, Health and being outside)." },
+      { name: "part3-checking", about: "The study with the codebook and Riley's first pass over Maya Okafor's interview (9 codings), with two slips: the bus pass coded as Parking permit cost, and her embarrassment as Personal safety at night." },
+      { name: "part3-units", about: "A second project, Commuting Survey Answers, made to code whole units: the survey answers and the transcripts of Maya Okafor and Daniel Reyes, with Riley's codebook and nothing coded." },
     ],
     // PrismQDA names its controls from its own code in demo mode (app/ui/src/demonames.ts on its studio-demo-hook branch), so most of
     // them appear only once their page or window is open. Run the course's tools/controls.ts to see the names on screen.

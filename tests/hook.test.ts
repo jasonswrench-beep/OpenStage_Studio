@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { findWords, isLoopback, readSettings, SETTINGS_GLOBAL, shownRect, steadySelector, toFrame } from "../demo-hook/protocol.ts";
+import { caretMove, findWords, isLoopback, readSettings, SETTINGS_GLOBAL, shownRect, steadySelector, toFrame } from "../demo-hook/protocol.ts";
 import { HookServer } from "../src/pipeline/hook-server.ts";
 import { wavDurationMs } from "../src/pipeline/helper.ts";
 
@@ -21,6 +21,16 @@ test("the hook only ever talks to this computer, with a proper token", () => {
   assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://10.0.0.2:5000", token: TOKEN } }, ""), null);
   assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000", token: "short" } }, ""), null);
   assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000", token: "has spaces in it ok?" } }, ""), null);
+});
+
+test("the arrow keys move the cursor in an editable area, and Shift selects, as they do for a person", () => {
+  assert.deepEqual(caretMove("ArrowRight", ["Ctrl", "Shift"]), { alter: "extend", direction: "forward", granularity: "word" });
+  assert.deepEqual(caretMove("ArrowLeft", []), { alter: "move", direction: "backward", granularity: "character" });
+  assert.deepEqual(caretMove("ArrowDown", ["Shift"]), { alter: "extend", direction: "forward", granularity: "line" });
+  assert.deepEqual(caretMove("End", ["Shift"]), { alter: "extend", direction: "forward", granularity: "lineboundary" });
+  assert.equal(caretMove("ArrowUp", ["Alt"]), null, "Alt with an arrow is the program's own key");
+  assert.equal(caretMove("Home", ["Ctrl"]), null);
+  assert.equal(caretMove("Enter", []), null);
 });
 
 test("a tick box whose input is hidden is where its label is, so the pointer goes to what is drawn", () => {

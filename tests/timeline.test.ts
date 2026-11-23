@@ -112,3 +112,17 @@ test("the pointer moves smoothly and arrives exactly", () => {
   assert.deepEqual(pointerAt([0, 0], [100, 0], 0), [0, 0]);
   assert.ok(travelMs(5) >= 450 && travelMs(5000) <= 1300);
 });
+
+test("a repeated key shows one badge with the count, and a picture for each press in quick succession", () => {
+  const s = script();
+  s.steps[2] = { action: "key", value: "Shift+ArrowDown", repeat: 3, narration: "Save." };
+  const tk = take();
+  tk.steps[2] = { index: 2, changes: ["k1", "k2", "k3"] };
+  const t = buildTimeline({ script: s, take: tk, clips });
+  const badges = t.marks.filter((m) => m.kind === "key");
+  assert.equal(badges.length, 1);
+  assert.equal(badges[0].text, "Shift + ArrowDown × 3");
+  const c = (id: string) => t.segments.find((x) => x.picture === id)!.from;
+  assert.ok(c("k2") > c("k1") && c("k3") > c("k2"));
+  assert.ok(c("k3") - c("k1") < 1000, "the presses follow one another quickly");
+});
