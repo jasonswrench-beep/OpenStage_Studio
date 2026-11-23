@@ -443,6 +443,8 @@ export const PROGRAMS: ProgramEntry[] = [
       { name: "part7-themes", about: "The coded study with the manual's three themes: Money decides the mode (Cost, Parking), Waiting and not knowing (Time and waiting, Weather) and Feeling safe on the way (Safety)." },
       // Explore.
       { name: "part8-query", about: "The coded study with one saved query, Waiting on the North campus (Time and waiting in cases whose Campus is North), following the coding and not frozen." },
+      // Data and statistics.
+      { name: "part9-merge", about: "The coded study (study-coded); Merge from a file's Choose a file offers More facts.csv (a parking permit, dependants and distance for S01 to S30)." },
     ],
     // PrismQDA names its controls from its own code in demo mode (app/ui/src/demonames.ts on its studio-demo-hook branch), so most of
     // them appear only once their page or window is open. Run the course's tools/controls.ts to see the names on screen.
