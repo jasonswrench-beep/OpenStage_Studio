@@ -441,6 +441,8 @@ export const PROGRAMS: ProgramEntry[] = [
       { name: "part4-tidy", about: "The Part 4 codebook with Late train (two codings: Samira Haddad, the survey) to merge, and Carpooling, never used, to retire." },
       // Themes.
       { name: "part7-themes", about: "The coded study with the manual's three themes: Money decides the mode (Cost, Parking), Waiting and not knowing (Time and waiting, Weather) and Feeling safe on the way (Safety)." },
+      // Explore.
+      { name: "part8-query", about: "The coded study with one saved query, Waiting on the North campus (Time and waiting in cases whose Campus is North), following the coding and not frozen." },
     ],
     // PrismQDA names its controls from its own code in demo mode (app/ui/src/demonames.ts on its studio-demo-hook branch), so most of
     // them appear only once their page or window is open. Run the course's tools/controls.ts to see the names on screen.
