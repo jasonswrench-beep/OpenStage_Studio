@@ -716,6 +716,9 @@ function seenOf(el: Element, rect: [number, number, number, number]): [number, n
   return clip && within(new DOMRect(rect[0], rect[1], Math.max(1, rect[2]), Math.max(1, rect[3])), new DOMRect(...clip));
 }
 
+/** A Windows path in some words: to its file's ending when it has one (a file's name may have spaces), else to the next space. */
+const A_PATH = /[A-Za-z]:[\\/](?:[^<>:"|?*\n]*\.[A-Za-z0-9]{2,5}(?![A-Za-z0-9])|[^\s<>:"|?*]*)/g;
+
 /** Every piece of text the viewer can see in one page or frame, with where it is on the program's page: the words, what is
  * typed in fields (or their placeholder when empty), and the choice showing in each drop-down list. Used by the frame
  * scan, never by the take. */
@@ -747,7 +750,20 @@ function textOnScreen({ doc, offset, clip: frameClip }: Surface): TextOnScreen[]
     // One piece per line the text wraps onto, so each has its own place.
     const lines = [...range.getClientRects()].map((r) => within(r, c)).filter((r): r is [number, number, number, number] => r !== null).map(place);
     if (!lines.length) continue;
-    const text = n.textContent!.replace(/\s+/g, " ").trim();
+    // A folder path is a piece of its own, one for each line it is on, so it can be blurred where it is and the words around it stay.
+    let words = n.textContent!;
+    for (const m of [...words.matchAll(A_PATH)]) {
+      const path = doc.createRange();
+      path.setStart(n, m.index);
+      path.setEnd(n, m.index + m[0].length);
+      for (const r of path.getClientRects()) {
+        const seen = within(r, c);
+        if (seen) out.push({ text: m[0].replace(/\s+/g, " ").trim(), rect: place(seen) });
+      }
+      words = words.replace(m[0], " ");
+    }
+    const text = words.replace(/\s+/g, " ").trim();
+    if (!text) continue;
     const left = Math.min(...lines.map((r) => r[0])), top = Math.min(...lines.map((r) => r[1]));
     const right = Math.max(...lines.map((r) => r[0] + r[2])), bottom = Math.max(...lines.map((r) => r[1] + r[3]));
     out.push({ text, rect: [left, top, right - left, bottom - top] });

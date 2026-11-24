@@ -4,7 +4,8 @@
 // stays on screen into the next step until the picture taken at its action.) Title and end cards are never blurred.
 
 import type { Redaction, Script } from "../script/format.ts";
-import type { Rect, Timeline } from "../timeline/build.ts";
+import type { TakeLog } from "../pipeline/player.ts";
+import type { Rect, TakeLog, Timeline } from "../timeline/build.ts";
 
 export interface RedactionSpan {
   /** First frame covered, and the frame after the last. */
@@ -49,7 +50,11 @@ export function redactionSpans(script: Script, timeline: Timeline): RedactionSpa
       if (b > a) out.push({ from: a, to: b, box: r.box });
     }
   }
-  // Join spans of one box that follow on from each other.
+  return joinSpans(out);
+}
+
+/** Join spans of one box that follow on from each other. */
+function joinSpans(out: RedactionSpan[]): RedactionSpan[] {
   const joined: RedactionSpan[] = [];
   for (const s of out.sort((p, q) => p.box.join().localeCompare(q.box.join()) || p.from - q.from)) {
     const last = joined[joined.length - 1];
@@ -57,6 +62,25 @@ export function redactionSpans(script: Script, timeline: Timeline): RedactionSpa
     else joined.push({ ...s });
   }
   return joined.sort((p, q) => p.from - q.from || p.box.join().localeCompare(q.box.join()));
+}
+
+/** Words are compared with either kind of slash and any capitals. */
+const plain = (s: string) => s.replace(/\//g, "\\").toLowerCase();
+
+/** The places to blur because the program says some words there (a project's `blur` words, such as the take's own folder): on every
+ * frame of each picture, over the pieces of text that hold them. Unlike a script's boxes these follow the words from picture to picture,
+ * as a page scrolls. */
+export function wordSpans(words: string[], take: TakeLog, timeline: Timeline): RedactionSpan[] {
+  const want = words.map(plain).filter((w) => w.trim());
+  if (!want.length || !take.pageText) return [];
+  const out: RedactionSpan[] = [];
+  for (const s of timeline.segments) {
+    if (!s.picture) continue;
+    for (const item of take.pageText[s.picture] ?? []) {
+      if (want.some((w) => plain(item.text).includes(w))) out.push({ from: s.from, to: s.to, box: grow(item.rect.map(Math.round) as Rect, 6, take.width, take.height) });
+    }
+  }
+  return joinSpans(out);
 }
 
 /** Whether a box lies inside another, allowing a couple of pixels. */

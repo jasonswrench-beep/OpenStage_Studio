@@ -6,7 +6,7 @@
 import type { Rect, TakeLog, Timeline } from "../timeline/build.ts";
 import type { Script } from "../script/format.ts";
 import { findHits, type Blocklist, type Category, type Hit } from "./blocklist.ts";
-import { inside, redactionSpans, stepsAt, type RedactionSpan } from "./redact.ts";
+import { inside, redactionSpans, stepsAt, wordSpans, type RedactionSpan } from "./redact.ts";
 
 /** What the helper's `ocr` command found in one picture. */
 export interface OcrLine {
@@ -118,9 +118,11 @@ export interface FrameScanInput {
   timeline: Timeline;
   ocr: OcrResult;
   list: Blocklist;
+  /** The project's words that are blurred wherever the program shows them. */
+  blur?: string[];
 }
 
-export function scanFrames({ script, take, timeline, ocr, list }: FrameScanInput): Flag[] {
+export function scanFrames({ script, take, timeline, ocr, list, blur }: FrameScanInput): Flag[] {
   // Where each picture shows.
   const shownAt = new Map<string, [number, number][]>();
   for (const s of timeline.segments) if (s.picture) shownAt.set(s.picture, [...(shownAt.get(s.picture) ?? []), [s.from, s.to]]);
@@ -153,7 +155,7 @@ export function scanFrames({ script, take, timeline, ocr, list }: FrameScanInput
     else groups.push([f]);
   }
 
-  const spans = redactionSpans(script, timeline);
+  const spans = [...redactionSpans(script, timeline), ...wordSpans(blur ?? [], take, timeline)];
   return groups.map((g) => {
     const fromPictures = g.filter((s) => s.source === "picture");
     const rect = union((fromPictures.length ? fromPictures : g).map((s) => s.rect));
@@ -168,8 +170,7 @@ export function scanFrames({ script, take, timeline, ocr, list }: FrameScanInput
     const covered = pictures.every((p) => {
       const inP = g.filter((s) => s.picture === p);
       const read = inP.filter((s) => s.source === "picture");
-      const place = union((read.length ? read : inP).map((s) => s.rect));
-      return (shownAt.get(p) ?? []).every(([a, b]) => coveredOn(place, a, b, spans));
+      return (read.length ? read : inP).every((s) => (shownAt.get(p) ?? []).every(([a, b]) => coveredOn(s.rect, a, b, spans)));
     });
     const steps = stepsAt(shown[0][0], shown[shown.length - 1][1], timeline);
     return {

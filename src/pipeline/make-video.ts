@@ -36,7 +36,7 @@ import { appRoot, computerSettings, workspace } from "../paths.ts";
 import { describeScriptHit, scanScript, scriptTexts } from "../guard/script-scan.ts";
 import { loadBlocklist, type LoadedBlocklist } from "../guard/load.ts";
 import { scanFrames, type OcrResult } from "../guard/frame-scan.ts";
-import { redactionSpans } from "../guard/redact.ts";
+import { redactionSpans, wordSpans } from "../guard/redact.ts";
 import { carryDecisions, gate, guardReport, REVIEW_FORMAT, type Review } from "../guard/review.ts";
 import { cardLook, makeDraft, thumbnailPlan, type ProjectPublishSettings } from "../package/package.ts";
 import { isMain } from "../util/is-main.ts";
@@ -67,6 +67,8 @@ export interface ProjectSettings {
   paces?: Partial<Paces>;
   /** The thumbnail template and the description's narration line (src/package/package.ts). */
   publish?: ProjectPublishSettings;
+  /** Words blurred wherever the program shows them, such as the folder takes are made in. */
+  blur?: string[];
 }
 
 export function readProjectSettings(scriptPath: string): ProjectSettings {
@@ -77,7 +79,7 @@ export function readProjectSettings(scriptPath: string): ProjectSettings {
   // The product's mark is named from the settings file's folder.
   const mark = data.publish?.thumbnail?.mark;
   if (mark && data.publish?.thumbnail) data.publish.thumbnail.mark = resolve(dirname(file), mark);
-  return { voice: { ...settings.voice, ...data.voice }, pronunciations: data.pronunciations ?? {}, paces: data.paces, publish: data.publish };
+  return { voice: { ...settings.voice, ...data.voice }, pronunciations: data.pronunciations ?? {}, paces: data.paces, publish: data.publish, ...(Array.isArray(data.blur) ? { blur: data.blur.filter((w) => typeof w === "string") } : {}) };
 }
 
 export interface MadeVideo {
@@ -194,8 +196,10 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
   chapters.warnings.forEach((w) => log(`Note: ${w}`));
 
   // 6. Assemble, with any blurred boxes chosen in review.
-  const plan = { ...makePlan(timeline, outFolder, clipFile), redactions: redactionSpans(script, timeline) };
-  if (plan.redactions.length) log(`Blurring ${script.redactions!.length} box(es) chosen in review.`);
+  const byWords = wordSpans(settings.blur ?? [], take, timeline);
+  const plan = { ...makePlan(timeline, outFolder, clipFile), redactions: [...redactionSpans(script, timeline), ...byWords] };
+  if (script.redactions?.length) log(`Blurring ${script.redactions.length} box(es) chosen in review.`);
+  if (byWords.length) log(`Blurring the project's words in ${byWords.length} place(s).`);
   const planFile = join(outFolder, "plan.json");
   writeFileSync(planFile, JSON.stringify(plan));
   const video = join(outFolder, `${basename(scriptPath, ".json")}.mp4`);
@@ -215,7 +219,7 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
 
   // 7. The frame scan and the review it starts.
   if (options.frameScan !== false) {
-    made.review = await frameScan(script, scriptPath, outFolder, video, take, timeline, blocklist, narration, scriptTexts(options.prepared?.scanned ?? script).length, helper, log);
+    made.review = await frameScan(script, scriptPath, outFolder, video, take, timeline, blocklist, narration, scriptTexts(options.prepared?.scanned ?? script).length, helper, log, settings.blur);
   }
 
   // 8. The thumbnail, and the publishing details as they stand now.
@@ -246,7 +250,7 @@ function writer(script: Script): string {
   return `an AI model${w.name ? ` (${w.name})` : ""}, ${w.editedByPerson ? "edited by a person" : "not edited by a person"}`;
 }
 
-async function frameScan(script: Script, scriptPath: string, outFolder: string, video: string, take: TakeLog, timeline: Timeline, blocklist: LoadedBlocklist, narration: string, scriptChecked: number, helper: string, log: (s: string) => void): Promise<Review> {
+async function frameScan(script: Script, scriptPath: string, outFolder: string, video: string, take: TakeLog, timeline: Timeline, blocklist: LoadedBlocklist, narration: string, scriptChecked: number, helper: string, log: (s: string) => void, blur?: string[]): Promise<Review> {
   const pictures = [...new Set(timeline.segments.flatMap((s) => (s.picture ? [s.picture] : [])))];
   log(`The frame scan: reading the text in ${pictures.length} pictures.`);
   const jobsFile = join(outFolder, "ocr-jobs.json");
@@ -262,7 +266,7 @@ async function frameScan(script: Script, scriptPath: string, outFolder: string, 
     }
   });
   const read = JSON.parse(readFileSync(ocrFile, "utf8")) as { language: string; pictures: OcrResult };
-  const flags = scanFrames({ script, take, timeline, ocr: read.pictures, list: blocklist.list });
+  const flags = scanFrames({ script, take, timeline, ocr: read.pictures, list: blocklist.list, ...(blur ? { blur } : {}) });
   const reviewFile = join(outFolder, "review.json");
   let earlier: Review | null = null;
   if (existsSync(reviewFile)) {
@@ -302,7 +306,7 @@ async function makeThumbnail(script: Script, take: TakeLog, timeline: Timeline, 
   const focus: [number, number] | null = r ? [r[0] + r[2] / 2, r[1] + r[3] / 2] : null;
   // Any blurred box over that picture where it shows in the video is on the thumbnail too.
   const at = timeline.segments.filter((s) => s.picture === picture);
-  const boxes = redactionSpans(script, timeline).filter((sp) => at.some((s) => sp.from < s.to && sp.to > s.from)).map((sp) => sp.box);
+  const boxes = [...redactionSpans(script, timeline), ...wordSpans(settings.blur ?? [], take, timeline)].filter((sp) => at.some((s) => sp.from < s.to && sp.to > s.from)).map((sp) => sp.box);
   const { plan, warnings } = thumbnailPlan(script, settings.publish?.thumbnail, join(outFolder, "take", `${picture}.png`), focus, boxes);
   warnings.forEach((w) => log(`Note: ${w}`));
   const planFile = join(outFolder, "thumbnail-plan.json");

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { makeBlocklist } from "../src/guard/blocklist.ts";
 import { scanFrames, shortHash, timeOf, type OcrResult } from "../src/guard/frame-scan.ts";
-import { redactionSpans, stepsAt } from "../src/guard/redact.ts";
+import { redactionSpans, stepsAt, wordSpans } from "../src/guard/redact.ts";
 import type { Script } from "../src/script/format.ts";
 import type { TakeLog, Timeline } from "../src/timeline/build.ts";
 
@@ -68,4 +68,17 @@ test("steps and times are said the way people count them", () => {
   assert.deepEqual(stepsAt(150, 240, timeline), [2, 2]);
   assert.equal(timeOf(137, 30), "0:04.6");
   assert.equal(shortHash("abc").length, 8);
+});
+
+test("a project's words are blurred in each picture where the program says they are, with any slash and capitals", () => {
+  const shown: TakeLog = { width: 1920, height: 1080, start: "p1", steps: [], pageText: {
+    p1: [{ text: "Saved", rect: [100, 300, 60, 20] }, { text: "c:/Work/Takes/a report.docx", rect: [170, 300, 300, 20] }],
+    p2: [{ text: "C:\Work\Takes\a report.docx", rect: [170, 200, 300, 20] }],
+  } };
+  assert.deepEqual(wordSpans(["C:\Work\Takes"], shown, timeline), [{ from: 90, to: 150, box: [164, 294, 312, 32] }, { from: 150, to: 240, box: [164, 194, 312, 32] }]);
+  assert.deepEqual(wordSpans([], shown, timeline), []);
+  const read: OcrResult = { p1: [], p2: [] };
+  const flags = scanFrames({ script, take: shown, timeline, ocr: read, list, blur: ["c:\work"] });
+  assert.ok(flags.length > 0 && flags.every((x) => x.covered), "a path the words cover is already blurred");
+  assert.ok(scanFrames({ script, take: shown, timeline, ocr: read, list }).every((x) => !x.covered));
 });

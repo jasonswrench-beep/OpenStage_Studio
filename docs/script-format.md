@@ -92,6 +92,9 @@ the blocklist. Notes for people (`startState.note`, `expect`, `writtenBy`, a blu
 
 ## Project settings
 
+`blur` in a `studio-project.json` is a list of words (such as the folder takes are made in, `["C:\\Work"]`) that are blurred in every
+video of the project wherever the program itself says it shows them, in each picture where they are.
+
 A `studio-project.json` beside the scripts holds what every video of a project shares:
 
 ```json
