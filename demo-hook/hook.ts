@@ -558,7 +558,9 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
     case "position": {
       const el = find(command.id);
       const control = info(el);
-      if (command.words) control.rect = wordsRect(wordsRange(el, command.words, command.caret), surfaceOf(el));
+      const range = command.words ? wordsRange(el, command.words, command.caret) : null;
+      if (range) control.rect = wordsRect(range, surfaceOf(el));
+      control.seen = seenOf(range ? (range.startContainer.parentElement ?? el) : el, control.rect);
       return { viewport: [innerWidth, innerHeight], control };
     }
     case "hover": {
@@ -699,6 +701,16 @@ function within(r: DOMRect, clip: DOMRect): [number, number, number, number] | n
   const left = Math.max(r.left, clip.left), top = Math.max(r.top, clip.top);
   const right = Math.min(r.right, clip.right), bottom = Math.min(r.bottom, clip.bottom);
   return right - left >= 1 && bottom - top >= 1 ? [left, top, right - left, bottom - top] : null;
+}
+
+/** The part of a control's place (on the program's page) that the window and the scrolling boxes around it let show. Null: none of it. */
+function seenOf(el: Element, rect: [number, number, number, number]): [number, number, number, number] | null {
+  const at = surfaceOf(el);
+  // A hidden tick box or choice is drawn as its label.
+  const drawn = isTickable(el) ? (el.labels?.[0] ?? el.closest("label") ?? el) : el;
+  const own = shows(drawn) ? clipOf(drawn) : null;
+  const clip = own && within(shift(own, at.offset), at.clip);
+  return clip && within(new DOMRect(...rect), new DOMRect(...clip));
 }
 
 /** Every piece of text the viewer can see in one page or frame, with where it is on the program's page: the words, what is

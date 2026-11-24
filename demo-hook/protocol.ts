@@ -58,6 +58,9 @@ export interface ControlInfo {
   focused?: boolean;
   /** For a tick box, a radio button or a control with aria-checked: whether it is ticked or chosen. (Hook version 7.) */
   checked?: boolean;
+  /** Only in the answer to `position`: the part of `rect` that shows, cut to the window and to every scrolling box around the control,
+   * or null when none of it does. A control below the fold of a pane or a list is in the window and not seen. (Hook version 9.) */
+  seen?: [number, number, number, number] | null;
 }
 
 export interface Hello {
@@ -83,8 +86,9 @@ export interface TextOnScreen {
  * events carry the point they land on and the mouse as the pointer, as a real click's do. No command changed. Version 7 makes
  * Space tick a tick box or choose a radio button and Enter in a form's box send the form, as they do for a person, reports
  * radio buttons and sliders by their own roles, and says whether a tick box is ticked. No command changed. Version 8 moves the cursor in an editable area with the arrow keys,
- * Home and End, and selects with Shift, as they do for a person. No command changed. */
-export const HOOK_VERSION = 8;
+ * Home and End, and selects with Shift, as they do for a person. No command changed. Version 9 says in the answer to `position` which
+ * part of the control shows, so a script whose pointer would go to a control hidden in a scrolling box is found. */
+export const HOOK_VERSION = 9;
 
 /** Where some words are in a control's text: the first place they appear as written, else the first ignoring case.
  * Null when they are not there. */
