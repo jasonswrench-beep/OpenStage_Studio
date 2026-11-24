@@ -4,7 +4,6 @@
 // stays on screen into the next step until the picture taken at its action.) Title and end cards are never blurred.
 
 import type { Redaction, Script } from "../script/format.ts";
-import type { TakeLog } from "../pipeline/player.ts";
 import type { Rect, TakeLog, Timeline } from "../timeline/build.ts";
 
 export interface RedactionSpan {

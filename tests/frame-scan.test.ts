@@ -73,12 +73,12 @@ test("steps and times are said the way people count them", () => {
 test("a project's words are blurred in each picture where the program says they are, with any slash and capitals", () => {
   const shown: TakeLog = { width: 1920, height: 1080, start: "p1", steps: [], pageText: {
     p1: [{ text: "Saved", rect: [100, 300, 60, 20] }, { text: "c:/Work/Takes/a report.docx", rect: [170, 300, 300, 20] }],
-    p2: [{ text: "C:\Work\Takes\a report.docx", rect: [170, 200, 300, 20] }],
+    p2: [{ text: String.raw`C:WorkTakes report.docx`, rect: [170, 200, 300, 20] }],
   } };
-  assert.deepEqual(wordSpans(["C:\Work\Takes"], shown, timeline), [{ from: 90, to: 150, box: [164, 294, 312, 32] }, { from: 150, to: 240, box: [164, 194, 312, 32] }]);
+  assert.deepEqual(wordSpans([String.raw`C:WorkTakes`], shown, timeline), [{ from: 90, to: 150, box: [164, 294, 312, 32] }, { from: 150, to: 240, box: [164, 194, 312, 32] }]);
   assert.deepEqual(wordSpans([], shown, timeline), []);
   const read: OcrResult = { p1: [], p2: [] };
-  const flags = scanFrames({ script, take: shown, timeline, ocr: read, list, blur: ["c:\work"] });
+  const flags = scanFrames({ script, take: shown, timeline, ocr: read, list, blur: [String.raw`c:work`] });
   assert.ok(flags.length > 0 && flags.every((x) => x.covered), "a path the words cover is already blurred");
   assert.ok(scanFrames({ script, take: shown, timeline, ocr: read, list }).every((x) => !x.covered));
 });
