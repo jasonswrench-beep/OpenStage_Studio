@@ -692,6 +692,8 @@ function shows(el: Element): boolean {
   for (let p: Element | null = el; p; p = p.parentElement) {
     const s = view.getComputedStyle(p);
     if (s.display === "none" || s.visibility === "hidden" || s.opacity === "0") return false;
+    // What a closed <details> holds keeps its place but is not drawn; only its summary shows.
+    if (p instanceof view.HTMLDetailsElement && !p.open && p !== el && !p.querySelector(":scope > summary")?.contains(el)) return false;
   }
   return true;
 }

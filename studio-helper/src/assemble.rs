@@ -608,8 +608,10 @@ fn draw_card(card: &Card, w: u32, h: u32, text: &dyn TextRenderer) -> Result<Can
     let fit = text.draw(&mut c, &req(&card.title, left, y, width, (210.0 * s) as i32, 80.0 * s, true, fg))?;
     warn_cut(fit.complete, &card.title);
     y += (230.0 * s) as i32;
+    // One line alone (a title card's goal) may take the room of all three, and wraps.
+    let room = if card.lines.len() == 1 { 188.0 } else { 60.0 };
     for line in card.lines.iter().take(3) {
-        let fit = text.draw(&mut c, &req(line, left, y, width, (60.0 * s) as i32, 38.0 * s, false, fg))?;
+        let fit = text.draw(&mut c, &req(line, left, y, width, (room * s) as i32, 38.0 * s, false, fg))?;
         warn_cut(fit.complete, line);
         y += (64.0 * s) as i32;
     }
