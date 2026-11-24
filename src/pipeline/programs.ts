@@ -444,6 +444,7 @@ export const PROGRAMS: ProgramEntry[] = [
       // Explore.
       { name: "part8-query", about: "The coded study with one saved query, Waiting on the North campus (Time and waiting in cases whose Campus is North), following the coding and not frozen." },
       // Data and statistics.
+      { name: "part11-packet", about: "The coded study (study-coded) with a packet for a chatbot built and not answered yet (the survey answers; Weather, Road safety, Bike lockers and showers). Ctrl+V pastes the invented chatbot's reply." },
       { name: "part9-merge", about: "The coded study (study-coded); Merge from a file's Choose a file offers More facts.csv (a parking permit, dependants and distance for S01 to S30)." },
     ],
     // PrismQDA names its controls from its own code in demo mode (app/ui/src/demonames.ts on its studio-demo-hook branch), so most of
