@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Studio's own page never talks to a local server; only the practice program's demo-mode hook does (the app's own
+         rule in tauri.conf.json covers both windows). Both rules apply, so this page gets the stricter one. -->
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' ipc: http://ipc.localhost" />
     <title>OpenStage Studio</title>
   </head>
   <body>

@@ -7,9 +7,8 @@ import { wavDurationMs } from "../src/pipeline/helper.ts";
 const TOKEN = "abcdefghijklmnop1234";
 
 test("demo mode is off unless the program was launched with the demo settings", () => {
-  assert.equal(readSettings({}, ""), null);
-  assert.deepEqual(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000/", token: TOKEN } }, ""), { endpoint: "http://127.0.0.1:5000", token: TOKEN });
-  assert.deepEqual(readSettings({}, `?demo-hook=http://127.0.0.1:5000&demo-token=${TOKEN}`), { endpoint: "http://127.0.0.1:5000", token: TOKEN });
+  assert.equal(readSettings({}), null);
+  assert.deepEqual(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000/", token: TOKEN } }), { endpoint: "http://127.0.0.1:5000", token: TOKEN });
 });
 
 test("the hook only ever talks to this computer, with a proper token", () => {
@@ -18,9 +17,9 @@ test("the hook only ever talks to this computer, with a proper token", () => {
   assert.equal(isLoopback("http://192.168.1.4:1"), false);
   assert.equal(isLoopback("https://example.org"), false);
   assert.equal(isLoopback("not a url"), false);
-  assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://10.0.0.2:5000", token: TOKEN } }, ""), null);
-  assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000", token: "short" } }, ""), null);
-  assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000", token: "has spaces in it ok?" } }, ""), null);
+  assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://10.0.0.2:5000", token: TOKEN } }), null);
+  assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000", token: "short" } }), null);
+  assert.equal(readSettings({ [SETTINGS_GLOBAL]: { endpoint: "http://127.0.0.1:5000", token: "has spaces in it ok?" } }), null);
 });
 
 test("a control's place on the page is scaled to the captured frame", () => {

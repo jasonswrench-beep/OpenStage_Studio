@@ -15,4 +15,5 @@ if "%FOLDER%"=="" for /f "delims=" %%D in ('node src\guard\cli.ts latest-review'
 if "%FOLDER%"=="" (echo There is no video to review yet. Make one with Make Video.bat first. & pause & exit /b 1)
 echo Opening the review of %FOLDER%
 echo (To review another video, drag its folder from renders onto this file.)
+set "OPENSTAGE_STUDIO_DEV_REPO=%CD%"
 start "" "src-tauri\target\release\openstage-studio.exe" --review "%FOLDER%"

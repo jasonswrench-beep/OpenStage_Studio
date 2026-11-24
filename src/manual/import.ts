@@ -22,8 +22,11 @@ const CALLOUT_WORDS: Record<string, string> = {
   "design-tip": "Design tip", caution: "Caution", "bright-idea": "Bright idea", "power-tip": "Power tip", "time-saver": "Time saver", "new-feature": "New in this version",
 };
 
+/** The most one manual may unpack to, in bytes: far more than any manual's words. */
+const MOST_MANUAL = 512 * 1024 * 1024;
+
 export function readProjectManual(file: string): Manual {
-  const entries = readZip(readFileSync(file));
+  const entries = readZip(readFileSync(file), MOST_MANUAL);
   const get = (name: string): Json | null => {
     const e = entries.find((x) => x.name === name);
     return e ? (JSON.parse(e.read().toString("utf8")) as Json) : null;

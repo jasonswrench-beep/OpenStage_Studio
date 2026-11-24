@@ -4,8 +4,8 @@ Last updated 2026-11-16, after the development list round (recordings, descripti
 
 ## Where things are
 
-Phases 1 to 5 are built (phase 5 in part: the driver and the connector), and their acceptance tests pass on Jason's computer (Windows 11 build 26200, two 1920 by 1080
-displays at 100 percent; takes run on the second display).
+Phases 1 to 5 are built (phase 5 in part: the driver and the connector), and their acceptance
+tests pass on the owner's computer (Windows 11; takes run on the second display).
 
 Phase 1, "One video by hand":
 
@@ -35,18 +35,18 @@ Phase 3, "AI planning and scripting" (`docs/ai.md`):
 - `Check AI Scripts.bat` passes with the built-in model (Qwen 3.5 4B on this computer): from the "Planning lessons"
   chapter of the invented Practice Planner manual, it planned six videos, wrote six scripts, and all six passed rehearsal
   after automatic repair, with no hand edits (the bar is four in five). See "Phase 3 results" below.
-- It also passes with Claude (`claude-opus-5-5`, Jason's own key, 2026-11-15): six videos planned, six scripts written,
+- It also passes with a hosted AI service (the owner's own key, 2026-11-15): six videos planned, six scripts written,
   all six passed rehearsal at the first run with no repairs, and on reading, every script does what its task says.
-- The licence check passes with phase 3's two packages (Anthropic's SDK and PDF.js, both Apache 2.0, in NOTICE).
+- The licence check passes with phase 3's two packages (a hosted service's own library and the PDF reader, both Apache 2.0, in NOTICE).
 
 Phase 4, "Batch and re-record" (`docs/batch.md`):
 
-- `Check Batch.bat` passes with Claude (2026-11-15). The whole invented Practice Planner manual recorded unattended: the
+- `Check Batch.bat` passes with a hosted AI service (2026-11-15). The whole invented Practice Planner manual recorded unattended: the
   chapter with no tasks was left out, and all six planned videos were planned, written, rehearsed and recorded with
   nobody at the computer. Then, against Practice Planner version 2 (two controls renamed), the release check named the
   exact broken step in all seven scripts checked (the six new ones and `examples/plan-a-lesson.json`): three broken, at
   the steps worked out independently, and four still working.
-- Claude's repaired copies were right on reading: they use the renamed controls, change the narration only where the
+- The AI's repaired copies were right on reading: they use the renamed controls, change the narration only where the
   words on screen changed, and leave every other step as it was. A repair may now reach past the failed step to fix the
   same problem later in a script (the hand-written example uses one renamed control twice and the other once later).
 - `Check Same Video.bat` still passes after phase 4, with the same frame fingerprint (version 1 of the practice program
@@ -56,7 +56,7 @@ Phase 4, "Batch and re-record" (`docs/batch.md`):
 Phase 5, "Reach", in part (`docs/accessibility-driver.md`, `docs/connector.md`):
 
 - `Check Reach.bat` passes (2026-11-15). Practice Planner, started with its hook off, recorded a whole video through
-  the accessibility driver (11 steps, 54.8 seconds). Claude (`claude-opus-5-5`, Jason's key), given only the connector's
+  the accessibility driver (11 steps, 54.8 seconds). A hosted AI service (the owner's key), given only the connector's
   tools over the connector's own protocol, listed the files and programs, read the manual and the real controls, checked
   and wrote a script for "Making a new lesson", and rehearsed it: it passed first time, and Studio's own rehearsal of it
   passed too. The script is right on reading.
@@ -78,7 +78,7 @@ The installer and the window (`docs/release.md`, `docs/code-signing.md`):
 - `Build Installer.bat` makes `OpenStage-Studio-0.1.0-alpha.1-Setup.exe` (42.5 MB, not signed) and its checks pass.
   `Test Installed App.bat` passes: installed silently, every page opened by its name with every control named (through
   UI Automation), the take screen set on Settings, the example video made from the installed window and its review
-  opened, then uninstalled with the work folder (here `OneDrive\Documents\OpenStage Studio`) and the downloads kept.
+  opened, then uninstalled with the work folder and the downloads kept.
 - Building the window found that a take started from the window got a blank practice program: the two shared one
   browser data folder with different settings, which the browser engine refuses. Studio's window now starts with exactly a
   take's settings (`BROWSER_SETTINGS` in `src-tauri/src/main.rs`, kept equal to `TAKE_BROWSER_SETTINGS` by a test). A
@@ -152,7 +152,7 @@ Confirmed by Jason:
   in Studio's own speech path for it); Studio draws a lecture's slides itself; PrismQDA's statistics switch is left to its
   own session. Every lecture is approved by a person before its video, whoever wrote it ("a script you approve").
 
-- **The installer** (2026-11-15): signed the way OpenExplainer is (Azure Artifact Signing with the suite's shared
+- **The installer** (2026-11-15): signed the way OpenExplainer is (a cloud signing service, with the suite's shared
   `tools/sign_windows.py`, on Jason's computer only); a person's work in `Documents\OpenStage Studio`; the first
   installer's window does all the jobs. Node.js is carried in the installer (pinned in `tools/node-runtime.json`, v24.22.3,
   the 24 line Studio is developed on); the voice and the model still download on request. The first release,
@@ -197,9 +197,9 @@ Confirmed by Jason:
 19. **The accessibility driver is proven on Practice Planner with its hook off** (2026-11-15), and its takes need only be
     the same to the eye (every frame at least 40 dB alike).
 20. **The connector follows the documentation tool's pattern** (2026-11-15): off until turned on, one named folder; its
-    acceptance test has Claude, with Jason's key, act as the outside assistant.
+    acceptance test has a hosted AI service, with the owner's key, act as the outside assistant.
 
-Made by Claude, open to change:
+Made by the AI assistant, open to change:
 
 1. **The text caret is hidden in demo mode** (so a blinking caret cannot make two takes differ).
 2. **The encoder is Windows' own** (H.264 and AAC). No FFmpeg, nothing to licence.
@@ -234,8 +234,8 @@ Made by Claude, open to change:
     step repeated by mistake.
 16. **Publishing details**: the metadata writer is told the program's name; chapters only for scripts of eight steps or
     more, at least two steps apart, as video sites need three chapters of ten seconds or more.
-17. **Claude** goes through Anthropic's own SDK, starting at `claude-opus-5-5` with medium effort and the service's own
-    fallback on a refusal. Keys are kept in `%APPDATA%\org.openstage.studio\ai.json`.
+17. **The first hosted service** goes through its own library, with medium effort and the service's own fallback on a
+    refusal. Keys are kept in `%APPDATA%\org.openstage.studio\ai.json`, encrypted by Windows for the person signed in.
 18. **AI setup is a double-click console script for now** (`Set Up AI.bat`): asked in words, one question at a time, so a
     screen reader can follow it. An AI settings screen in the app comes with moving the player into the app.
 19. **Videos from the queue go into `renders\<series>-<script>\`**, one flat folder each, so `Review Video.bat` and
@@ -281,7 +281,7 @@ Made by Claude, open to change:
   layer; the take waits five seconds for a program to finish starting; and the program is started with plain grey text
   smoothing, the same settings as Studio's own window, so the two share one browser data folder. If a repeat check ever fails, the take log shows the first picture that differs.
 - The built-in AI model and its runtime live in `%LOCALAPPDATA%\org.openstage.studio\ai\` (the voice beside it in `voices\`); writing one script with it takes a
-  minute or two on this computer's processor, and a whole chapter's run about 25 minutes. With Claude a whole chapter's
+  minute or two on this computer's processor, and a whole chapter's run about 25 minutes. With a hosted service a whole chapter's
   run took about 10 minutes, most of it rehearsal.
 - When an AI assistant runs Studio's commands from inside a packaged desktop app, Windows keeps anything it writes under
   AppData in that app's private folder: the AI settings, the voice and the model it downloads there are not the ones

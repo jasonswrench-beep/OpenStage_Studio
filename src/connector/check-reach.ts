@@ -2,7 +2,7 @@
 //
 //   1. A program without the hook records through the accessibility driver: Practice Planner, started with its hook off,
 //      makes a whole video from examples/accessibility/plan-a-lesson-no-hook.json.
-//   2. An outside assistant builds and rehearses a script through the connector: Claude (the key Set Up AI.bat saved)
+//   2. An outside assistant builds and rehearses a script through the connector: a hosted AI (the key Set Up AI.bat saved)
 //      is given only the connector's tools, over the connector's own protocol, and asked to write a script for a task in
 //      the invented manual and rehearse it until it passes. Studio then rehearses the script itself, independently.
 //
@@ -75,7 +75,7 @@ export async function checkReach(log: (s: string) => void = console.log): Promis
   log("\n=== 2. An outside assistant through the connector ===");
   const ai = readAiSettings();
   if (ai.choice !== "hosted" || presetOf(ai)?.protocol !== "anthropic" || !ai.key) {
-    result(false, "the connector test needs Claude as the AI (Set Up AI.bat), to act as the outside assistant");
+    result(false, "the connector test needs the first hosted service in Set Up AI.bat's list, to act as the outside assistant");
   } else {
     const model = ai.model ?? presetOf(ai)!.defaultModel!;
     const folder = join(base, "connector");
@@ -87,7 +87,7 @@ export async function checkReach(log: (s: string) => void = console.log): Promis
     const calls: string[] = [];
     let lastRehearsal = "";
     try {
-      await c.request("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: `Claude (${model})`, version: "check" } });
+      await c.request("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: `A hosted AI (${model})`, version: "check" } });
       c.notify("notifications/initialized");
       const listed = await c.request<{ tools: { name: string; description: string; inputSchema: Record<string, unknown> }[] }>("tools/list");
       const tools = listed.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.inputSchema as Anthropic.Beta.BetaTool.InputSchema }));
@@ -106,7 +106,7 @@ export async function checkReach(log: (s: string) => void = console.log): Promis
           betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
         } as Anthropic.Beta.MessageCreateParamsNonStreaming);
         messages.push({ role: "assistant", content: r.content as Anthropic.Beta.BetaContentBlockParam[] });
-        if (r.stop_reason === "refusal") throw new Error("Claude declined the task.");
+        if (r.stop_reason === "refusal") throw new Error("The AI declined the task.");
         const uses = r.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
         if (!uses.length) {
           done = r.content.some((b) => b.type === "text" && /DONE/.test(b.text));
@@ -117,17 +117,17 @@ export async function checkReach(log: (s: string) => void = console.log): Promis
           const out = await c.request<{ content: { text: string }[]; isError?: boolean }>("tools/call", { name: u.name, arguments: u.input });
           const text = out.content.map((x) => x.text).join("\n");
           calls.push(`${u.name}${out.isError ? " (error)" : ""}`);
-          log(`  Claude used ${u.name}${out.isError ? ": refused" : ""}.`);
+          log(`  The AI used ${u.name}${out.isError ? ": refused" : ""}.`);
           if (u.name === "rehearse_script") lastRehearsal = text;
           results.push({ type: "tool_result", tool_use_id: u.id, content: text, ...(out.isError ? { is_error: true } : {}) });
         }
         messages.push({ role: "user", content: results });
       }
-      lines.push(`  Claude's calls, in order: ${calls.join(", ")}`);
+      lines.push(`  The AI's calls, in order: ${calls.join(", ")}`);
       const file = join(folder, "make-a-new-lesson.json");
       result(done && calls.includes("write_script") && calls.includes("rehearse_script") && /^Passed/.test(lastRehearsal),
-        `Claude wrote and rehearsed a script through the connector (${calls.length} tool calls; its last rehearsal: ${lastRehearsal.split("\n")[0] || "none"})`);
-      // Studio's own, independent rehearsal of what Claude wrote.
+        `The AI wrote and rehearsed a script through the connector (${calls.length} tool calls; its last rehearsal: ${lastRehearsal.split("\n")[0] || "none"})`);
+      // Studio's own, independent rehearsal of what the AI wrote.
       if (existsSync(file)) {
         const v = validateScript(JSON.parse(readFileSync(file, "utf8")));
         let passed = false;
@@ -140,7 +140,7 @@ export async function checkReach(log: (s: string) => void = console.log): Promis
           }
         }
         result(passed && v.script!.writtenBy?.kind === "model", `Studio's own rehearsal of the script passed (${v.script?.steps.length ?? 0} steps, written by ${v.script?.writtenBy?.name ?? "?"})`);
-      } else result(false, "the script Claude was asked for is not in the folder");
+      } else result(false, "the script the AI was asked for is not in the folder");
     } catch (e) {
       result(false, `the connector test could not finish: ${e instanceof Error ? e.message : String(e)}`);
     } finally {

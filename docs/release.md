@@ -85,9 +85,12 @@ A release is signed on the publisher's computer and published only with the owne
   a few controls, from run to run. An experiment of three takes per setting showed it in every setting but the shared
   folder, which gave the same pictures in six takes out of six and in every check since. The example's frame fingerprint
   is 81d41989e3de3093.
-- **A program built in the repository runs the repository's engine.** An installer build leaves a bundled engine beside
-  `target\release\openstage-studio.exe`; the shell used it, with its own older code and the installed work folder, until
-  it was made to prefer the repository it is built in (`src-tauri/src/engine.rs`).
+- **A program built in the repository runs the repository's engine only when told to.** An installer build leaves a bundled
+  engine beside `target\release\openstage-studio.exe`, with its own older code and the installed work folder. Set
+  `OPENSTAGE_STUDIO_DEV_REPO` to the repository's folder (`Review Video.bat` does) and the shell uses the repository's engine
+  and folders instead; a debug build (`Run OpenStage Studio.bat`) finds the repository by itself. Until 2026-11-24 a release
+  build looked for the repository in every folder above it, which let any account on the computer plant one
+  (`src-tauri/src/engine.rs`). A release build started by hand without that setting runs the engine beside it.
 - **Every module thought it was the program being run** once bundled into one file, since they all share that file's
   address. `src/util/is-main.ts` decides; the bundle marks itself, and only the engine's own command line starts.
 - **Installed, the engine first did nothing at all.** The shell handed Node.js the engine's path in Windows' long-path form
@@ -97,8 +100,8 @@ A release is signed on the publisher's computer and published only with the owne
 - **The silent uninstaller hands itself to a temporary copy and returns at once**, and from an AI assistant's packaged
   session that copy did nothing. The installed test runs it in place (`uninstall.exe /S _?=<install folder>`), which waits
   until it is done and leaves only itself, then removes it. Uninstalling from Add or Remove Programs is not affected.
-- **Documents can be somewhere else.** On Jason's computer it is in OneDrive (`OneDrive\Documents`); the window asks
-  Windows for the Documents folder, so the work folder follows it.
+- **Documents can be somewhere else.** A person may keep it elsewhere, such as in a synced folder; the window
+  asks Windows for the Documents folder, so the work folder follows it.
 
 ## What was tried on the installed app (2026-11-15)
 

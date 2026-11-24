@@ -3,6 +3,17 @@
 Things the build sessions cannot try themselves: a person's eyes and ears, real recordings, a screen reader, a hosted AI
 key's cost, and decisions. Newest round first. Tick or delete an item once done.
 
+## Security fixes of 2026-11-24
+
+The fixes the security review of 2026-11-17 asked for. Not run yet, because other recordings were using the take screen:
+
+- [ ] `Check Same Video.bat` (the demo-mode hook and the helper changed; neither should change a frame).
+- [ ] `Test Installed App.bat` on a setup with the fixes (the shell finds its engine and the work folder another way, and
+      Studio's own page has a stricter rule for what it may reach).
+- [ ] **Your AI key moves to a protected form** the first time this version reads your AI settings. An older Studio, or a
+      checkout without the fix, then asks for the key again. Merge the fix everywhere you run Studio first.
+- [ ] `Review Video.bat`: open a review and add a blurred box; it should still go straight into the script.
+
 ## Development list round of 2026-11-15/16
 
 ### Watch and listen
@@ -36,7 +47,7 @@ key's cost, and decisions. Newest round first. Tick or delete an item once done.
 ### Checks that spend your hosted AI key
 
 Not run this round, because they call the AI chosen in Set Up AI with your key: `Check AI Scripts.bat`, `Check Batch.bat`,
-`Check Reach.bat` (its Claude part). The code they cover changed only slightly (the script format is version 3; AI-written
+`Check Reach.bat` (its hosted AI part). The code they cover changed only slightly (the script format is version 3; AI-written
 scripts now say so). Run them when you are happy to spend the credit.
 
 ### Installer and release
@@ -44,7 +55,7 @@ scripts now say so). Run them when you are happy to spend the credit.
 - [x] **A signed build**, tested and published as the 0.1.0 alpha 1 pre-release (2026-11-16, `docs/code-signing.md`).
 - [ ] **Install the published release by hand** from its GitHub page: the download, SmartScreen, the installer's own
       wizard (the test used the silent install), and a first look at the window.
-- [ ] The installed-app test leaves its example video and the examples in `OneDrive\Documents\OpenStage Studio`. Delete
+- [ ] The installed-app test leaves its example video and the examples in your work folder (`Documents\OpenStage Studio`). Delete
       them if you like; Studio copies the examples again when needed.
 
 ### Decisions waiting on the shared core

@@ -7,7 +7,7 @@ sides) and `hook.ts` (the part a program includes).
 ## Rules
 
 - Off by default. The hook starts only when the program is launched with the demo flag, which makes its shell set the
-  page global `__OPENSTAGE_DEMO_HOOK__` (or the page address carries `?demo-hook=...&demo-token=...`).
+  page global `__OPENSTAGE_DEMO_HOOK__`. Nothing else starts it: a page's address can come from a link, so it is not read.
 - It only talks to this computer (`127.0.0.1`, `localhost` or `[::1]`), and every request carries a one-time token the
   player made for the take. Anything else is refused on both sides.
 - Controls are found by stable names, never by their visible labels. Rewording a button does not break a script.

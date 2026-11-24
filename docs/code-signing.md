@@ -17,7 +17,7 @@ release holds exactly two files, and a downloaded copy is signed by Jason Wrench
 
 - **Who signs.** The setup file and every program in it (Studio itself, the helper, the installer's plugins and the
   uninstaller) are signed by the publisher, **Jason Wrench**, with a code-signing certificate in the publisher's own name
-  from a cloud code-signing service (Azure Artifact Signing). The certificates last three days, so every signature carries
+  from a cloud code-signing service. The certificates last three days, so every signature carries
   a timestamp, which keeps it valid after its certificate runs out.
 - **What is signed.** Only what a Studio release carries. Files their makers have already signed keep their makers'
   signatures: Node.js (`node\node.exe`, signed by the OpenJS Foundation) and the web view's setup inside the installer.
@@ -27,7 +27,8 @@ release holds exactly two files, and a downloaded copy is signed by Jason Wrench
 - **Privacy.** Studio does not send information to other computers unless the person asks: to download the voice or the
   built-in AI model (after pressing Download), and, only if the person chooses a hosted AI service with their own key, to
   that service (`docs/ai.md`). The connector listens only to an assistant this person starts on this computer. The
-  installer carries the web view's setup and downloads nothing.
+  installer carries the web view's small setup; on a computer that has no web view yet (Windows 11 always has one), that
+  setup downloads it from its maker.
 
 ## How a release is made
 
@@ -39,7 +40,7 @@ published without the owner's yes.
    then commit everything (as `jasonswrench-beep`, with no Co-Authored-By or "Generated with" lines; `CLAUDE.md`), so the
    working tree is clean. Tag that commit `v<release>` and push the commit and the tag to `main`. The tag comes before
    the build, so it points at the exact commit the build came from.
-3. On the owner's computer, from that tagged commit, signed in to the signing service (`az login`), with the account's details in the environment
+3. On the owner's computer, from that tagged commit, signed in to the signing service, with the account's details in the environment
    (the top of `tools/sign_windows.py` names them: `OPENSTAGE_SIGN_ENDPOINT`, `OPENSTAGE_SIGN_ACCOUNT`,
    `OPENSTAGE_SIGN_PROFILE`, and optionally `OPENSTAGE_SIGN_PUBLISHER`): `node tools/build-installer.mjs --sign`. It stops
    on any problem: a Node.js that is not the pinned build, a file that names this computer's user folder, an installer

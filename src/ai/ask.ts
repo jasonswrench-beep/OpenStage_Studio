@@ -1,5 +1,5 @@
-// One way for every AI role to ask a question, whichever AI is chosen: the built-in model on this computer, Claude through
-// Anthropic's own library, or a service that speaks the common chat-completions request (ChatGPT, Gemini, others).
+// One way for every AI role to ask a question, whichever AI is chosen: the built-in model on this computer, a hosted service
+// through its own library, or a hosted service that speaks the common chat-completions request.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { readLocalManifest, startLocalAi, type LocalServer } from "./local.ts";
@@ -26,7 +26,7 @@ export interface Answerer {
   close(): Promise<void>;
 }
 
-/** Claude models that accept the server-side fallback on a refusal. */
+/** The models that accept the server-side fallback on a refusal. */
 const FALLBACK_MODELS = new Set(["claude-fable-5-2", "claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
 
 function claude(key: string, model: string): Answerer {

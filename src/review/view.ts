@@ -12,6 +12,7 @@ import { grow } from "../guard/redact.ts";
 import { ACTION_WORDS, approve, decide, flagState, gate, guardReport, STATE_WORDS, type Action, type Review } from "../guard/review.ts";
 import { checklistText, uploadText, type PublishDraft, type VideoRecord } from "../package/package.ts";
 import { addRedaction } from "../script/edit.ts";
+import { onADrive } from "./script-path.ts";
 
 const PACKAGE_COPIES = ["captions.srt", "captions.vtt", "transcript.txt", "thumbnail.png"];
 /** Copied when the video has them (the description track; videos made before 2026-11-15 have none). */
@@ -251,14 +252,17 @@ export async function showReview(host: HTMLElement, folder: string, announce: (s
   heading.focus();
 }
 
-/** Add a blurred box to the script. If the window may not write it yet, the person is asked to choose the script. */
+/** Add a blurred box to the script. If the window may not write it, or its path is not a plain one on this computer, the
+ * person is asked to choose the script. */
 async function blurInScript(script: string, redaction: { box: [number, number, number, number]; fromStep: number; toStep: number; reason: string }) {
   let path = script;
   let text: string;
+  const local = onADrive(script);
   try {
+    if (!local) throw new Error("not a path on this computer");
     text = await readTextFile(path);
   } catch {
-    const chosen = await open({ multiple: false, defaultPath: script, title: "Choose this video's script, to add the blurred box to it", filters: [{ name: "Tutorial script", extensions: ["json"] }] });
+    const chosen = await open({ multiple: false, ...(local ? { defaultPath: script } : {}), title: "Choose this video's script, to add the blurred box to it", filters: [{ name: "Tutorial script", extensions: ["json"] }] });
     if (typeof chosen !== "string") throw new Error("no script was chosen.");
     path = chosen;
     text = await readTextFile(path);

@@ -68,7 +68,9 @@ For each flag the window shows what was found, when and where, and the picture w
 the video to that moment. The person types their name once, then decides:
 
 - **Approve: it may show.** For something the scans could not judge, such as an invented name that looks like a real one.
-- **Blur it.** Adds a blurred box to the script (`redactions`), over that place for the steps it shows in. Make the video
+- **Blur it.** Adds a blurred box to the script (`redactions`), over that place for the steps it shows in. The script named in
+  the review is changed only if it is on this computer, in your work folder or beside the review; otherwise you are asked to
+  choose it (`src-tauri/src/review_scope.rs`). Make the video
   again to apply it; the flag then counts as resolved, because the video itself has the box.
 - **Record again.** For something that should not be there at all: change the demo project or the script and make the
   video again. Export stays shut meanwhile.

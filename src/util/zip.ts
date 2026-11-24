@@ -20,8 +20,11 @@ export function safeName(name: string): boolean {
   return name.length > 0 && name.length < 400 && !/^[\\/]|^[A-Za-z]:|\\/.test(name) && !name.split("/").some((p) => p === ".." || p === ".");
 }
 
-/** The entries of a zip file. Throws, in words, if it is not one. */
-export function readZip(data: Buffer): ZipEntry[] {
+/** The entries of a zip file. Throws, in words, if it is not one. An entry that does not unpack to exactly the size the zip
+ * gives for it is refused, and so is reading more than `mostRead` bytes from one zip in all, so a small crafted file cannot
+ * fill the computer's memory. */
+export function readZip(data: Buffer, mostRead = Infinity): ZipEntry[] {
+  let left = mostRead;
   // The end record is in the last 64 KB (it may be followed by a comment).
   let end = -1;
   for (let i = data.length - 22; i >= Math.max(0, data.length - 65557); i--) {
@@ -54,9 +57,19 @@ export function readZip(data: Buffer): ZipEntry[] {
         if (data.readUInt32LE(localAt) !== LOCAL) throw new Error(`${name} is damaged in the zip file.`);
         const start = localAt + 30 + data.readUInt16LE(localAt + 26) + data.readUInt16LE(localAt + 28);
         const raw = data.subarray(start, start + packed);
-        if (method === 0) return Buffer.from(raw);
-        if (method === 8) return inflateRawSync(raw);
-        throw new Error(`${name} is stored in a way this reader does not know (method ${method}).`);
+        if (method !== 0 && method !== 8) throw new Error(`${name} is stored in a way this reader does not know (method ${method}).`);
+        if (size > left) throw new Error("The zip file holds more than this reader will unpack.");
+        const wrong = () => new Error(`${name} does not unpack to the size the zip file gives for it. The file is damaged, or was made to mislead.`);
+        let out: Buffer;
+        try {
+          // The reader stops one byte past the stated size (a limit of 0 is not allowed).
+          out = method === 0 ? Buffer.from(raw) : inflateRawSync(raw, { maxOutputLength: size + 1 });
+        } catch {
+          throw wrong();
+        }
+        if (out.length !== size) throw wrong();
+        left -= size;
+        return out;
       },
     });
   }
