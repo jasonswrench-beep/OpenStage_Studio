@@ -710,7 +710,8 @@ function seenOf(el: Element, rect: [number, number, number, number]): [number, n
   const drawn = isTickable(el) ? (el.labels?.[0] ?? el.closest("label") ?? el) : el;
   const own = shows(drawn) ? clipOf(drawn) : null;
   const clip = own && within(shift(own, at.offset), at.clip);
-  return clip && within(new DOMRect(...rect), new DOMRect(...clip));
+  // A cursor among the words has no width of its own.
+  return clip && within(new DOMRect(rect[0], rect[1], Math.max(1, rect[2]), Math.max(1, rect[3])), new DOMRect(...clip));
 }
 
 /** Every piece of text the viewer can see in one page or frame, with where it is on the program's page: the words, what is
