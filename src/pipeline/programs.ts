@@ -565,6 +565,7 @@ export const PROGRAMS: ProgramEntry[] = [
       { name: "empty", about: "The window as it opens: an empty project called Untitled project, not saved yet. No box for choosing files offers anything." },
       { name: "smoke", about: "The book Brewing Good Tea open and saved, for the hook's smoke test; Open project offers it again." },
       { name: "tea-book", about: "The book Brewing Good Tea about the made-up program Tea Timer, open and saved, with no pictures yet: Getting started (Choosing your tea, Starting a brew, Stopping early), Settings (Changing the settings, Choosing the bell) and When something goes wrong (The tea tastes bitter). Choosing your tea and Starting a brew are Drafted and have words; the variables PRODUCT, VERSION and COMPANY are Tea Timer, 2.0 and Tea Notes." },
+      { name: "tea-finished", about: "The book Brewing Good Tea finished, open and saved: every topic written, mostly Reviewed; four pictures of Tea Timer (the window as it opens, Green tea chosen, brewing, and its Settings window) in Choosing your tea, Starting a brew and Changing the settings; a Caution and a Time saver box; and a short guide called Quick start with Starting a brew and Changing the settings." },
     ],
     // OpenStage Capture names its controls in demo mode (src/demo/names.ts on OpenExplainer's studio-demo-hook branch), most of them
     // only once their pane, menu or dialog is drawn.
