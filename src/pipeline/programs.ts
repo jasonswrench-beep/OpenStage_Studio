@@ -53,6 +53,14 @@ export function assessExe(root: string, env: NodeJS.ProcessEnv = process.env): s
   return places.find((p): p is string => !!p && existsSync(p)) ?? null;
 }
 
+/** OpenStage Capture's window with the demo hook (the program is OpenExplainer; OpenStage Capture is its suite name): where
+ * OPENSTAGE_CAPTURE_EXE says, else a build of OpenExplainer's branch `studio-demo-hook` beside this repository (its own checkout,
+ * OpenExplainer-demo). The installed OpenExplainer has no hook, so it is never used. Null if none is there. */
+export function captureExe(root: string, env: NodeJS.ProcessEnv = process.env): string | null {
+  const places = [env.OPENSTAGE_CAPTURE_EXE, resolve(root, "../OpenExplainer-demo/src-tauri/target/release/openexplainer.exe")];
+  return places.find((p): p is string => !!p && existsSync(p)) ?? null;
+}
+
 /** The names of one recording's controls in Prism Transcribe, by the slug of its label (INT-01 is int-01). */
 function transcribeFile(slug: string, label: string): { pattern: string; about: string }[] {
   return [
@@ -511,6 +519,38 @@ export const PROGRAMS: ProgramEntry[] = [
       { pattern: "**", about: "any other control, by its screen (home, import, bank, export, print, sheets, score, or dialog inside a dialog) and its accessible name in small letters with hyphens: home.choose-a-file, home.new-bank, home.try-it-a-word-test-bank, home.open-planets-quiz; a second with the same name gets .2" },
     ],
     notes: "The menus are menu.file, menu.bank, menu.question, menu.test and menu.help; a command shows only after its menu's name is clicked and is menu.<menu>.<command>: menu.file.newBank, menu.file.openBankFile, menu.file.importFile, menu.file.yourBanks, menu.file.showFolder, menu.bank.rename, menu.bank.folders, menu.bank.coverage, menu.bank.checkQuality, menu.bank.remove, menu.question.new-multipleChoice (and new-multipleResponse, new-trueFalse, new-fillInBlank, new-shortAnswer, new-matching, new-ordering, new-numeric, new-essay), menu.question.search, menu.question.clearFilters, menu.test.print, menu.test.sheets, menu.test.export, menu.help.search, menu.help.keys, menu.help.updates. The navy bar holds bar.search, and on a bank's screen bar.print, bar.sheets and bar.export, and bar.name, the bank's name (words for a callout, not a control). A callout on the navy bar needs a light color, such as #FFD23F. In demo mode no Windows box ever opens: a box for choosing files answers at once with the next file the stage offers for it (packages/app/demo on the branch), Save a copy saves into the workspace's Downloads with no dialog, Show in folder and Show this folder do nothing, and Check for updates is turned off. The first screen's line names the take's library folder inside Studio's workspace, which the project should blur.",
+  },
+  {
+    id: "openstage-capture",
+    name: "OpenStage Capture",
+    launch(root, endpoint, token, monitor) {
+      const exe = captureExe(root);
+      if (!exe) throw new Error("OpenStage Capture with the demo hook was not found. Build OpenExplainer's branch studio-demo-hook (Build Demo.bat in C:\\Dev\\OpenExplainer-demo), or set OPENSTAGE_CAPTURE_EXE.");
+      // A clean workspace for this take, always at the same place, so two takes look the same. The program keeps its settings, its
+      // browser profile and every file it opens or saves there (Documents), never in the person's own folders.
+      const workspace = resolve(studioWorkspace(), "work", "demo-workspace", "openstage-capture");
+      rmSync(workspace, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
+      mkdirSync(workspace, { recursive: true });
+      return { exe, args: ["--demo-hook", endpoint, "--demo-token", token, "--demo-workspace", workspace, "--monitor", String(monitor)] };
+    },
+    windowTitle: "OpenExplainer (demo mode)",
+    // The invented book Brewing Good Tea about the made-up program Tea Timer (the program manual's own example), made by the OpenStage
+    // Capture course's tools/demo-stages.ts into demo/stages on OpenExplainer's branch studio-demo-hook.
+    demos: [
+      { name: "empty", about: "The window as it opens: an empty project called Untitled project, not saved yet. No box for choosing files offers anything." },
+      { name: "smoke", about: "The book Brewing Good Tea open and saved, for the hook's smoke test; Open project offers it again." },
+      { name: "tea-book", about: "The book Brewing Good Tea about the made-up program Tea Timer, open and saved, with no pictures yet: Getting started (Choosing your tea, Starting a brew, Stopping early), Settings (Changing the settings, Choosing the bell) and When something goes wrong (The tea tastes bitter). Choosing your tea and Starting a brew are Drafted and have words; the variables PRODUCT, VERSION and COMPANY are Tea Timer, 2.0 and Tea Notes." },
+    ],
+    // OpenStage Capture names its controls in demo mode (src/demo/names.ts on OpenExplainer's studio-demo-hook branch), most of them
+    // only once their pane, menu or dialog is drawn.
+    appearing: [
+      { pattern: "menu.*.*", about: "a command of a menu under the navy bar once the menu is open, by its words without the dots: menu.file.new-project, menu.insert.capture, menu.help.keyboard-keys" },
+      { pattern: "popup.*", about: "a command of an Add or ... menu of a pane once it is open, by its words: popup.add-chapter, popup.paragraph, popup.picture-view" },
+      { pattern: "tree.*", about: "a chapter or topic in the list on the left, by its title: tree.getting-started, tree.starting-a-brew" },
+      { pattern: "dialog.*", about: "a control of the open dialog, by its words: dialog.ok, dialog.cancel, dialog.close; a second with the same name gets .2" },
+      { pattern: "**", about: "any other control, by its area (bar, tree, page, props, status) and its accessible name in small letters with hyphens" },
+    ],
+    notes: "The program's window says OpenExplainer; the course calls it OpenStage Capture. The menus are menu.file, menu.chapters, menu.insert, menu.write, menu.book, menu.view, menu.review, menu.tools and menu.help; a command shows only after its menu's name is clicked. The navy bar holds the project's name (bar.name, words for a callout), the search and the Save, Capture, Check and Export buttons; a callout on the navy bar needs a light color, such as #FFD23F. In demo mode no Windows box ever opens: a box for choosing files answers at once with the next file the stage offers for it, a file is saved into the take's Documents folder with no dialog, Check for updates asks nothing, and the Capture window lists only the made-up program Tea Timer's windows. While it captures, the program hides its own window, which is the window Studio records.",
   },
 ];
 
