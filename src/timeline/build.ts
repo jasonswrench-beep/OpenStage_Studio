@@ -13,6 +13,9 @@ export interface TakeStep {
   index: number;
   /** The control acted on, in pixels of the frame, measured just before the action. */
   target?: { rect: Rect; label?: string; role?: string };
+  /** The pictures of the page scrolling a control into view before the step, when it was below or above what showed (hook
+   * version 10): a person scrolls to a control before reaching for it. */
+  reveal?: string[];
   /** The picture with the pointer resting over the control (the program's hover look), if the hook gave one. */
   hover?: string;
   /** A picture after each change the step made, in order: one for a click, one per character typed, and so on. */
@@ -204,8 +207,12 @@ export function buildTimeline(input: BuildInput): Timeline {
   script.steps.forEach((step: Step, index) => {
     const log = byIndex.get(index);
     if (!log) throw new Error(`The take has nothing for step ${index + 1}.`);
-    const start = t;
-    const narrationEnd = speak(`step-${index}`, step.silent ? undefined : step.narration, start);
+    const stepFrom = t;
+    const narrationEnd = speak(`step-${index}`, step.silent ? undefined : step.narration, stepFrom);
+    // A control out of view is scrolled to first, while the narration begins; the step's action starts once it shows.
+    const revealed = log.reveal ?? [];
+    revealed.forEach((p, k) => pictureAt.push({ ms: stepFrom + k * P.scrollStepMs, picture: p }));
+    const start = stepFrom + revealed.length * P.scrollStepMs;
     let actionMs = start;
     let actionEnd = start;
     const highlight = step.highlight ?? true;
@@ -308,7 +315,7 @@ export function buildTimeline(input: BuildInput): Timeline {
       }
     }
 
-    steps.push({ index, startMs: start, endMs: end, actionMs, ...(step.chapter ? { chapter: step.chapter } : {}) });
+    steps.push({ index, startMs: stepFrom, endMs: end, actionMs, ...(step.chapter ? { chapter: step.chapter } : {}) });
     t = end + P.stepGapMs;
   });
 

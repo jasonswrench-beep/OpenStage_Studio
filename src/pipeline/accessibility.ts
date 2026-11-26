@@ -177,6 +177,9 @@ export class AccessibilityDriver implements Hook {
         throw new Error("The accessibility driver cannot press keys (it never uses the real keyboard). Use a click or typing step instead.");
       case "scroll":
         throw new Error("The accessibility driver cannot scroll yet.");
+      case "reveal":
+        // Never sent: the driver says hook version 0, and the player asks only a hook of version 10 or later.
+        throw new Error("The accessibility driver cannot scroll yet.");
       case "text":
         throw new Error("The accessibility driver does not report the text on screen; the frame scan reads the pictures.");
     }

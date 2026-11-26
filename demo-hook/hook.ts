@@ -644,6 +644,12 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
       el.scrollBy(command.axis === "y" ? { top: command.amount } : { left: command.amount });
       return null;
     }
+    case "reveal": {
+      const el = find(command.id);
+      if (command.amount === undefined) return { amount: revealAmount(el) };
+      scrollerOf(el).scrollBy({ top: command.amount, behavior: "instant" });
+      return null;
+    }
     case "loadDemo":
       await options.loadDemo(command.name);
       return null;
@@ -727,6 +733,49 @@ function seenOf(el: Element, rect: [number, number, number, number]): [number, n
   const clip = own && within(shift(own, at.offset), at.clip);
   // A cursor among the words has no width of its own.
   return clip && within(new DOMRect(rect[0], rect[1], Math.max(1, rect[2]), Math.max(1, rect[3])), new DOMRect(...clip));
+}
+
+/** The box that scrolls a control up and down: the nearest one around it that can, else the page. */
+function scrollerOf(el: HTMLElement): HTMLElement {
+  const view = windowOf(el);
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const overflow = view.getComputedStyle(p).overflowY;
+    if ((overflow === "auto" || overflow === "scroll") && p.scrollHeight > p.clientHeight) return p;
+  }
+  return (el.ownerDocument.scrollingElement ?? el.ownerDocument.documentElement) as HTMLElement;
+}
+
+/** Room left at the edges when a control is scrolled into view, in CSS pixels. */
+const REVEAL_MARGIN = 24;
+
+/**
+ * How far a control's scrolling box must move for the whole control to show, in CSS pixels (0 when it shows, or when it is not
+ * drawn). A control that does not show is brought to the middle of the box, or to its top when it is too tall for that, within what
+ * the box can scroll. Showing means inside the box and the window and not under something else (a bar fixed at the top of the page).
+ */
+function revealAmount(el: HTMLElement): number {
+  const drawn = isTickable(el) ? (el.labels?.[0] ?? el.closest("label") ?? el) : el;
+  if (!shows(drawn)) return 0;
+  const view = windowOf(el);
+  const scroller = scrollerOf(el);
+  const page = scroller === el.ownerDocument.scrollingElement || scroller === el.ownerDocument.documentElement;
+  const box = page ? { top: 0, bottom: view.innerHeight } : scroller.getBoundingClientRect();
+  const top = Math.max(0, box.top);
+  const bottom = Math.min(view.innerHeight, box.bottom);
+  const r = drawn.getBoundingClientRect();
+  if (r.height <= 0) return 0;
+  const inside = r.top >= top && r.bottom <= bottom;
+  const hit = (y: number) => {
+    const at = el.ownerDocument.elementFromPoint(r.left + Math.min(r.width / 2, 20), y);
+    return !at || drawn.contains(at) || at.contains(drawn);
+  };
+  // Covered counts only near the top, where a bar fixed over the page hides what scrolls under it; lower down it is a dialog or a
+  // message over the page, which scrolling would not uncover.
+  if (inside && ((hit(r.top + 2) && hit(r.bottom - 2)) || r.top > top + (bottom - top) / 4)) return 0;
+  const room = bottom - top;
+  const wanted = r.height <= room - 2 * REVEAL_MARGIN ? r.top + r.height / 2 - (top + room / 2) : r.top - top - REVEAL_MARGIN;
+  const most = scroller.scrollHeight - scroller.clientHeight;
+  return Math.round(Math.max(-scroller.scrollTop, Math.min(most - scroller.scrollTop, wanted)));
 }
 
 /** A Windows path in some words: to its file's ending when it has one (a file's name may have spaces), else to the next space. */

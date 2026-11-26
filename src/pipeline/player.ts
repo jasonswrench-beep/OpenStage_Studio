@@ -126,6 +126,23 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
     if (step.words && !(hello.hookVersion >= 5)) {
       throw new Error(`${hello.hookVersion ? "This program's demo hook is older than version 5 and cannot" : "The accessibility driver cannot"} click on words inside a control.`);
     }
+    // A control below or above what shows is scrolled into view first, as a person scrolls to it before reaching for it or before
+    // the viewer is shown it (hook version 10). Without this, a step acted on a control out of sight and the video showed nothing.
+    const toReveal = step.action === "open" ? undefined : step.action === "wait" ? calloutId : (step.target ?? calloutId);
+    if (toReveal && hello.hookVersion >= 10) {
+      const { amount } = await hook.send<{ amount: number }>({ cmd: "reveal", id: toReveal });
+      if (amount) {
+        const pieces = options.scrollPieces ?? 6;
+        out.reveal = [];
+        let done = 0;
+        for (let k = 1; k <= pieces; k++) {
+          const next = Math.round((amount * k) / pieces);
+          await hook.send({ cmd: "reveal", id: toReveal, amount: next - done });
+          done = next;
+          out.reveal.push(await shot());
+        }
+      }
+    }
     if (step.target && step.action !== "open" && step.action !== "wait") {
       // On words, the pointer goes to the words rather than the middle of the control.
       out.target = await where(step.target, step.words, step.caret);

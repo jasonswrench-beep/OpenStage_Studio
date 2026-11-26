@@ -27,6 +27,10 @@ export type Command =
   | { cmd: "type"; id?: string; text: string }
   | { cmd: "key"; id?: string; key: string; modifiers: string[] }
   | { cmd: "scroll"; id?: string; axis: "x" | "y"; amount: number }
+  /** Bring a control into view as a person would scroll to it (hook version 10). Without `amount`: how far its scrolling box (the
+   * nearest one around it that scrolls up and down, or the page) must move, in CSS pixels, with 0 when the whole control shows; the
+   * answer is `{ amount }`. With `amount`: scroll that box by so much, so the player can show the scroll in pieces. */
+  | { cmd: "reveal"; id: string; amount?: number }
   | { cmd: "loadDemo"; name: string }
   | { cmd: "reset" }
   | { cmd: "settle" }
@@ -87,8 +91,10 @@ export interface TextOnScreen {
  * Space tick a tick box or choose a radio button and Enter in a form's box send the form, as they do for a person, reports
  * radio buttons and sliders by their own roles, and says whether a tick box is ticked. No command changed. Version 8 moves the cursor in an editable area with the arrow keys,
  * Home and End, and selects with Shift, as they do for a person. No command changed. Version 9 says in the answer to `position` which
- * part of the control shows, so a script whose pointer would go to a control hidden in a scrolling box is found. */
-export const HOOK_VERSION = 9;
+ * part of the control shows, so a script whose pointer would go to a control hidden in a scrolling box is found. Version 10 adds
+ * `reveal`, which scrolls a control below or above what shows into view before the step reaches for it or draws a box round it
+ * (OpenStage Assess, 2026-11-26: the Answer sheets screen's Make a test was filled in out of sight below the fold). */
+export const HOOK_VERSION = 10;
 
 /** Where some words are in a control's text: the first place they appear as written, else the first ignoring case.
  * Null when they are not there. */
