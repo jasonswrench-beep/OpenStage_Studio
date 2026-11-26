@@ -3,22 +3,27 @@
 // screen looks like after each change, and the timeline (src/timeline/build.ts) decides when each picture shows.
 //
 // The real mouse and keyboard are never used. The hook presses the controls directly, and the pointer the viewer follows
-// is drawn on afterward, so nothing the person at the computer does can spoil a take.
+// is drawn on afterward, so nothing the person at the computer does can spoil a take. A step in another program's window
+// (`window`, format version 4) is worked through Windows' accessibility interface instead (src/pipeline/outside.ts), also
+// without the real mouse or keyboard.
 
 import { parseKey, parseScroll, type Script, type Step } from "../script/format.ts";
 import type { Rect, TakeLog, TakeStep } from "../timeline/build.ts";
 import type { Command, ControlInfo, Hello, TextOnScreen } from "../../demo-hook/protocol.ts";
 import { toFrame } from "../../demo-hook/protocol.ts";
 import { accessibleScript } from "./targets.ts";
+import { describeKey, outsideKey, type Outside } from "./outside.ts";
 
 /** Something that sends a command to the program and waits for its answer. */
 export interface Hook {
   send<T = unknown>(command: Command, timeoutMs?: number): Promise<T>;
 }
 
-/** Something that saves a still picture of the program's window and returns its id (its fingerprint). */
+/** Something that saves a still picture of the program's window and returns its id (its fingerprint). `shown`, when it can tell,
+ * says whether the program's window is showing: a take that films the screen goes on while the program hides itself. */
 export interface Camera {
   grab(): Promise<string>;
+  shown?(): Promise<boolean>;
 }
 
 export interface PlayOptions {
@@ -34,6 +39,18 @@ export interface PlayOptions {
   beforeStep?: (index: number) => Promise<void>;
   /** The pause after the window settles, before each picture (AFTER_SETTLE_MS unless given; tests give 0). */
   afterSettleMs?: number;
+  /** For steps in another program's window: Windows' accessibility interface (src/pipeline/outside.ts). */
+  outside?: Outside;
+  /** What the camera films: the program's window, or the whole display it is on, given as [left, top, width, height] on the desktop
+   * (ProgramEntry.film). A step in another window needs the display; rehearsal, which films nothing, uses that window's display. */
+  film?: { kind: "window" } | { kind: "screen"; display: [number, number, number, number] };
+}
+
+/** A place on the whole desktop, in screen pixels, as a place in the frame that films `display`. */
+export function screenToFrame(rect: [number, number, number, number], display: [number, number, number, number], frame: [number, number]): Rect {
+  const sx = frame[0] / display[2];
+  const sy = frame[1] / display[3];
+  return [Math.round((rect[0] - display[0]) * sx), Math.round((rect[1] - display[1]) * sy), Math.round(rect[2] * sx), Math.round(rect[3] * sy)];
 }
 
 /** The pause after the window settles and before each picture, for what Windows fades in by itself. */
@@ -63,14 +80,17 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
   const pageText: Record<string, { text: string; rect: Rect }[]> = {};
   let readText = options.readText !== false && hello.hookVersion >= 2;
   if (options.readText !== false && !readText) log(`${hello.hookVersion ? "This program's demo hook cannot" : "The accessibility driver does not"} report the text on screen; the frame scan will read the pictures only.`);
+  // Whether the program's window shows. While it is hidden (OpenStage Capture hides itself to capture) the page cannot be asked to
+  // settle and shows no text; the camera, filming the screen, waits for the screen to stop changing by itself.
+  const shows = async () => (camera.shown ? camera.shown() : true);
   const shot = async () => {
-    await settle();
+    if (await shows()) await settle();
     // Windows draws some parts itself, outside the page, and fades them in (a scroller's scroll bar, when a list first appears):
     // the page has settled before they have. A short pause lets them finish, so the picture is the same in every take
     // (2026-11-20: Prism Transcribe's editor, one take caught the scroll bar's arrow a shade lighter).
     await new Promise((r) => setTimeout(r, options.afterSettleMs ?? AFTER_SETTLE_MS));
     const id = await camera.grab();
-    if (readText && !pageText[id]) {
+    if (readText && !pageText[id] && (await shows())) {
       try {
         const answer = await hook.send<{ viewport: [number, number]; items: TextOnScreen[] }>({ cmd: "text" });
         pageText[id] = answer.items.map((t) => ({ text: t.text, rect: toFrame(t.rect, answer.viewport, options.frame) }));
@@ -120,7 +140,64 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
   await hook.send({ cmd: "hover", id: null });
   return { width: options.frame[0], height: options.frame[1], start, steps, ...(readText ? { pageText } : {}) };
 
+  /** A step in another program's window: found and worked through Windows' accessibility interface. For a click, the program is told
+   * first where it lands (hook version 11), so a program that records clicks in other programs records it before the control
+   * reacts, as it would a real click. */
+  async function playOutsideStep(index: number, step: Step): Promise<TakeStep> {
+    const out: TakeStep = { index, changes: [] };
+    const hands = options.outside;
+    if (!hands) throw new Error(`This step is in the window "${step.window}", and this run cannot reach other programs' windows.`);
+    if (options.film?.kind === "window") throw new Error(`This step is in the window "${step.window}", but the take films only the program's own window. The program's entry needs film "screen" (src/pipeline/programs.ts).`);
+    const win = step.window!;
+    const key = outsideKey(step);
+    const named = !!(key.id || key.name);
+    if (step.action === "wait") {
+      if (named) {
+        const end = Date.now() + WAIT_FOR_CONTROL_MS;
+        for (;;) {
+          const seen = await hands.locate(win, key).then((c) => c.visible, () => false);
+          if (seen) break;
+          if (Date.now() > end) throw new Error(`${describeKey(key)} did not appear in the window "${win}" within ${WAIT_FOR_CONTROL_MS / 1000} seconds.`);
+          await new Promise((r) => setTimeout(r, 200));
+        }
+      }
+      out.changes.push(await shot());
+      return out;
+    }
+    const c = await hands.locate(win, key);
+    if (!c.visible) throw new Error(`${describeKey(key)} in the window "${c.window}" is not on screen.`);
+    if (!c.enabled) throw new Error(`${describeKey(key)} in the window "${c.window}" is switched off.`);
+    const display = options.film?.kind === "screen" ? options.film.display : c.display;
+    if (!display) throw new Error(`Could not tell which display the window "${c.window}" is on.`);
+    out.target = { rect: screenToFrame(c.rect, display, options.frame), label: c.name, role: c.role };
+    // No hover look without the mouse (as with the accessibility driver): the pointer arrives over the control as it is.
+    out.hover = await shot();
+    if (step.action === "click") {
+      if (hello.hookVersion >= 11) {
+        const [x, y, w, h] = c.rect;
+        await hook.send({ cmd: "outsideClick", x: Math.round(x + w / 2), y: Math.round(y + h / 2), window: c.window, ...(c.name ? { label: c.name } : {}) });
+      }
+      await hands.press(win, key, "invoke");
+      // The program's own control that shows what the click started is done (OpenStage Capture's Review your clicks, after Stop).
+      if (step.until) await until(step.until);
+      out.changes.push(await shot());
+    } else if (step.action === "type") {
+      const text = step.value ?? "";
+      if (c.role === "combobox") {
+        await hands.press(win, key, "choose", text);
+        out.changes.push(await shot());
+      } else {
+        for (const ch of text) {
+          await hands.press(win, key, "append", ch);
+          out.changes.push(await shot());
+        }
+      }
+    } else throw new Error(`A step in another program's window is a click, typing or a wait, not ${step.action}.`);
+    return out;
+  }
+
   async function playStep(index: number, step: Step): Promise<TakeStep> {
+    if (step.window !== undefined) return playOutsideStep(index, step);
     const out: TakeStep = { index, changes: [] };
     const calloutId = step.callout ? ("around" in step.callout ? step.callout.around : "to" in step.callout ? step.callout.to : step.callout.near) : undefined;
     if (step.words && !(hello.hookVersion >= 5)) {

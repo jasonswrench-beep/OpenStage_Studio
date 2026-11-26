@@ -2,7 +2,7 @@
 // A person or any AI model can write one, and the player performs it without interpretation.
 
 export const SCRIPT_FORMAT = "openstage-studio-script";
-export const SCRIPT_VERSION = 3;
+export const SCRIPT_VERSION = 4;
 
 /** What the player does in a step. Drag is part of the format but not performed yet (canvas work comes later). */
 export const ACTIONS = ["click", "type", "key", "drag", "scroll", "open", "wait"] as const;
@@ -77,6 +77,12 @@ export interface Step {
   /** For a viewer who cannot see the screen: what this step shows that the narration does not say (version 3). Goes into
    * the video's description track (descriptions.vtt) and the transcript. */
   describe?: string;
+  /** For a step in another program's window, not the program's own (version 4): part of that window's title, such as `Tea Timer`.
+   * Its control is found and worked through Windows' accessibility interface, as the accessibility driver does (by automation id
+   * as `target`, or by role and name as `fallback`), never with the real mouse or keyboard. Click, type and wait only, with the
+   * hook. A program that records clicks in other programs is told where the click lands (hook version 11). `until` still names a
+   * control of the program itself. */
+  window?: string;
 }
 
 export interface Script {

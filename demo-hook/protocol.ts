@@ -34,7 +34,13 @@ export type Command =
   | { cmd: "loadDemo"; name: string }
   | { cmd: "reset" }
   | { cmd: "settle" }
-  | { cmd: "text" };
+  | { cmd: "text" }
+  /** Studio is about to press a control in another program's window (a script step with `window`), through Windows' accessibility
+   * interface, never the real mouse. `x` and `y` are the middle of that control on the whole desktop, in screen pixels, and `window`
+   * is that window's title. A program that records the clicks a person makes in other programs (OpenStage Capture's click by click)
+   * records this one as if the mouse had clicked there, and answers once it has; any other program ignores it. The answer is
+   * `{ recorded }` (hook version 11). */
+  | { cmd: "outsideClick"; x: number; y: number; window: string; label?: string };
 
 /** A command as sent, with the number its reply carries. */
 export type Envelope = Command & { seq: number };
@@ -93,8 +99,12 @@ export interface TextOnScreen {
  * Home and End, and selects with Shift, as they do for a person. No command changed. Version 9 says in the answer to `position` which
  * part of the control shows, so a script whose pointer would go to a control hidden in a scrolling box is found. Version 10 adds
  * `reveal`, which scrolls a control below or above what shows into view before the step reaches for it or draws a box round it
- * (OpenStage Assess, 2026-11-26: the Answer sheets screen's Make a test was filled in out of sight below the fold). */
-export const HOOK_VERSION = 10;
+ * (OpenStage Assess, 2026-11-26: the Answer sheets screen's Make a test was filled in out of sight below the fold). Version 11 adds
+ * `outsideClick`, for steps in another program's window, and makes `settle` and `text` work while the program's own window is hidden
+ * (OpenStage Capture hides itself while it captures): `settle` does not wait for the page to draw, which a hidden page never does, and
+ * `text` reports nothing, since nothing of the page shows (OpenStage Capture, 2026-11-26). It also adds a rule it never rewrites that
+ * keeps the browser's own focus ring off any control the hook has not marked, so the ring no longer depends on which window is in front. */
+export const HOOK_VERSION = 11;
 
 /** Where some words are in a control's text: the first place they appear as written, else the first ignoring case.
  * Null when they are not there. */

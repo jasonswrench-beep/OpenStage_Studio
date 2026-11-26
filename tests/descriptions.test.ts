@@ -59,6 +59,7 @@ test("version 3 adds describe: checked for length, scanned for blocked names, an
   assert.match(validateScript(long).errors.map((e) => e.message).join(" "), /at most 280 characters/);
   assert.ok(scriptTexts(script).some((t) => t.path === "steps[0].describe"));
   const old = migrateScript({ ...script, version: 2 });
-  assert.equal((old.data as Script).version, 3);
+  // Brought up to the current version (4 since 2026-11-26, which added steps in another program's window).
+  assert.equal((old.data as Script).version, 4);
   assert.equal(old.from, 2);
 });

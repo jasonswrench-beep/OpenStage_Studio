@@ -78,11 +78,12 @@ export async function rehearse(session: ProgramSession, start: Script, o: Rehear
     const steps = script.steps;
     try {
       await play(script, session.hook, { grab: async () => `rehearsal-${n++}` }, {
-        frame: o.frame, readText: false, afterSettleMs: 0,
+        frame: o.frame, readText: false, afterSettleMs: 0, ...(session.outside ? { outside: session.outside } : {}),
         ...(canCheckBoxes ? {
           beforeStep: async (i: number) => {
             const step = steps[i];
-            if (step.action !== "type") return;
+            // A box in another program's window is not one of the program's controls.
+            if (step.action !== "type" || step.window !== undefined) return;
             const listed = await session.hook.send<{ controls: ControlInfo[] }>({ cmd: "list" });
             const box = step.target ? listed.controls.find((c) => c.id === step.target) : listed.controls.find((c) => c.focused);
             const problem = typingProblem(step, steps[i - 1], box);

@@ -182,6 +182,9 @@ export class AccessibilityDriver implements Hook {
         throw new Error("The accessibility driver cannot scroll yet.");
       case "text":
         throw new Error("The accessibility driver does not report the text on screen; the frame scan reads the pictures.");
+      case "outsideClick":
+        // Steps in another program's window go with the hook (the validator refuses them here), so there is nothing to record.
+        return { recorded: false } as T;
     }
   }
 

@@ -1,6 +1,6 @@
 {
   "format": "openstage-studio-script",
-  "version": 3,
+  "version": 4,
   "title": "Plan a new lesson",
   "goal": "Make a lesson plan with a title, notes and a checklist, then share and save it.",
   "program": { "id": "practice-planner", "name": "Practice Planner", "version": "1.0" },

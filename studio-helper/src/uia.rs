@@ -10,6 +10,13 @@
 //! * `{"cmd":"do","key":{...},"action":"invoke"|"focus"|"setValue"|"append"|"choose","value":"..."}`: work one control, found by
 //!   `{"id":"<automation id>"}` or `{"role":"button","name":"Save lesson"}`.
 //! * `{"cmd":"focused"}`: the control with the keyboard focus, if it is in the window.
+//!
+//! For a script step in another program's window (a step with `window`, which goes with the demo-mode hook), the window is named in
+//! the command itself and the attached window is left as it was:
+//!
+//! * `{"cmd":"locate","window":"<part of the title>","key":{...}}`: where that control is on the whole desktop (`rect`, in screen
+//!   pixels), its name and role, whether it shows and is switched on, and the display the window is on (`display`).
+//! * `{"cmd":"press","window":"<part of the title>","key":{...},"action":"invoke"|"append"|"choose","value":"..."}`: work it.
 
 use crate::say;
 use serde::Deserialize;
@@ -76,6 +83,7 @@ mod win {
     use windows::Win32::Foundation::{HWND, LPARAM, RECT};
     use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED};
     use windows::Win32::UI::Accessibility::*;
+    use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
     use windows::Win32::UI::WindowsAndMessaging::{EnumWindows, GetWindowTextLengthW, GetWindowTextW, IsWindowVisible};
 
     pub struct Session {
@@ -110,20 +118,54 @@ mod win {
             }
         }
 
-        pub fn attach(&mut self, title: &str) -> Result<Value, String> {
+        /// The open window whose title is `title` (case aside), or else the first, front to back, whose title has it in it.
+        fn window(&self, title: &str) -> Result<(HWND, String, IUIAutomationElement), String> {
             let mut found: Vec<(HWND, String)> = Vec::new();
             unsafe {
                 let _ = EnumWindows(Some(collect), LPARAM(&mut found as *mut _ as isize));
             }
-            let want = title.to_lowercase();
-            let (hwnd, name) = found
-                .into_iter()
-                .find(|(_, t)| t.to_lowercase().contains(&want))
+            let want = title.trim().to_lowercase();
+            let at = found
+                .iter()
+                .position(|(_, t)| t.trim().to_lowercase() == want)
+                .or_else(|| found.iter().position(|(_, t)| t.to_lowercase().contains(&want)))
                 .ok_or_else(|| format!("No open window's title has \"{title}\" in it."))?;
+            let (hwnd, name) = found.swap_remove(at);
             let root = unsafe { self.automation.ElementFromHandle(hwnd) }.map_err(|e| format!("The window \"{name}\" could not be read: {e}"))?;
+            Ok((hwnd, name, root))
+        }
+
+        pub fn attach(&mut self, title: &str) -> Result<Value, String> {
+            let (_, name, root) = self.window(title)?;
             let r = unsafe { root.CurrentBoundingRectangle() }.map_err(|e| e.to_string())?;
             self.root = Some(root);
             Ok(json!({ "window": name, "width": r.right - r.left, "height": r.bottom - r.top }))
+        }
+
+        /// Where a control of another window is on the whole desktop, and the display that window is on.
+        pub fn locate(&self, title: &str, key: &Key) -> Result<Value, String> {
+            let (hwnd, name, root) = self.window(title)?;
+            let el = self.find_in(&root, key)?;
+            let desktop = RECT::default();
+            let mut info = self.describe_any(&el, desktop).ok_or("The control could not be read.")?;
+            let mut m = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
+            let display = unsafe {
+                let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                GetMonitorInfoW(monitor, &mut m).as_bool().then(|| {
+                    let r = m.rcMonitor;
+                    json!([r.left, r.top, r.right - r.left, r.bottom - r.top])
+                })
+            };
+            info["window"] = json!(name);
+            info["display"] = display.unwrap_or(Value::Null);
+            Ok(info)
+        }
+
+        /// Work a control of another window, leaving the attached window as it was.
+        pub fn act_in(&self, title: &str, key: &Key, action: &str, value: Option<&str>) -> Result<Value, String> {
+            let (_, _, root) = self.window(title)?;
+            let el = self.find_in(&root, key)?;
+            self.act_on(&el, action, value)
         }
 
         fn root(&self) -> Result<&IUIAutomationElement, String> {
@@ -131,20 +173,30 @@ mod win {
         }
 
         fn all(&self) -> Result<Vec<IUIAutomationElement>, String> {
+            self.all_in(self.root()?)
+        }
+
+        fn all_in(&self, root: &IUIAutomationElement) -> Result<Vec<IUIAutomationElement>, String> {
             unsafe {
                 let cond = self.automation.CreateTrueCondition().map_err(|e| e.to_string())?;
-                let found = self.root()?.FindAll(TreeScope_Descendants, &cond).map_err(|e| format!("The window's controls could not be read: {e}"))?;
+                let found = root.FindAll(TreeScope_Descendants, &cond).map_err(|e| format!("The window's controls could not be read: {e}"))?;
                 let n = found.Length().map_err(|e| e.to_string())?;
                 Ok((0..n).filter_map(|i| found.GetElement(i).ok()).collect())
             }
         }
 
         fn describe(&self, el: &IUIAutomationElement, origin: RECT) -> Option<Value> {
+            let role = role_of(unsafe { el.CurrentControlType() }.ok()?.0);
+            if !actionable(role) {
+                return None;
+            }
+            self.describe_any(el, origin)
+        }
+
+        /// A control's id, name, role, place (from `origin`) and state, whatever its role.
+        fn describe_any(&self, el: &IUIAutomationElement, origin: RECT) -> Option<Value> {
             unsafe {
                 let role = role_of(el.CurrentControlType().ok()?.0);
-                if !actionable(role) {
-                    return None;
-                }
                 let id = el.CurrentAutomationId().map(|b| b.to_string()).unwrap_or_default();
                 let name = el.CurrentName().map(|b| b.to_string()).unwrap_or_default();
                 if id.is_empty() && name.trim().is_empty() {
@@ -182,8 +234,12 @@ mod win {
         }
 
         fn find(&self, key: &Key) -> Result<IUIAutomationElement, String> {
+            self.find_in(self.root()?, key)
+        }
+
+        fn find_in(&self, root: &IUIAutomationElement, key: &Key) -> Result<IUIAutomationElement, String> {
             let mut matches: Vec<(IUIAutomationElement, bool)> = Vec::new();
-            for el in self.all()? {
+            for el in self.all_in(root)? {
                 unsafe {
                     let ok = if let Some(id) = &key.id {
                         el.CurrentAutomationId().map(|b| b.to_string() == *id).unwrap_or(false)
@@ -206,6 +262,11 @@ mod win {
 
         pub fn act(&self, key: &Key, action: &str, value: Option<&str>) -> Result<Value, String> {
             let el = self.find(key)?;
+            self.act_on(&el, action, value)
+        }
+
+        fn act_on(&self, el: &IUIAutomationElement, action: &str, value: Option<&str>) -> Result<Value, String> {
+            let el = el.clone();
             unsafe {
                 if !el.CurrentIsEnabled().map(|b| b.as_bool()).unwrap_or(true) {
                     return Err("The control is switched off.".into());
@@ -348,6 +409,8 @@ pub fn run() -> Result<(), String> {
                 "list" => s.list(),
                 "focused" => s.focused(),
                 "do" => s.act(&c.key.unwrap_or_default(), c.action.as_deref().unwrap_or("invoke"), c.value.as_deref()),
+                "locate" => s.locate(c.window.as_deref().unwrap_or(""), &c.key.unwrap_or_default()),
+                "press" => s.act_in(c.window.as_deref().unwrap_or(""), &c.key.unwrap_or_default(), c.action.as_deref().unwrap_or("invoke"), c.value.as_deref()),
                 other => Err(format!("\"{other}\" is not a command of the accessibility driver.")),
             },
         };

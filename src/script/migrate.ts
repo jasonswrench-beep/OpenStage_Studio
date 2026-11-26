@@ -11,6 +11,8 @@ const STEPS: Record<number, { says: string; run: (s: Obj) => Obj }> = {
   1: { says: "Version 2 added the publishing details and blurred boxes; nothing in this script changed.", run: (s) => ({ ...s, version: 2 }) },
   // Version 3 added a step's optional `describe`, for the description track. Nothing in a version 2 script changes meaning.
   2: { says: "Version 3 added descriptions for viewers who cannot see the screen; nothing in this script changed.", run: (s) => ({ ...s, version: 3 }) },
+  // Version 4 added a step's optional `window`, for a step in another program's window. Nothing in a version 3 script changes meaning.
+  3: { says: "Version 4 added steps in another program's window; nothing in this script changed.", run: (s) => ({ ...s, version: 4 }) },
 };
 
 export interface Migrated {

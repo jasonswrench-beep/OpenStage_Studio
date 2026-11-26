@@ -1,4 +1,4 @@
-# The tutorial script format (version 3)
+# The tutorial script format (version 4)
 
 A tutorial script is one JSON file that fully describes one video. A person or any AI model can write one, and the player
 performs it without interpretation. `src/script/format.ts` holds the types and `src/script/validate.ts` the validator,
@@ -9,7 +9,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | Field | Required | What it holds |
 |---|---|---|
 | `format` | yes | Always `"openstage-studio-script"`. |
-| `version` | yes | `3`. A version 1 or 2 script is read as version 3 (see "Versions" below). A newer number is refused with a message saying a newer Studio made it. |
+| `version` | yes | `4`. A version 1, 2 or 3 script is read as version 4 (see "Versions" below). A newer number is refused with a message saying a newer Studio made it. |
 | `title` | yes | The video's title, at most 100 characters (it goes on the title card). |
 | `goal` | yes | One line: what the viewer can do after watching. |
 | `program` | yes | `{ "id": "practice-planner", "name": "Practice Planner", "version": "1.0" }`. The id is how Studio finds the program to launch (`src/pipeline/programs.ts`); the name goes on the cards. |
@@ -43,6 +43,7 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 | `expect` | What must be true afterward, for rehearsal | `A new untitled lesson is selected` |
 | `chapter` | Starts a chapter of the video here | `Share and save` |
 | `describe` | For a viewer who cannot see the screen: what the step shows that the narration does not say, at most 280 characters (version 3). It goes into the video's description track and the transcript | `The new lesson appears at the bottom of the list, highlighted.` |
+| `window` | For a step in another program's window, not the program's own: part of that window's title (version 4). See "Steps in another program's window" below | `Tea Timer` |
 
 ### Actions
 
@@ -64,6 +65,26 @@ which rejects a malformed script before the player runs it. `examples/plan-a-les
 - `wait`: `value` is seconds (up to 30; default 1). With a `target`, the take first waits until that control is on screen,
   for at most a minute, as when a program finishes work of its own (Prism Transcribe's Edit button appears when a
   transcription is done). Only the picture taken afterward is used, so the real wait never shows in the video.
+
+### Steps in another program's window
+
+A tutorial about a program that works with other programs (OpenStage Capture captures them) needs steps in their windows too.
+A step with `window` acts in the open window whose title is that text (or has it in it), with the hook driver:
+
+- Its control is found through Windows' accessibility interface, as the accessibility driver finds controls: by automation id as
+  `target` (in a WPF program, its `x:Name`), or by `fallback` `{ "role": "button", "name": "Start" }`.
+- Only `click`, `type` and `wait`. It is worked through that interface too (pressed, typed into, chosen from), never with the real
+  mouse or keyboard; the pointer the viewer follows is drawn from the control's place on the screen, with no hover look.
+- A click first tells the program, through the hook (`outsideClick`, hook version 11), where on the screen it lands, so a program
+  that records the clicks a person makes in other programs records this one before the control reacts.
+- The program's entry must film the whole screen (`film: "screen"` in `src/pipeline/programs.ts`), and it opens the other program
+  itself (`companions`), so the take always starts with the same windows. `words`, `caret`, `repeat` and `callout` are refused;
+  `until` names a control of the program itself, as for any click (OpenStage Capture's Review your clicks, after its Stop window's
+  button).
+
+```json
+{ "action": "click", "window": "Tea Timer", "fallback": { "role": "button", "name": "Start" }, "narration": "In Tea Timer, select Start." }
+```
 
 ### Callouts
 
@@ -132,6 +153,7 @@ back unless the review screen adds a blurred box, which also writes the new vers
 | 1 | The first format (phase 1). |
 | 2 | Added `publish` and `redactions` (phase 2). Nothing in a version 1 script changes meaning. |
 | 3 | Added a step's `describe`, for the description track (2026-11-15). Nothing in a version 2 script changes meaning. |
+| 4 | Added a step's `window`, for a step in another program's window (2026-11-26, for OpenStage Capture). Nothing in a version 3 script changes meaning. |
 
 ## The description track
 

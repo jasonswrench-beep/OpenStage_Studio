@@ -91,6 +91,21 @@ export interface ProgramEntry {
   /** For the accessibility driver (no hook): the program and its arguments to start it with a demo project open on the
    * given display. A program without this can only be driven through its hook. */
   launchPlain?(root: string, monitor: number, demo: string): { exe: string; args: string[] };
+  /** How a take films the program: its own window (the default), or the whole display it is on ("screen"), for a program that hides
+   * its window or shows windows of its own beside it during a step (OpenStage Capture hides itself while it captures another
+   * program). Such a program fills that display, so a place on its page is the same place in the picture. A script step in another
+   * program's window (`window`) needs "screen". */
+  film?: "window" | "screen";
+  /** Other programs a take or a rehearsal opens first, on the take display, and closes afterward: the made-up programs a tutorial
+   * works in beside the program itself (OpenStage Capture's Tea Timer). Each is waited for by part of its window's title. */
+  companions?(root: string, monitor: number): { name: string; exe: string; args: string[]; windowTitle: string }[];
+}
+
+/** Tea Timer, the made-up program OpenStage Capture's course captures (a small program of the course's own): where OPENSTAGE_TEA_TIMER_EXE
+ * says, else its build in the course folder beside this repository. Null if none is there. */
+export function teaTimerExe(root: string, env: NodeJS.ProcessEnv = process.env): string | null {
+  const places = [env.OPENSTAGE_TEA_TIMER_EXE, resolve(root, "../Training Videos/OpenStage Capture/tea-timer/bin/Release/net10.0-windows/TeaTimer.exe")];
+  return places.find((p): p is string => !!p && existsSync(p)) ?? null;
 }
 
 export const PROGRAMS: ProgramEntry[] = [
@@ -534,6 +549,16 @@ export const PROGRAMS: ProgramEntry[] = [
       return { exe, args: ["--demo-hook", endpoint, "--demo-token", token, "--demo-workspace", workspace, "--monitor", String(monitor)] };
     },
     windowTitle: "OpenExplainer (demo mode)",
+    // OpenStage Capture hides its window while it captures, and shows its own Cancel and Stop windows beside the program it captures,
+    // so the take films the whole take display. In demo mode it fills that display and stays in front of Tea Timer.
+    film: "screen",
+    // Tea Timer is what the course captures. --backdrop puts a plain window behind it over the whole display, taskbar included, so
+    // nothing else on the computer shows while OpenStage Capture is hidden; --still keeps its clock from counting, so takes repeat.
+    companions(root, monitor) {
+      const exe = teaTimerExe(root);
+      if (!exe) throw new Error("Tea Timer was not found. Build it with Build Tea Timer.bat in the OpenStage Capture course folder, or set OPENSTAGE_TEA_TIMER_EXE.");
+      return [{ name: "Tea Timer", exe, args: ["--screen", String(monitor), "--backdrop", "--still"], windowTitle: "Tea Timer" }];
+    },
     // The invented book Brewing Good Tea about the made-up program Tea Timer (the program manual's own example), made by the OpenStage
     // Capture course's tools/demo-stages.ts into demo/stages on OpenExplainer's branch studio-demo-hook.
     demos: [
@@ -550,7 +575,7 @@ export const PROGRAMS: ProgramEntry[] = [
       { pattern: "dialog.*", about: "a control of the open dialog, by its words: dialog.ok, dialog.cancel, dialog.close; a second with the same name gets .2" },
       { pattern: "**", about: "any other control, by its area (bar, tree, page, props, status) and its accessible name in small letters with hyphens" },
     ],
-    notes: "The program's window says OpenExplainer; the course calls it OpenStage Capture. The menus are menu.file, menu.chapters, menu.insert, menu.write, menu.book, menu.view, menu.review, menu.tools and menu.help; a command shows only after its menu's name is clicked. The navy bar holds the project's name (bar.name, words for a callout), the search and the Save, Capture, Check and Export buttons; a callout on the navy bar needs a light color, such as #FFD23F. In demo mode no Windows box ever opens: a box for choosing files answers at once with the next file the stage offers for it, a file is saved into the take's Documents folder with no dialog, Check for updates asks nothing, and the Capture window lists only the made-up program Tea Timer's windows. While it captures, the program hides its own window, which is the window Studio records.",
+    notes: "The program's window says OpenExplainer; the course calls it OpenStage Capture. The menus are menu.file, menu.chapters, menu.insert, menu.write, menu.book, menu.view, menu.review, menu.tools and menu.help; a command shows only after its menu's name is clicked. The navy bar holds the project's name (bar.name, words for a callout), the search and the Save, Capture, Check and Export buttons; a callout on the navy bar needs a light color, such as #FFD23F. In demo mode no Windows box ever opens: a box for choosing files answers at once with the next file the stage offers for it, a file is saved into the take's Documents folder with no dialog, Check for updates asks nothing, and the Capture window lists only the made-up program Tea Timer's windows. Tea Timer is open behind the program from the start, on a plain background that fills the take display. While it captures, the program hides its own window and the take films the whole display, so the video shows Tea Timer, the Cancel window (top right, with Wait before capturing) and the Stop window of click by click. Steps in Tea Timer, the Stop window (\"OpenExplainer is capturing clicks\") or the Cancel window (\"OpenExplainer is capturing\") have window set to that title and name their control by fallback role and name: Tea Timer's buttons are Settings, Start, Stop and Reset, its list items Black tea, Green tea, Oolong, White tea and Herbal tea; its Settings window is \"Tea Timer Settings\". Its clock does not count down in a take.",
   },
 ];
 

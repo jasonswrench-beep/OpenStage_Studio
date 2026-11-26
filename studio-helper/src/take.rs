@@ -6,9 +6,14 @@
 //! half-drawn one. Because the video's timing comes from the narration and not from the clock during the take, the same
 //! script gives the same pictures every time, however fast or slow the computer was.
 //!
+//! With `--film screen` it films the whole display the window is on instead of the window alone, for a program that hides its
+//! window or shows windows of its own around it during a step (OpenStage Capture hides itself while it captures another program).
+//! Such a program fills that display, so a place on its page is the same place in the picture.
+//!
 //! Commands, one JSON object a line on standard input:
-//! `{"cmd":"grab","dir":"<folder>","settleMs":250,"timeoutMs":5000}` and `{"cmd":"stop"}`.
-//! Answers: `{"event":"ready",...}`, `{"event":"grabbed","file":"<folder>/<fingerprint>.png","hash":...}`.
+//! `{"cmd":"grab","dir":"<folder>","settleMs":250,"timeoutMs":5000}`, `{"cmd":"shown"}` and `{"cmd":"stop"}`.
+//! Answers: `{"event":"ready",...}`, `{"event":"grabbed","file":"<folder>/<fingerprint>.png","hash":...,"shown":true}` and
+//! `{"event":"shown","shown":true}`, where `shown` says whether the program's window is showing (not hidden or minimized).
 
 use crate::{arg, pngio, say};
 use openstage_capture_windows::{choose_window, system_platform, FittedSource, Frame, FrameSource};
@@ -43,6 +48,11 @@ pub fn run(args: &[String]) -> Result<(), String> {
     let width: u32 = arg(args, "--width").and_then(|v| v.parse().ok()).unwrap_or(1920);
     let height: u32 = arg(args, "--height").and_then(|v| v.parse().ok()).unwrap_or(1080);
     let wait_s: u64 = arg(args, "--wait").and_then(|v| v.parse().ok()).unwrap_or(20);
+    let film_screen = match arg(args, "--film").as_deref() {
+        None | Some("window") => false,
+        Some("screen") => true,
+        Some(other) => return Err(format!("--film is window or screen, not \"{other}\".")),
+    };
 
     // The program may still be starting, so look for its window for a while.
     let platform = system_platform();
@@ -55,8 +65,15 @@ pub fn run(args: &[String]) -> Result<(), String> {
             Err(_) => std::thread::sleep(Duration::from_millis(250)),
         }
     };
-    let source = platform.start_window_capture(&window, false).map_err(|e| e.to_string())?;
+    let (source, display) = if film_screen {
+        let display = display_of(&platform.list_displays().map_err(|e| e.to_string())?, window.handle)
+            .ok_or_else(|| format!("Could not tell which display the window \"{}\" is on.", window.title))?;
+        (platform.start_display_capture(&display, false).map_err(|e| e.to_string())?, Some(display))
+    } else {
+        (platform.start_window_capture(&window, false).map_err(|e| e.to_string())?, None)
+    };
     let mut source: Box<dyn FrameSource + Send> = Box::new(SendSource(Box::new(FittedSource::new(source, width, height))));
+    let handle = window.handle;
 
     let latest = Arc::new(Mutex::new(Latest { frame: None, at: None, count: 0 }));
     let stop = Arc::new(AtomicBool::new(false));
@@ -88,7 +105,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         std::thread::sleep(Duration::from_millis(20));
     }
     say(json!({ "event": "ready", "window": window.title, "process": window.process, "width": width, "height": height,
-        "windowWidth": window.width, "windowHeight": window.height }));
+        "windowWidth": window.width, "windowHeight": window.height, "film": if film_screen { "screen" } else { "window" },
+        "display": display.as_ref().map(|d| json!([d.x, d.y, d.width, d.height])) }));
 
     let stdin = std::io::stdin();
     for line in stdin.lock().lines() {
@@ -113,10 +131,14 @@ pub fn run(args: &[String]) -> Result<(), String> {
                 let settle = Duration::from_millis(cmd["settleMs"].as_u64().unwrap_or(250));
                 let timeout = Duration::from_millis(cmd["timeoutMs"].as_u64().unwrap_or(5000));
                 match grab(&latest, &dir, settle, timeout) {
-                    Ok(answer) => say(answer),
+                    Ok(mut answer) => {
+                        answer["shown"] = json!(shown(handle));
+                        say(answer)
+                    }
                     Err(message) => say(json!({ "event": "error", "message": message })),
                 }
             }
+            Some("shown") => say(json!({ "event": "shown", "shown": shown(handle) })),
             Some("stop") => break,
             other => say(json!({ "event": "error", "message": format!("Unknown command {other:?}.") })),
         }
@@ -160,6 +182,50 @@ fn grab(latest: &Arc<Mutex<Latest>>, dir: &std::path::Path, settle: Duration, ti
     }
     Ok(json!({ "event": "grabbed", "file": file.to_string_lossy(), "hash": hash, "settled": settled,
         "waitedMs": asked.elapsed().as_millis() as u64, "newPictures": l.count - count_before }))
+}
+
+/// The display that holds the middle of the window, or the one it overlaps most if its middle is on none.
+fn display_of(displays: &[openstage_capture_windows::DisplayInfo], handle: isize) -> Option<openstage_capture_windows::DisplayInfo> {
+    let (left, top, right, bottom) = window_rect(handle)?;
+    let (cx, cy) = ((left + right) / 2, (top + bottom) / 2);
+    let inside = |d: &openstage_capture_windows::DisplayInfo| cx >= d.x && cx < d.x + d.width as i32 && cy >= d.y && cy < d.y + d.height as i32;
+    if let Some(d) = displays.iter().find(|d| inside(d)) {
+        return Some(d.clone());
+    }
+    let overlap = |d: &openstage_capture_windows::DisplayInfo| {
+        let w = (right.min(d.x + d.width as i32) - left.max(d.x)).max(0) as i64;
+        let h = (bottom.min(d.y + d.height as i32) - top.max(d.y)).max(0) as i64;
+        w * h
+    };
+    displays.iter().max_by_key(|d| overlap(d)).filter(|d| overlap(d) > 0).cloned()
+}
+
+#[cfg(windows)]
+fn window_rect(handle: isize) -> Option<(i32, i32, i32, i32)> {
+    use windows::Win32::Foundation::{HWND, RECT};
+    use windows::Win32::UI::WindowsAndMessaging::GetWindowRect;
+    let mut r = RECT::default();
+    unsafe { GetWindowRect(HWND(handle as *mut core::ffi::c_void), &mut r) }.ok()?;
+    Some((r.left, r.top, r.right, r.bottom))
+}
+
+#[cfg(not(windows))]
+fn window_rect(_: isize) -> Option<(i32, i32, i32, i32)> {
+    None
+}
+
+/// Whether the window is showing: not hidden, not minimized, and not closed.
+#[cfg(windows)]
+fn shown(handle: isize) -> bool {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{IsIconic, IsWindow, IsWindowVisible};
+    let h = HWND(handle as *mut core::ffi::c_void);
+    unsafe { IsWindow(Some(h)).as_bool() && IsWindowVisible(h).as_bool() && !IsIconic(h).as_bool() }
+}
+
+#[cfg(not(windows))]
+fn shown(_: isize) -> bool {
+    true
 }
 
 /// The capture source is only ever used from the one thread that takes pictures from it.

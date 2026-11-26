@@ -32,6 +32,7 @@ import { readManifest } from "./get-voice.ts";
 import { voiceReady, voicesRoot } from "../narration/voice-download.ts";
 import { demoEnvironment, findProgram, type ProgramEntry } from "./programs.ts";
 import { AccessibilityDriver } from "./accessibility.ts";
+import { openCompanions, OutsideHands } from "./outside.ts";
 import { appRoot, computerSettings, workspace } from "../paths.ts";
 import { describeScriptHit, scanScript, scriptTexts } from "../guard/script-scan.ts";
 import { loadBlocklist, type LoadedBlocklist } from "../guard/load.ts";
@@ -320,29 +321,40 @@ async function recordTake(script: Script, pictureDir: string, helper: string, mo
   if (script.driver === "accessibility") return recordAccessibleTake(script, program, pictureDir, helper, monitor, log);
   const server = new HookServer();
   await server.start();
-  const launch = program.launch(appRoot(), server.endpoint, server.token, monitor);
-  log(`Starting ${program.name} in demo mode.`);
-  const app = spawn(launch.exe, launch.args, { stdio: "ignore", windowsHide: false, env: demoEnvironment() });
+  // The programs the take works in beside this one (OpenStage Capture's Tea Timer) open first, so the program opens in front of them.
+  const hands = new OutsideHands(appRoot());
+  let companions: { close(): void } | null = null;
+  let app: ReturnType<typeof spawn> | null = null;
   let session: TakeSession | null = null;
   try {
+    companions = await openCompanions(program, appRoot(), monitor, log, hands);
+    const launch = program.launch(appRoot(), server.endpoint, server.token, monitor);
+    log(`Starting ${program.name} in demo mode.`);
+    app = spawn(launch.exe, launch.args, { stdio: "ignore", windowsHide: false, env: demoEnvironment() });
     await Promise.race([
       server.contacted,
       new Promise((_, fail) => setTimeout(() => fail(new Error(`${program.name} did not start its demo-mode hook within 40 seconds.`)), 40000)),
     ]);
-    session = new TakeSession(helper, program.windowTitle, FRAME);
+    const filmScreen = program.film === "screen";
+    session = new TakeSession(helper, program.windowTitle, FRAME, filmScreen ? "screen" : "window");
     const ready = await session.ready();
-    log(`Recording the window "${ready.window}" (${ready.windowWidth} by ${ready.windowHeight}).`);
+    const display = Array.isArray(ready.display) ? (ready.display as [number, number, number, number]) : null;
+    if (filmScreen && display) log(`Recording the whole display the window "${ready.window}" is on (${display[2]} by ${display[3]}).`);
+    else log(`Recording the window "${ready.window}" (${ready.windowWidth} by ${ready.windowHeight}).`);
     // A program that has just opened is still settling for a few seconds (its layout size is set as it opens, and it draws
     // some of its controls twice), so the take waits before the first step. Without this, two takes could differ.
     log("Letting the program finish starting.");
     await new Promise((r) => setTimeout(r, WARM_UP_MS));
     const s = session;
-    const take = await play(script, server, { grab: async () => (await s.grab(pictureDir)).hash }, { frame: FRAME, log });
+    const film = filmScreen && display ? { kind: "screen" as const, display } : { kind: "window" as const };
+    const take = await play(script, server, { grab: async () => (await s.grab(pictureDir)).hash, shown: () => s.shown() }, { frame: FRAME, log, outside: hands, film });
     return take;
   } finally {
     await session?.stop().catch(() => session?.kill());
     await server.close();
-    app.kill();
+    app?.kill();
+    companions?.close();
+    await hands.close();
   }
 }
 

@@ -5,6 +5,7 @@
 import { spawn } from "node:child_process";
 import { HookServer } from "./hook-server.ts";
 import { AccessibilityDriver } from "./accessibility.ts";
+import { openCompanions, OutsideHands, type Outside } from "./outside.ts";
 import type { Hook } from "./player.ts";
 import { demoEnvironment, findProgram, type ProgramEntry } from "./programs.ts";
 import type { ControlInfo, Hello } from "../../demo-hook/protocol.ts";
@@ -15,6 +16,8 @@ export interface ProgramSession {
   hook: Hook;
   hello: Hello;
   driver: Driver;
+  /** For steps in another program's window (with the hook only). */
+  outside?: Outside;
   close(): Promise<void>;
 }
 
@@ -23,25 +26,29 @@ export async function openProgram(root: string, programId: string, monitor: numb
   const program = findProgram(programId);
   const hook = new HookServer();
   await hook.start();
-  const launch = program.launch(root, hook.endpoint, hook.token, monitor);
-  log(`Opening ${program.name} in demo mode.`);
-  const app = spawn(launch.exe, launch.args, { stdio: "ignore", windowsHide: false, env: demoEnvironment() });
+  // The programs a script works in beside this one (OpenStage Capture's Tea Timer) open first, so the program opens in front of them.
+  const outside = new OutsideHands(root);
+  let companions: { close(): void } | null = null;
+  let app: ReturnType<typeof spawn> | null = null;
+  const end = async () => {
+    await hook.close();
+    app?.kill();
+    companions?.close();
+    await outside.close();
+  };
   try {
+    companions = await openCompanions(program, root, monitor, log, outside);
+    const launch = program.launch(root, hook.endpoint, hook.token, monitor);
+    log(`Opening ${program.name} in demo mode.`);
+    app = spawn(launch.exe, launch.args, { stdio: "ignore", windowsHide: false, env: demoEnvironment() });
     await Promise.race([
       hook.contacted,
       new Promise((_, fail) => setTimeout(() => fail(new Error(`${program.name} did not start its demo-mode hook within 40 seconds.`)), 40000)),
     ]);
     const hello = await hook.send<Hello>({ cmd: "hello" });
-    return {
-      program, hook, hello, driver: "hook",
-      close: async () => {
-        await hook.close();
-        app.kill();
-      },
-    };
+    return { program, hook, hello, driver: "hook", outside, close: end };
   } catch (e) {
-    await hook.close();
-    app.kill();
+    await end();
     throw e;
   }
 }

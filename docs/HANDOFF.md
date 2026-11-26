@@ -257,6 +257,17 @@ Made by Claude, open to change:
     and rehearsing scripts. No recording through it: a person makes the video from a script it wrote.
 26. **The connector speaks the protocol itself** (JSON lines on standard input and output), as the documentation tool's
     does, with no added package.
+27. **A take may film the whole take screen** (Jason, 2026-11-26, for the OpenStage Capture course: "Film the take screen").
+    A program entry with `film: "screen"` is filmed as the display it fills (`studio-helper take --film screen`), because
+    OpenStage Capture hides its window while it captures and shows its own Cancel and Stop windows. Its `companions` (Tea
+    Timer, with a plain backdrop over the whole display) open before it. A step with `window` (script format 4) works a
+    control in another program's window through Windows' accessibility interface (`src/pipeline/outside.ts`,
+    `studio-helper uia` `locate` and `press`), still never the real mouse or keyboard; a click first tells the program
+    where it lands (`outsideClick`, hook version 11), so a program that records clicks records it. While the program's
+    window is hidden the player does not ask its page to settle or for its text (hook version 11 also copes by itself).
+    Hook 11 also adds a rule it never rewrites that keeps the browser's own focus ring off unmarked controls (it came and went
+    with which window was active). Checked 2026-11-26: `Check Same Video.bat` (plan-a-lesson, 3,284 frames identical) and
+    the OpenStage Capture course's `series/smoke/capture-clicks.json` made twice with every frame identical.
 
 ## Next
 

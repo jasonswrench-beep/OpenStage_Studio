@@ -45,7 +45,7 @@ const COLOUR = /^#[0-9A-Fa-f]{6}$/;
 const SIDES = ["left", "right", "above", "below"];
 
 const HEADER_KEYS = ["format", "version", "title", "goal", "program", "driver", "startState", "playlist", "intro", "outro", "writtenBy", "publish", "redactions", "steps"];
-const STEP_KEYS = ["action", "target", "fallback", "value", "words", "caret", "repeat", "until", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter", "describe"];
+const STEP_KEYS = ["action", "target", "fallback", "value", "words", "caret", "repeat", "until", "narration", "silent", "callout", "highlight", "hold", "expect", "chapter", "describe", "window"];
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -186,8 +186,25 @@ export function validateScript(input: unknown, options: ValidateOptions = {}): V
       if (accessible && !["click", "type", "wait"].includes(action as string)) {
         err(`${at}.action`, `The accessibility driver does ${action === "key" || action === "scroll" ? "not press keys or scroll (it never uses the real keyboard or mouse)" : action === "open" ? "not open another demo project partway (the program starts with the script's demo project)" : "not do this"}. Use click, type and wait, or the hook.`);
       }
+      const outside = step.window !== undefined;
+      if (outside) {
+        // A step in another program's window (version 4): its control is found through Windows' accessibility interface, by automation
+        // id or by role and name, so the program's own list of controls says nothing about it.
+        if (!isText(step.window)) err(`${at}.window`, "Say which window, by part of its title, such as Tea Timer.");
+        else if (step.window.length > 100) err(`${at}.window`, "Name the window by at most 100 characters of its title.");
+        if (accessible) err(`${at}.window`, "A step in another program's window goes with the hook, not the accessibility driver.");
+        if (!["click", "type", "wait"].includes(action as string)) err(`${at}.action`, "A step in another program's window is a click, typing or a wait: it never uses the real keyboard or mouse.");
+        for (const k of ["words", "caret", "repeat", "callout"]) {
+          if (step[k] !== undefined) err(`${at}.${k}`, `${k} does not go with a step in another program's window.`);
+        }
+        const named = isObj(step.fallback) && isText(step.fallback.name);
+        if (isObj(step.fallback) && (step.fallback.x !== undefined || step.fallback.y !== undefined)) err(`${at}.fallback`, "In another program's window a control is found by role and name, not by x and y.");
+        if (step.target !== undefined) {
+          if (!isText(step.target) || !CONTROL.test(step.target)) err(`${at}.target`, "In another program's window, target is the control's automation id: letters, digits, - and _.");
+        } else if (action !== "wait" && !named) err(`${at}.target`, "Name the control in that window by its automation id as target, or by its role and name as fallback.");
+      }
       // A wait may name a control: the take waits until it is on screen (a program that works for a while, such as a transcription).
-      if ((needsTarget && !(byName && step.target === undefined)) || (step.target !== undefined && action !== "open")) checkControl(`${at}.target`, step.target);
+      if (!outside && ((needsTarget && !(byName && step.target === undefined)) || (step.target !== undefined && action !== "open"))) checkControl(`${at}.target`, step.target);
       if (action === "open" && step.target !== undefined) err(`${at}.target`, "An open step has no target.");
       const value = step.value;
       if (value !== undefined && typeof value !== "string") err(`${at}.value`, "The value is text.");

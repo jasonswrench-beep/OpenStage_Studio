@@ -67,9 +67,10 @@ sides) and `hook.ts` (the part a program includes).
 | `loadDemo` | Opens a demo project from the program's demo library, by name. |
 | `reset` | Puts the program back to a known state. |
 | `settle` | Waits for fonts, any running animations, the page (and its frames) to stop changing for 150 ms (at most 1.5 seconds, for a program that draws a moment after a click on a timer of its own), and two drawn frames, so a still picture shows the finished result. |
-| `text` | Lists every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their placeholder), and the choice showing in each drop-down list. Text hidden, scrolled out of view or clipped is left out. For the frame scan (docs/guard.md); it never changes the page. |
+| `text` | Lists every piece of text the viewer can see, with where it is: the page's words, what is typed in fields (or their placeholder), and the choice showing in each drop-down list. Text hidden, scrolled out of view or clipped is left out. For the frame scan (docs/guard.md); it never changes the page. While the program's window is hidden it lists nothing (hook version 11). |
+| `outsideClick` | Studio is about to press a control in another program's window (a script step with `window`, docs/script-format.md) through Windows' accessibility interface, never the real mouse; `x` and `y` are the middle of that control on the whole desktop, in screen pixels. A program that records the clicks a person makes in other programs gives the hook an `outsideClick` option and records this one as if the mouse had clicked there, then answers; the answer says whether it did (`{ recorded }`). Every other program ignores it (hook version 11). |
 
-The hook's version is 8. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
+The hook's version is 11. Version 2 added `text`; version 3 added a box's words, its several-lines flag and the focus to
 `list`, and Ctrl+A; version 4 reaches the program's own frames, with no command changed (`Check Same Video.bat` passed
 after it, 2026-11-19: every one of the 3,284 frames identical); version 5 clicks on words inside a control (`click` and
 `position` with `words` and `caret`, a script step's `words` and `caret`), and Backspace and Delete work in an editable area. A script that
@@ -84,7 +85,14 @@ only, and rehearsal skips its check on typing into a box that already holds word
 tick box and Enter in a form's box send the form, and reports radio buttons, sliders and whether a tick box is ticked. Version 8
 (2026-11-23) moves the cursor in an editable area with the arrow keys, Home and End, and selects with Shift (Ctrl moves a word
 at a time), with Selection.modify: a browser does that only for a real key, so PrismQDA's reader could not be selected from the
-keyboard before. No command changed in either.
+keyboard before. No command changed in either. Version 9 says which part of a control shows, and version 10 adds `reveal`.
+Version 11 (2026-11-26, for OpenStage Capture, which hides its own window while it captures and records the clicks a person makes
+in other programs) adds `outsideClick`, and makes `settle` and `text` work while the program's window is hidden: `settle` no
+longer waits for the page to draw (a hidden page never draws, so it used to wait for ever) and `text` lists nothing. It
+also adds one style rule the hook never rewrites, which keeps the browser's own focus ring off every control the hook has
+not marked: the hook's older rule against that ring was rewritten with the page's rules and so matched nothing, and the
+browser draws the ring only while the window is the active one, so it came and went with which window was in front
+(OpenStage Capture's chosen topic had it in one take and not the next). Controls the hook marks look as before.
 
 ## Programs with the hook
 

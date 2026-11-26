@@ -41,15 +41,16 @@ export function runHelper(exe: string, args: string[], onEvent?: (e: HelperEvent
   });
 }
 
-/** A take in progress: the helper watching one window, saving a still picture whenever asked. */
+/** A take in progress: the helper watching one window, saving a still picture whenever asked. With `film` "screen" it films the
+ * whole display the window is on (src/pipeline/programs.ts, ProgramEntry.film). */
 export class TakeSession {
   private child: ChildProcessWithoutNullStreams;
   private waiters: ((e: HelperEvent) => void)[] = [];
   private stderr = "";
   private ended: Error | null = null;
 
-  constructor(exe: string, window: string, size: [number, number]) {
-    this.child = spawn(exe, ["take", "--window", window, "--width", String(size[0]), "--height", String(size[1])], { windowsHide: true });
+  constructor(exe: string, window: string, size: [number, number], film: "window" | "screen" = "window") {
+    this.child = spawn(exe, ["take", "--window", window, "--width", String(size[0]), "--height", String(size[1]), "--film", film], { windowsHide: true });
     this.child.stderr.on("data", (d: Buffer) => (this.stderr += d.toString()));
     createInterface({ input: this.child.stdout }).on("line", (line) => {
       if (!line.trim()) return;
@@ -84,11 +85,18 @@ export class TakeSession {
   }
 
   /** Save a still picture once the window has stopped changing. Returns the file and its fingerprint. */
-  async grab(dir: string, settleMs = 180): Promise<{ file: string; hash: string; settled: boolean; waitedMs: number; newPictures: number }> {
+  async grab(dir: string, settleMs = 180): Promise<{ file: string; hash: string; settled: boolean; waitedMs: number; newPictures: number; shown: boolean }> {
     const answer = this.next(15000);
     this.child.stdin.write(JSON.stringify({ cmd: "grab", dir, settleMs, timeoutMs: 6000 }) + "\n");
     const e = await answer;
-    return { file: String(e.file), hash: String(e.hash), settled: e.settled !== false, waitedMs: Number(e.waitedMs ?? 0), newPictures: Number(e.newPictures ?? 0) };
+    return { file: String(e.file), hash: String(e.hash), settled: e.settled !== false, waitedMs: Number(e.waitedMs ?? 0), newPictures: Number(e.newPictures ?? 0), shown: e.shown !== false };
+  }
+
+  /** Whether the program's window is showing now (not hidden or minimized). */
+  async shown(): Promise<boolean> {
+    const answer = this.next(5000);
+    this.child.stdin.write(JSON.stringify({ cmd: "shown" }) + "\n");
+    return (await answer).shown !== false;
   }
 
   async stop(): Promise<void> {

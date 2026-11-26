@@ -24,7 +24,7 @@ import { PROGRAMS, type ProgramEntry } from "../pipeline/programs.ts";
 import { FRAME, takeMonitor } from "../pipeline/make-video.ts";
 import { scanScript, describeScriptHit } from "../guard/script-scan.ts";
 import { loadBlocklist } from "../guard/load.ts";
-import type { Script } from "../script/format.ts";
+import type { Script, Step } from "../script/format.ts";
 import { validateScript } from "../script/validate.ts";
 import { examplesDir, workspace } from "../paths.ts";
 import { isMain } from "../util/is-main.ts";
@@ -91,12 +91,14 @@ export function checker(program: ProgramEntry, all: ControlFact[]) {
       if (step?.action === "open" && step.value && demos.size && !demos.has(step.value)) problems.push(`steps[${i}].value: "${step.value}" is not one of the demo projects.`);
       // Clicking a drop-down list only opens it; a choice is made by typing its words. Without this, a script can pass
       // rehearsal (every click works) and still never choose anything.
-      if (step?.action === "click" && step.target && roles.get(step.target) === "combobox") {
+      if (step?.action === "click" && step.target && !step.window && roles.get(step.target) === "combobox") {
         problems.push(`steps[${i}]: "${step.target}" is a drop-down list. To choose from it, use {"action": "type", "target": "${step.target}", "value": "<the choice's words>"} instead of clicking it.`);
       }
       // The same step twice in a row is a slip (a repair often leaves the step it replaced behind).
       const prev = i > 0 ? s.steps[i - 1] : undefined;
-      if (prev && step && prev.action === step.action && prev.target === step.target && prev.value === step.value && step.action !== "scroll" && step.action !== "key") {
+      // A step in another program's window (format 4) is told apart by its window and its control's role and name too.
+      const same = (a: Step, b: Step) => a.action === b.action && a.target === b.target && a.value === b.value && a.window === b.window && a.fallback?.role === b.fallback?.role && a.fallback?.name === b.fallback?.name;
+      if (prev && step && same(prev, step) && step.action !== "scroll" && step.action !== "key") {
         problems.push(`steps[${i}]: it repeats step ${i} exactly. Remove one of them.`);
       }
     }

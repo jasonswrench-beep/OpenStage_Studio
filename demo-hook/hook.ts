@@ -29,6 +29,10 @@ export interface DemoHookOptions {
   /** Whether the program still has work of its own to finish on a timer after a step (OpenStage Author checks the course for
    * problems a moment after each change). Settle waits until it has none, at most BUSY_MOST_MS, so the picture shows the result. */
   busy?(): boolean;
+  /** For a program that records the clicks a person makes in other programs (OpenStage Capture's click by click): Studio is about to
+   * press a control in another window, at `x`, `y` on the whole desktop in screen pixels, through Windows' accessibility interface,
+   * so no real click happens. Record it as if one had, and resolve once it is recorded (hook version 11). */
+  outsideClick?(click: { x: number; y: number; window: string; label?: string }): void | Promise<void>;
 }
 
 /** The longest settle waits for a program's own work (DemoHookOptions.busy). */
@@ -319,6 +323,13 @@ function steady(doc: Document) {
   style.dataset.demoHook = "steady";
   style.textContent = STEADY_CSS;
   (doc.head ?? doc.documentElement).append(style);
+  // Rewritten like the page's rules, the one above leaves the browser's own focus ring alone, and the browser draws that ring only while
+  // the window is the active one, so it came and went with which window was in front (hook version 11, 2026-11-26: OpenStage Capture's
+  // chosen topic had it in one take and not the next). This rule is never rewritten: a control the hook has not marked never shows it.
+  const ring = doc.createElement("style");
+  ring.dataset.demoHook = "no-ring";
+  ring.textContent = ":focus-visible:not([data-demo-focus-visible]) { outline-style: none !important; }";
+  (doc.head ?? doc.documentElement).append(ring);
   doc.documentElement.dataset.demoMode = "on";
   watchFocus((doc.defaultView ?? window) as PageWindow);
   steadySheets(doc);
@@ -356,6 +367,8 @@ function steadySheets(doc: Document) {
     }
   };
   for (const sheet of [...Array.from(doc.styleSheets), ...(doc.adoptedStyleSheets ?? [])]) {
+    // The rule that keeps the browser's own focus ring away is left as written (see steady).
+    if ((sheet as CSSStyleSheet).ownerNode instanceof view.HTMLElement && ((sheet as CSSStyleSheet).ownerNode as HTMLElement).dataset.demoHook === "no-ring") continue;
     try {
       rewrite(sheet.cssRules);
     } catch {
@@ -410,8 +423,16 @@ function quiet(docs: Document[], still = 150, most = 1500): Promise<void> {
   });
 }
 
+/** `n` frames drawn. A hidden page draws none (the program hid its window, as OpenStage Capture does while it captures), so it is not
+ * waited for, and a page hidden partway stops the wait (hook version 11). */
 const frames = (n: number) => new Promise<void>((done) => {
-  const tick = (k: number) => (k <= 0 ? done() : requestAnimationFrame(() => tick(k - 1)));
+  if (document.hidden) return done();
+  const hidden = () => {
+    document.removeEventListener("visibilitychange", hidden);
+    done();
+  };
+  document.addEventListener("visibilitychange", hidden);
+  const tick = (k: number) => (k <= 0 ? hidden() : requestAnimationFrame(() => tick(k - 1)));
   tick(n);
 });
 
@@ -659,6 +680,9 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
     case "settle":
       for (const { doc } of all) steadySheets(doc);
       markFocus(all);
+      // While the program's window is hidden nothing of the page shows and nothing is drawn, so there is nothing to wait for (hook
+      // version 11: OpenStage Capture hides itself while it captures, and the take films the screen meanwhile).
+      if (document.hidden) return null;
       for (const { doc } of all) {
         await doc.fonts.ready;
         await Promise.all(doc.getAnimations().map((a) => a.finished.catch(() => undefined)));
@@ -676,7 +700,11 @@ async function perform(command: Command, options: DemoHookOptions): Promise<unkn
       await frames(2);
       return null;
     case "text":
-      return { viewport: [innerWidth, innerHeight], items: all.flatMap(textOnScreen) };
+      // A hidden page shows no text (hook version 11).
+      return { viewport: [innerWidth, innerHeight], items: document.hidden ? [] : all.flatMap(textOnScreen) };
+    case "outsideClick":
+      await options.outsideClick?.({ x: command.x, y: command.y, window: command.window, ...(command.label ? { label: command.label } : {}) });
+      return { recorded: !!options.outsideClick };
   }
 }
 
