@@ -435,13 +435,18 @@ function hasSelection(el: HTMLInputElement): boolean {
   }
 }
 
+/**
+ * What was typed into a box with no text selection, and what the box held straight after: a number box empties itself while its
+ * text is not yet a number, so "0.5" read back after "0." became "" and then "5" (OpenStage Assess, 2026-11-26: a give or take of
+ * 0.5 was stored as 5). It is kept with the box and not inside one call, because the player sends one character per command (the
+ * first fix kept it inside the call and changed nothing). While the box still holds what it held after the last character, the
+ * typing goes on from what was typed; once anything else has changed the box, from what it holds.
+ */
+const typedSoFar = new WeakMap<HTMLInputElement, { typed: string; held: string }>();
+
 /** Put text into a text field or editable area as if typed: one character at a time, with the events a keyboard sends. */
 function typeInto(el: HTMLElement, text: string) {
   const view = windowOf(el);
-  // What a box with no text selection holds so far, kept here and not read back from the box: a number box empties itself when
-  // its text is not yet a number, so "0.5" read back after "0." became "" and then "5" (OpenStage Assess, 2026-11-26: a give or take
-  // of 0.5 was stored as 5).
-  let soFar: string | null = null;
   for (const ch of text) {
     const init = { key: ch, bubbles: true, cancelable: true };
     const go = el.dispatchEvent(new view.KeyboardEvent("keydown", init));
@@ -449,8 +454,11 @@ function typeInto(el: HTMLElement, text: string) {
       if (isInput(el) || isTextArea(el)) typedIn.add(el);
       if (isInput(el) && !hasSelection(el)) {
         // A box with no text selection (a number box): the character goes at the end, or replaces all after Ctrl+A.
-        soFar = (soFar ?? (allChosen.has(el) ? "" : el.value)) + ch;
-        el.value = soFar;
+        const last = typedSoFar.get(el);
+        const before = allChosen.has(el) ? "" : last && el.value === last.held ? last.typed : el.value;
+        const typed = before + ch;
+        el.value = typed;
+        typedSoFar.set(el, { typed, held: el.value });
         allChosen.delete(el);
         el.dispatchEvent(new view.InputEvent("input", { bubbles: true, data: ch, inputType: "insertText" }));
       } else if (isInput(el) || isTextArea(el)) {
