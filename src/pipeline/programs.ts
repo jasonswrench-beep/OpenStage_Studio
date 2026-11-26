@@ -45,6 +45,14 @@ export function prismqdaExe(root: string, env: NodeJS.ProcessEnv = process.env):
   return places.find((p): p is string => !!p && existsSync(p)) ?? null;
 }
 
+/** OpenStage Assess's window with the demo hook: where OPENSTAGE_ASSESS_EXE says, else a build of OpenAssess's branch `studio-demo-hook`
+ * beside this repository (its own checkout, openassess-demo). The installed OpenAssess has no hook, so it is never used. Null if none
+ * is there. */
+export function assessExe(root: string, env: NodeJS.ProcessEnv = process.env): string | null {
+  const places = [env.OPENSTAGE_ASSESS_EXE, resolve(root, "../openassess-demo/packages/app/shell/src-tauri/target/release/openassess-shell.exe")];
+  return places.find((p): p is string => !!p && existsSync(p)) ?? null;
+}
+
 /** The names of one recording's controls in Prism Transcribe, by the slug of its label (INT-01 is int-01). */
 function transcribeFile(slug: string, label: string): { pattern: string; about: string }[] {
   return [
@@ -454,6 +462,37 @@ export const PROGRAMS: ProgramEntry[] = [
       { pattern: "**", about: "a control on a page or in a window that opens later: by its element id (pane-sources, the Documents pane) or, for an item of a list or tree, the id of the part it is in, item and its key (codebook-tree.item.12), or by its place: the id of the part it is in, its group, its kind and its number there" },
     ],
     notes: "In demo mode no Windows box ever opens: a box for choosing a file answers at once with the next file of the workspace's Files folder for that kind (Files/documents, Files/image, Files/media, Files/reference, Files/web, Files/email; a folder there is offered as several files at once), a folder to import is the next of Files/folder, a project is saved in the workspace's Projects, and a file in its Exports. Open project opens the demo project opened last; the project to merge on the Team page is the next of Files/packets (Jordan's coded packet). Check for updates acts as if the offline lock were on, and the program never hands itself to a PrismQDA the person has open. The coder is the invented Riley. The clock stands still in demo mode (18 March 2026, 14:30 UTC).",
+  },
+  {
+    id: "openstage-assess",
+    name: "OpenStage Assess",
+    launch(root, endpoint, token, monitor) {
+      const exe = assessExe(root);
+      if (!exe) throw new Error("OpenStage Assess with the demo hook was not found. Build the window of OpenAssess's branch studio-demo-hook (in packages\\app\\shell: npm run build:exe), or set OPENSTAGE_ASSESS_EXE.");
+      // A clean workspace for this take, always at the same place, so two takes look the same and the folder the first screen names is
+      // never the person's own. The app keeps its library there (a folder OpenAssess inside it), and a file it hands over in Downloads.
+      const workspace = resolve(studioWorkspace(), "work", "demo-workspace", "openstage-assess");
+      rmSync(workspace, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
+      mkdirSync(workspace, { recursive: true });
+      return { exe, args: ["--demo-hook", endpoint, "--demo-token", token, "--demo-workspace", workspace, "--monitor", String(monitor)] };
+    },
+    windowTitle: "OpenStage Assess (demo mode)",
+    demos: [
+      { name: "empty", about: "No banks: the first screen with its four samples about the planets. No box for choosing files offers anything." },
+      { name: "smoke", about: "No banks; Choose a file offers Planets test bank.docx (the app's own Word sample), for the hook's smoke test." },
+    ],
+    // OpenStage Assess names its controls in demo mode (packages/app/ui/demo-names.js on its studio-demo-hook branch), most of them only
+    // once their screen or dialog is drawn. Run the course's tools/controls.ts to see the names on screen.
+    appearing: [
+      { pattern: "dialog.ok", about: "the main button of the dialog that is open, whatever its words (Create, Save, Remove it)" },
+      { pattern: "dialog.cancel", about: "the button of the open dialog that answers no (Cancel, Keep it)" },
+      { pattern: "dialog.close", about: "the X in the corner of the open dialog" },
+      { pattern: "dialog.action.*", about: "any other button of the open dialog, by its place counting from 1 at the left" },
+      { pattern: "popup.*", about: "a command of a ... menu once it is open, by the same name as in the menu bar (popup.rename, popup.folders)" },
+      { pattern: "page.*", about: "a control with a fixed id: page.import-file, page.ask-text (the box of a dialog that asks for a name), page.cs-input (Search for a command's box)" },
+      { pattern: "**", about: "any other control, by its screen (home, import, bank, export, print, sheets, score, or dialog inside a dialog) and its accessible name in small letters with hyphens: home.choose-a-file, home.new-bank, home.try-it-a-word-test-bank, home.open-planets-quiz; a second with the same name gets .2" },
+    ],
+    notes: "The menus are menu.file, menu.bank, menu.question, menu.test and menu.help; a command shows only after its menu's name is clicked and is menu.<menu>.<command>: menu.file.newBank, menu.file.openBankFile, menu.file.importFile, menu.file.yourBanks, menu.file.showFolder, menu.bank.rename, menu.bank.folders, menu.bank.coverage, menu.bank.checkQuality, menu.bank.remove, menu.question.new-multipleChoice (and new-multipleResponse, new-trueFalse, new-fillInBlank, new-shortAnswer, new-matching, new-ordering, new-numeric, new-essay), menu.question.search, menu.question.clearFilters, menu.test.print, menu.test.sheets, menu.test.export, menu.help.search, menu.help.keys, menu.help.updates. The navy bar holds bar.search, and on a bank's screen bar.print, bar.sheets and bar.export, and bar.name, the bank's name (words for a callout, not a control). A callout on the navy bar needs a light color, such as #FFD23F. In demo mode no Windows box ever opens: a box for choosing files answers at once with the next file the stage offers for it (packages/app/demo on the branch), Save a copy saves into the workspace's Downloads with no dialog, Show in folder and Show this folder do nothing, and Check for updates is turned off. The first screen's line names the take's library folder inside Studio's workspace, which the project should blur.",
   },
 ];
 
