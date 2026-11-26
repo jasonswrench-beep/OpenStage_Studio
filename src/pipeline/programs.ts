@@ -480,6 +480,22 @@ export const PROGRAMS: ProgramEntry[] = [
     demos: [
       { name: "empty", about: "No banks: the first screen with its four samples about the planets. No box for choosing files offers anything." },
       { name: "smoke", about: "No banks; Choose a file offers Planets test bank.docx (the app's own Word sample), for the hook's smoke test." },
+      // The invented course Earth and Space Science 101 (Riverbend Community College, Professor Dana Whitfield), made by the OpenStage
+      // Assess course's tools/demo-course/build.mjs. Each import stage has no banks and says what Choose a file offers, in turn.
+      { name: "import-ch1", about: "No banks. Choose a file offers Chapter 1 test bank.docx (13 questions, all parsed), then Old midterm.doc, Lecture 1 slides.pptx and ~$apter 1 test bank.docx, each refused in words." },
+      { name: "import-word", about: "No banks. Choose a file offers Chapter 2 quiz.docx (Word's own lists, a True / False heading, the quiz again after an Answer Key heading: 11 parsed), then Chapter 2 quiz (table).docx (a grid: 8 parsed)." },
+      { name: "import-keys", about: "No banks. Choose a file offers Chapter 3 with an Answer line under each, then with an Answers list, then with the right answers in bold (12 parsed each; the bold one has the note that bold was taken as the key)." },
+      { name: "import-objects", about: "No banks. Choose a file offers Chapter 4 test bank.docx: two pictures (one with no description, so its question needs review), an equation, a Greek letter from the Symbol font, a table of stars, hidden text and a text box, each named in the notes about the file." },
+      { name: "import-table", about: "No banks. Choose a file offers Chapter 1 question table.xlsx, the blank table filled in (12 parsed)." },
+      { name: "import-tables", about: "No banks. Choose a file offers Chapter 2 with details.xlsx (chapter, objective, Bloom level, difficulty and tags), Chapter 3 right answer first.xlsx (the answers mixed, and said), Chapter 4 numbered options.xlsx." },
+      { name: "import-text", about: "No banks. Choose a file offers Chapter 3 quiz.txt, Chapter 3 quiz (Aiken).txt and Chapter 3 quiz.gift (its category kept as a tag)." },
+      { name: "import-pdf", about: "No banks. Choose a file offers Chapter 4 test bank.pdf (12 questions, 2 to review for their pictures)." },
+      { name: "import-lms", about: "No banks. Choose a file offers a colleague's bank Stars and planets as Moodle XML, QTI 1.2, QTI 2.1, QTI 3.0, Common Cartridge, Brightspace CSV and Blackboard, then Colleague's Moodle questions.xml, whose cloze question is kept as a failed essay." },
+      { name: "import-repair", about: "No banks. Choose a file offers Chapter 1 test bank (needs repair).docx: 2 failed (no key; a key naming option E), 1 to review (two answers marked), 10 parsed, and 3 pieces of text no question used (the title, a heading, a note)." },
+      { name: "course-bank", about: "The bank Earth and Space Science 101: 63 questions in four chapters with their details (chapter, section, objective, Bloom level, difficulty, tags), chapters 1 and 2 approved, 3 reviewed, 4 draft, two retired; one needs review (a picture with no description). Open a bank file offers From a colleague.openassess; Add a picture offers Plate boundaries.png." },
+      { name: "course-folders", about: "The course bank with a folder for each chapter (Chapter 1 to Chapter 4), each chapter's questions filed in it." },
+      { name: "course-test", about: "The course bank with the test ESS 101 Midterm, spring 2026: 24 questions, versions A and B, 2 short answers and an essay, 28 points, sheet code 40DF9." },
+      { name: "colleague-bank", about: "The course bank and the bank From a colleague, which opens with the note that formatting was taken out of one question." },
     ],
     // OpenStage Assess names its controls in demo mode (packages/app/ui/demo-names.js on its studio-demo-hook branch), most of them only
     // once their screen or dialog is drawn. Run the course's tools/controls.ts to see the names on screen.
