@@ -83,8 +83,9 @@ Kitten ONNX files contain unseeded random steps, and whether the Rust front end 
 ## The graphics card and the front end (2026-11-26)
 
 - Where the model runs (`OPENSTAGE_VOICE_DEVICE`, read by the helper): by default on the processor while the computer is
-  quiet, and on the graphics card through CUDA while other work uses a tenth of the processor or more (Jason, 2026-11-26:
-  "if there is any other work happening, go to the graphics card. It just sucks up too much of the CPU"). `processor`,
+  quiet, and on the graphics card while other work uses a tenth of the processor or more (Jason, 2026-11-26:
+  "if there is any other work happening, go to the graphics card. It just sucks up too much of the CPU"): through CUDA
+  where NVIDIA's files are, else through DirectML (2026-11-27, below). `processor`,
   `cuda`, `directml` and `graphics-card` (CUDA, else DirectML) choose one. A card must take the model and say a test word;
   if it does not, or fails part way, the voice is on the processor and the helper says why in a note. The `voice` event
   names the device. `Check Same Video.bat` keeps both of its runs on the processor unless told otherwise.
@@ -93,7 +94,7 @@ Kitten ONNX files contain unseeded random steps, and whether the Rust front end 
   `%LOCALAPPDATA%\openstage-cuda-trial\bin`, else Windows' usual places. With ort's `cuda` and `copy-dylibs` features the
   build downloads ONNX Runtime's CUDA build (89 MB, from the same place as before; it carries DirectML too) and puts
   `onnxruntime_providers_cuda.dll` and `onnxruntime_providers_shared.dll` beside the helper. Without them, or without NVIDIA's
-  files, CUDA is simply not taken. Whether the installer may carry these, or point to NVIDIA's, is Jason's licence decision.
+  files, CUDA is simply not taken. The installer carries none of them (Jason, 2026-11-27).
 - Measured on 2026-11-26 (RTX 3050, eight course lines, against the processor): CUDA, with full 32-bit sums (TF32 off) and
   deterministic kernels, gives every line the same length to the sample, the same loudness (within 0.01 dB), the same pitch
   (median difference 0 cents) and a spectrum within 0.06 dB in every band (log-spectral distance about 0.5 dB, where the
@@ -101,7 +102,16 @@ Kitten ONNX files contain unseeded random steps, and whether the Rust front end 
   (Jason's ears are the last check, TESTING-TODO.md). It is 4 to 10 times as
   fast, and the same every run. DirectML on the same card is about 3 times as fast and the same every run, but its timbre is
   not the processor's: 3.5 to 5 dB less between 1 and 4 kHz, about 2 dB more above 4 kHz and 1.5 dB quieter, whatever its
-  settings (graph optimisation, fusion, device). So it is never chosen by itself.
+  settings (graph optimisation, fusion, device). Jason's ears, 2026-11-27, on three course lines made all three ways: "I cannot
+  tell the difference between processor and cuda. Directml just BARELY softer."
+- **DirectML for installs (Jason, 2026-11-27).** On a busy computer the voice tries CUDA, then DirectML, then the processor.
+  An installed Studio carries only `studio-helper.exe`, without ONNX Runtime's CUDA provider or NVIDIA's files, so CUDA is
+  not taken there and the voice goes to DirectML; on a computer with NVIDIA's files and the provider beside the helper (the
+  build folder), it stays on CUDA. DirectML needs nothing from Studio: Windows has `DirectML.dll` in System32 (1.15.6 on
+  this computer, newer than the 1.15.4 the build copies beside the helper), and the helper alone in an empty folder ran the
+  voice there. Before this, a card that did not take the voice used up ONNX Runtime's one environment, so the processor
+  could not load after it ("only one environment is allowed per process") and an install narrated nothing while the
+  computer was busy; the environment is now made once and kept.
 - The fallback no longer spells out what it does not know. Letters and digits written together are said piece by piece
   (F6 "F six", F10 "F ten", P07 and INT-01 "zero seven" and "zero one", H.264 "H two six four", Shift+F6 "Shift plus F
   six"); a known word with an ending comes before splitting (copied is copy with -ed, not "co pied"); and a name is sounded

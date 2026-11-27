@@ -14,8 +14,8 @@ key's cost, and decisions. Newest round first. Tick or delete an item once done.
       1.5 GB), now only in `%LOCALAPPDATA%\openstage-cuda-trial` on this computer. Without them the voice stays on the
       processor, as before.
       **Jason, 2026-11-27: DirectML for installs.** The installer carries no NVIDIA files. An installed Studio uses DirectML
-      (which comes with ONNX Runtime) when the computer is busy; Jason's own computer keeps CUDA. Not built yet: today
-      DirectML is never chosen by itself.
+      (Windows' own `DirectML.dll`) when the computer is busy; Jason's own computer keeps CUDA. Built the same day: on a
+      busy computer the voice tries CUDA, then DirectML, then the processor (docs/voice-models.md).
 
 ## Development list round of 2026-11-15/16
 
