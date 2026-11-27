@@ -10,9 +10,12 @@ key's cost, and decisions. Newest round first. Tick or delete an item once done.
       `line-N-directml.wav`; made again on 2026-11-27 from 2b462cd, as the first set was deleted with its note folder).
       Measured, CUDA is the processor's voice and DirectML is duller and hissier (docs/voice-models.md). Do your ears agree?
       **Jason, 2026-11-27:** "I cannot tell the difference between processor and cuda. Directml just BARELY softer."
-- [ ] **Decide: may the installer carry CUDA?** It needs NVIDIA's CUDA 13 runtime and cuDNN 9 (NVIDIA's licences, about
+- [x] **Decide: may the installer carry CUDA?** It needs NVIDIA's CUDA 13 runtime and cuDNN 9 (NVIDIA's licences, about
       1.5 GB), now only in `%LOCALAPPDATA%\openstage-cuda-trial` on this computer. Without them the voice stays on the
       processor, as before.
+      **Jason, 2026-11-27: DirectML for installs.** The installer carries no NVIDIA files. An installed Studio uses DirectML
+      (Windows' own `DirectML.dll`) when the computer is busy; Jason's own computer keeps CUDA. Built the same day: on a
+      busy computer the voice tries CUDA, then DirectML, then the processor (docs/voice-models.md).
 
 ## Security fixes of 2026-11-24
 

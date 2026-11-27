@@ -3,9 +3,9 @@
 //!
 //! * The model (Apache-2.0) is the ONNX build of Kokoro-82M 1.0, pinned to one revision and checked by its SHA-256 when it
 //!   is downloaded (`tools/kokoro-model.json`). It runs with ONNX Runtime (MIT), offline: on the processor while the
-//!   computer is quiet, and on an NVIDIA graphics card through CUDA while other work is running, when NVIDIA's CUDA
-//!   runtime and cuDNN are on the computer (they are not part of Studio). CUDA gives the processor's voice; DirectML, which
-//!   any card has, changes its timbre and is used only when asked for. See [`open_session`] and docs/voice-models.md.
+//!   computer is quiet, and on the graphics card while other work is running: through CUDA when NVIDIA's CUDA runtime
+//!   and cuDNN are on the computer (they are not part of Studio), else through DirectML, which comes with Windows. CUDA
+//!   gives the processor's voice; DirectML's is a little softer. See [`open_session`] and docs/voice-models.md.
 //! * Words become sounds through misaki-rs (MIT), a Rust port of Kokoro's own dictionary front end, built without its
 //!   GPL fallback. Words that are not in its dictionary go through [`WordFallback`] below, which is ours: it says letters
 //!   and digits written together piece by piece (F6, INT-01), takes off common endings, splits joined words, sounds out a
@@ -161,9 +161,10 @@ fn run_model(session: &mut Session, chunk: &[i64], voice: &[f32], speed: f32) ->
 /// it is not on the graphics card, when it was meant to be.
 ///
 /// Which, by OPENSTAGE_VOICE_DEVICE: `processor`, `cuda`, `directml`, `graphics-card` (CUDA, else DirectML), or `auto`, the
-/// default: the processor while the computer is quiet, and CUDA while other work is using a tenth of the processor or more,
-/// so a long narration does not slow everything else (Jason, 2026-11-26). DirectML is never chosen by itself: it changes
-/// the voice's timbre (docs/voice-models.md).
+/// default: the processor while the computer is quiet, and the graphics card while other work is using a tenth of the
+/// processor or more, so a long narration does not slow everything else (Jason, 2026-11-26): CUDA where NVIDIA's files
+/// are, else DirectML, so an installed Studio, which carries no NVIDIA files, still takes the card (Jason, 2026-11-27:
+/// DirectML only "BARELY softer" to his ears; docs/voice-models.md).
 fn open_session(model: &Path, vocab: &HashMap<char, i64>, voice: &[f32]) -> Result<(Session, Device, Option<String>), String> {
     let wanted = std::env::var("OPENSTAGE_VOICE_DEVICE").map(|v| v.to_ascii_lowercase()).unwrap_or_default();
     let cards = cards_to_try(&wanted, processor_busy);
@@ -194,7 +195,7 @@ fn cards_to_try(wanted: &str, busy: impl FnOnce() -> Option<f64>) -> &'static [D
         "directml" => &[Device::DirectMl],
         "graphics-card" | "gpu" => &[Device::Cuda, Device::DirectMl],
         _ => match busy() {
-            Some(b) if b >= BUSY => &[Device::Cuda],
+            Some(b) if b >= BUSY => &[Device::Cuda, Device::DirectMl],
             _ => &[],
         },
     }
@@ -234,8 +235,7 @@ fn processor(model: &Path, why: Option<String>) -> Result<(Session, Device, Opti
 /// and only the kernels that give the same result every time; on DirectML with one stream and no memory pattern, on the
 /// fastest card rather than a processor's built-in graphics.
 fn session_on(model: &Path, device: Device) -> Result<Session, String> {
-    let env = ort::init().build().map_err(|e| e.to_string())?;
-    let builder = Session::builder(&env).map_err(|e| e.to_string())?;
+    let builder = Session::builder(environment()?).map_err(|e| e.to_string())?;
     let builder = builder.with_optimization_level(GraphOptimizationLevel::Level3).map_err(|e| e.to_string())?;
     let builder = builder.with_intra_threads(1).map_err(|e| e.to_string())?;
     let builder = builder.with_inter_threads(1).map_err(|e| e.to_string())?;
@@ -257,6 +257,17 @@ fn session_on(model: &Path, device: Device) -> Result<Session, String> {
         Device::Processor => builder,
     };
     builder.commit_from_file(model).map_err(|e| e.to_string())
+}
+
+/// ONNX Runtime's environment, made once and kept: ort allows one per process, so a card that does not take the voice
+/// must not use it up before the next card or the processor is tried ("only one environment is allowed per process").
+fn environment() -> Result<&'static ort::environment::Environment, String> {
+    static ENV: std::sync::OnceLock<ort::environment::Environment> = std::sync::OnceLock::new();
+    if let Some(env) = ENV.get() {
+        return Ok(env);
+    }
+    let env = ort::init().build().map_err(|e| e.to_string())?;
+    Ok(ENV.get_or_init(|| env))
 }
 
 /// Where the CUDA runtime and cuDNN are looked for besides Windows' usual places: OPENSTAGE_CUDA_DIR, else
@@ -923,7 +934,7 @@ mod tests {
     #[test]
     fn the_voice_goes_to_the_card_only_while_the_computer_is_busy() {
         assert_eq!(cards_to_try("", || Some(0.03)), &[] as &[Device], "quiet: the processor");
-        assert_eq!(cards_to_try("auto", || Some(0.40)), &[Device::Cuda], "busy: CUDA, never DirectML by itself");
+        assert_eq!(cards_to_try("auto", || Some(0.40)), &[Device::Cuda, Device::DirectMl], "busy: CUDA, else DirectML");
         assert_eq!(cards_to_try("", || None), &[] as &[Device], "not known: the processor");
         assert_eq!(cards_to_try("processor", || panic!("not asked")), &[] as &[Device]);
         assert_eq!(cards_to_try("directml", || panic!("not asked")), &[Device::DirectMl]);
