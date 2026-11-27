@@ -95,6 +95,17 @@ test("a click in another window tells the program where it lands, then presses t
   assert.ok(!f.sent.some((c) => c.cmd === "settle" || c.cmd === "text"));
 });
 
+test("typing in another window replaces a box's words, a letter at a time", async () => {
+  const f = fakes([false]);
+  const box: OutsideControl = { window: "Select the part of the screen to capture", id: "f-left", name: "Distance from the left edge", role: "textbox", rect: [643, -1210, 113, 31], visible: true, enabled: true, display: [7, -1080, 1920, 1080], value: "0" };
+  f.outside.locate = async () => box;
+  const step = { action: "type", window: "Select the part", fallback: { role: "textbox", name: "Distance from the left edge" }, value: "58", narration: "Type 58.", expect: "It says 58" };
+  const s = validateScript(script([step])).script as Script;
+  const take = await play(s, f.hook, f.camera, { frame: [1920, 1080], afterSettleMs: 0, outside: f.outside, film: { kind: "screen", display: [7, -1080, 1920, 1080] } });
+  assert.deepEqual(f.pressed.map((p) => [p.action, p.value]), [["setValue", ""], ["append", "5"], ["append", "8"]]);
+  assert.equal(take.steps[0].changes.length, 3);
+});
+
 test("while the program's window shows, pictures wait for its page as before", async () => {
   const f = fakes([true]);
   const s = validateScript(script([start])).script as Script;

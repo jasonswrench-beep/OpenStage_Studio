@@ -187,6 +187,12 @@ export async function play(given: Script, hook: Hook, camera: Camera, options: P
         await hands.press(win, key, "choose", text);
         out.changes.push(await shot());
       } else {
+        // The box's words are replaced, as a person selects them and types over them (a number box that says 0 becomes 580, not
+        // 0580); a box with nothing in it is left as it is.
+        if (c.value) {
+          await hands.press(win, key, "setValue", "");
+          out.changes.push(await shot());
+        }
         for (const ch of text) {
           await hands.press(win, key, "append", ch);
           out.changes.push(await shot());

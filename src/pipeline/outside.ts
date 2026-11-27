@@ -27,12 +27,14 @@ export interface OutsideControl {
   visible: boolean;
   enabled: boolean;
   display: [number, number, number, number] | null;
+  /** For a box: the words in it now (never a password box's). */
+  value?: string | null;
 }
 
 /** What the player needs for a step in another window. */
 export interface Outside {
   locate(window: string, key: OutsideKey): Promise<OutsideControl>;
-  press(window: string, key: OutsideKey, action: "invoke" | "append" | "choose", value?: string): Promise<void>;
+  press(window: string, key: OutsideKey, action: "invoke" | "append" | "choose" | "setValue", value?: string): Promise<void>;
 }
 
 /** The control a step in another window names. */
@@ -90,7 +92,7 @@ export class OutsideHands implements Outside {
     return { ...c, rect: c.rect as [number, number, number, number] };
   }
 
-  async press(window: string, key: OutsideKey, action: "invoke" | "append" | "choose", value?: string): Promise<void> {
+  async press(window: string, key: OutsideKey, action: "invoke" | "append" | "choose" | "setValue", value?: string): Promise<void> {
     await this.ask({ cmd: "press", window, key, action, ...(value !== undefined ? { value } : {}) });
   }
 
