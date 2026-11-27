@@ -43,7 +43,7 @@ export function startServer(input: NodeJS.ReadableStream = process.stdin, output
         return reply({
           protocolVersion: VERSIONS.includes(asked) ? asked : VERSIONS[0],
           capabilities: { tools: {} },
-          serverInfo: { name: "openstage-studio", version: "0.1.0" },
+          serverInfo: { name: "openstage-studio", version: "1.0.0" },
           instructions: INSTRUCTIONS,
         });
       }

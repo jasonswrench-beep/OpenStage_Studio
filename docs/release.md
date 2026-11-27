@@ -6,9 +6,10 @@ First built on 2026-11-15. Before this, Studio ran only from the repository, thr
 
 One setup file, `OpenStage-Studio-<release>-Setup.exe`, that installs Studio for the person who runs it, with no
 administrator rights, into `%LOCALAPPDATA%\OpenStage Studio`, with a Start menu entry and an entry in Add or Remove
-Programs. `<setup> /S` does the same without asking anything. The first release is `0.1.0-alpha.1` (`RELEASE` in
-`tools/build-installer.mjs`; the version in `tauri.conf.json`, `package.json` and the `Cargo.toml` files stays the plain
-`0.1.0` until a new version).
+Programs. `<setup> /S` does the same without asking anything. The first release was `0.1.0-alpha.1`; the current one is
+`1.0.0` (`RELEASE` in `tools/build-installer.mjs`). The version in `tauri.conf.json`, `package.json`, `package-lock.json`,
+the `Cargo.toml` files and the connector's `serverInfo` (`src/connector/server.ts`) is the release without its alpha or
+beta part; change them together.
 
 Installed, the window does everything the double-click files do: make a video, review it, plan and write scripts from a
 manual, the queue, the release check, AI and connector setup, and settings. Each job is run by the **engine**: Studio's own
