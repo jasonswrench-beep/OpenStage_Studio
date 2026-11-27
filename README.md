@@ -80,7 +80,7 @@ every job the double-click files below do (`docs/release.md`). Installed, your w
    same. **`Check Guard.bat`** is phase 2's: a blocked name is stopped, a planted path is flagged, export stays shut.
    **`Check AI Scripts.bat`** is phase 3's: from one manual chapter, at least four in five AI scripts pass rehearsal.
    **`Check Batch.bat`** is phase 4's: a manual records unattended, and the release check names the exact broken steps.
-   **`Check Reach.bat`** is phase 5's: a program without the hook records, and Claude writes and rehearses a script
+   **`Check Reach.bat`** is phase 5's: a program without the hook records, and a hosted AI writes and rehearses a script
    through the connector.
 10. **`Run OpenStage Studio.bat`** opens the app. Its pages do everything above: make a video, review, plan and write
     from a manual, the queue, the release check, AI, the connector and settings.

@@ -8,6 +8,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod engine;
+mod review_scope;
 
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
@@ -66,7 +67,8 @@ fn main() {
                     .inner_size(1180.0, 860.0)
                     .min_inner_size(720.0, 520.0);
                 // `--review <folder>`: open that video's review. The window may read that folder, and write the one
-                // script named in its review (to add a blurred box), and nothing else unless the person chooses it.
+                // script named in its review (to add a blurred box) if it is the person's own (review_scope.rs), and
+                // nothing else unless the person chooses it.
                 if let Some(folder) = value_after(&args, "--review") {
                     // The full path, written plainly (without Windows' long-path prefix), as the page will ask for it.
                     let full = std::fs::canonicalize(&folder).unwrap_or_else(|_| std::path::PathBuf::from(&folder));
@@ -79,7 +81,8 @@ fn main() {
                             .ok()
                             .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
                             .and_then(|v| v["script"].as_str().map(String::from));
-                        if let Some(script) = script {
+                        let workspace = engine::workspace(app.handle());
+                        if let Some(script) = script.and_then(|s| review_scope::review_script(&s, &folder, workspace.as_deref())) {
                             app.fs_scope().allow_file(&script)?;
                         }
                         let path = folder.to_string_lossy().to_string();

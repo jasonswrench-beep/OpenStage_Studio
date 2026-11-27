@@ -230,7 +230,7 @@ async function main(argv) {
   if (mode !== "embedBootstrapper" && mode !== "offlineInstaller") {
     fail(`the installer would get the web view's setup by ${mode ?? "an unknown way"}, which downloads it while installing. tauri.conf.json must embed it.`);
   }
-  say(`  the installer carries the web view's setup (${mode}); it downloads nothing`);
+  say(`  the installer carries the web view's setup (${mode}); Studio's own installer downloads nothing`);
   checkSetup(setup, sign);
 
   say("5. The release file.");

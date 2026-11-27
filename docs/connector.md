@@ -47,7 +47,7 @@ Every tool checks everything first, so a call that cannot be done says why and c
 
 1. Practice Planner, with its hook off, records a whole video through the accessibility driver
    (`docs/accessibility-driver.md`).
-2. Claude, with the key `Set Up AI.bat` saved, acts as the outside assistant: given only the connector's tools, over the
+2. The first hosted AI service, with the key `Set Up AI.bat` saved, acts as the outside assistant: given only the connector's tools, over the
    connector's own protocol, it is asked to write a script for "Making a new lesson" from the invented manual and to
    rehearse it until it passes. Studio then rehearses the script itself, independently. The connector runs with its own
    settings in `renders\reach-check\`, so a person's own connector settings are not touched.

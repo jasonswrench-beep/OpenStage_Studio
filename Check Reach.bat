@@ -11,7 +11,7 @@ echo OpenStage Studio is not built yet. Building it now; the first time takes se
 call "%~dp0Build Studio.bat" nopause || (pause & exit /b 1)
 :built
 echo Phase 5's acceptance test: Practice Planner, with its hook off, records a video through the accessibility driver;
-echo then Claude (the key Set Up AI.bat saved) uses only the connector to write a script and rehearse it until it passes.
+echo then the hosted AI (the key Set Up AI.bat saved) uses only the connector to write a script and rehearse it until it passes.
 echo The practice program fills your take screen meanwhile. Your own connector settings are not touched.
 echo.
 node src\connector\check-reach.ts

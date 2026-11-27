@@ -3,7 +3,9 @@
 // the development server; writes are kept in memory and listed in window.__writes. A folder dialog answers with
 // window.__nextDialog, or a made-up folder. Never part of the built app.
 
-const ROOT = "C:\\Dev\\OpenStage_Studio";
+/** The project's folder, from the development server (vite.config.ts). */
+declare const __PROJECT_FOLDER__: string;
+const ROOT = __PROJECT_FOLDER__;
 const params = new URLSearchParams(location.search);
 const folder = `${ROOT}\\${(params.get("folder") ?? "renders/planted-path").replace(/\//g, "\\")}`;
 

@@ -1,4 +1,4 @@
-// Bundles the engine (src/engine/main.ts and everything it uses, with Anthropic's SDK and PDF.js) into one file for the
+// Bundles the engine (src/engine/main.ts and everything it uses, with the packages it uses) into one file for the
 // installer: src-tauri/engine/engine.mjs, with PDF.js's worker file beside it (PDF.js loads it by name at run time).
 // Installed Studio runs it with its own copy of Node.js; nothing else is needed on the computer.
 //

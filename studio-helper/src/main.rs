@@ -18,6 +18,7 @@
 //! * `uia`: the accessibility driver: find and work a window's controls as a screen reader does.
 //! * `slides --plan <file>`: draw a lecture's slides as still pictures.
 //! * `recording --project <folder>`: what a recording in the shared capture format holds (its takes and their logs).
+//! * `protect` and `unprotect`: keep a person's AI key unreadable on disk (the words come and go on standard input and output).
 //!
 //! The capture engine (Windows Graphics Capture, the MP4 writer, the drawing on frames) and the capture format's reader are
 //! the OpenStage shared core's (tag `capture-v0.1.0`), used without change.
@@ -31,6 +32,7 @@ mod ocr;
 mod pointer;
 mod pngio;
 mod recording;
+mod secret;
 mod slides;
 mod speech;
 mod take;
@@ -74,6 +76,8 @@ fn main() -> ExitCode {
         "card" => assemble::card_preview(&args),
         "recording" => recording::run(&args),
         "slides" => slides::run(&args),
+        "protect" => secret::protect(),
+        "unprotect" => secret::unprotect(),
         other => Err(format!("\"{other}\" is not something this helper does. Use windows, take, voices, speak, assemble, compare, ocr or thumbnail.")),
     };
     match result {

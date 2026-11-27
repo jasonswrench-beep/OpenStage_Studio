@@ -1,6 +1,6 @@
 // Runs the engine's jobs for the window: making a video, the downloads, AI and connector setup, planning, the queue, the
 // release check and export. The engine is Studio's own copy of Node.js running engine\engine.mjs (installed), or `node
-// src/engine/main.ts` from the repository (development). Only the named jobs below can be started; each one's settings go
+// src/engine/main.ts` from the repository (development, only when OPENSTAGE_STUDIO_DEV_REPO names it). Only the named jobs below can be started; each one's settings go
 // as one JSON argument, and a key for a hosted AI service is written to the engine's standard input, never put on its
 // command line. Every line the engine says is passed to the window as an "engine" event, and the run is stopped (with
 // everything it started, such as the practice program or the helper) on Cancel or when the window closes.
@@ -38,14 +38,37 @@ fn quiet(cmd: &mut Command) -> &mut Command {
     cmd
 }
 
-/// The repository's folder, for a build run from it: found by walking up from Studio's own program.
-fn repository() -> Option<PathBuf> {
-    let exe = std::env::current_exe().ok()?;
-    exe.ancestors().find(|p| p.join("src").join("engine").join("main.ts").is_file()).map(Path::to_path_buf)
+/// The setting (an environment variable) that names the repository's folder, for development. The double-click scripts set
+/// it. An installed Studio never has it.
+const DEV_REPO: &str = "OPENSTAGE_STUDIO_DEV_REPO";
+
+/// Whether a folder is the repository: it holds the engine's source, and it is a plain folder on a drive.
+fn is_repository(folder: &Path) -> bool {
+    folder.is_absolute() && folder.parent().is_some() && folder.join("src").join("engine").join("main.ts").is_file()
 }
 
-/// How to start the engine: from the repository, for a program built in one (an installer build leaves a bundled engine
-/// beside it, which would soon be out of date); otherwise the installed copy.
+/// The repository's folder, when Studio is being developed: the one `named`, or (only with `search`, which a release build
+/// never sets) the first one above Studio's own program. A release build must not search the folders above it: on Windows
+/// any account may make a folder at the top of a drive, so a file found there may be anyone's.
+fn repository_from(exe: Option<&Path>, named: Option<&Path>, search: bool) -> Option<PathBuf> {
+    if let Some(folder) = named {
+        return is_repository(folder).then(|| folder.to_path_buf());
+    }
+    if !search {
+        return None;
+    }
+    exe?.ancestors().skip(1).find(|p| is_repository(p)).map(Path::to_path_buf)
+}
+
+/// The repository this program is developed in, or None (always, once installed).
+fn repository() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok();
+    let named = std::env::var_os(DEV_REPO).filter(|v| !v.is_empty()).map(PathBuf::from);
+    repository_from(exe.as_deref(), named.as_deref(), cfg!(debug_assertions))
+}
+
+/// How to start the engine: from the repository in development (an installer build leaves a bundled engine beside the
+/// program, which would soon be out of date); otherwise always the copy Studio carries, with the Node.js it carries.
 fn engine_command(app: &AppHandle) -> Result<(Command, bool), String> {
     if let Some(repo) = repository() {
         let mut cmd = Command::new("node");
@@ -65,7 +88,7 @@ fn engine_command(app: &AppHandle) -> Result<(Command, bool), String> {
 }
 
 /// A path written plainly, without Windows' long-path prefix.
-fn plain(p: &Path) -> String {
+pub fn plain(p: &Path) -> String {
     p.to_string_lossy().trim_start_matches(r"\\?\").to_string()
 }
 
@@ -147,9 +170,9 @@ pub fn stop_all(app: &AppHandle) {
     }
 }
 
-/// The person's work folder, as src/paths.ts finds it: the repository for a build run from it; installed, the folder chosen
-/// in Settings (kept in %APPDATA%\org.openstage.studio\studio.json) or Documents\OpenStage Studio.
-fn workspace(app: &AppHandle) -> Option<PathBuf> {
+/// The person's work folder, as src/paths.ts finds it: the repository in development; installed, the folder chosen in
+/// Settings (kept in %APPDATA%\org.openstage.studio\studio.json) or Documents\OpenStage Studio.
+pub fn workspace(app: &AppHandle) -> Option<PathBuf> {
     if let Some(repo) = repository() {
         return Some(repo);
     }
@@ -172,4 +195,50 @@ pub fn allow_workspace(app: AppHandle) -> Result<String, String> {
     std::fs::create_dir_all(&w).map_err(|e| e.to_string())?;
     app.fs_scope().allow_directory(&w, true).map_err(|e| e.to_string())?;
     Ok(plain(&w))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A scratch folder holding `src\engine\main.ts` at its top and, deeper down, a program, as an installed one would be.
+    fn planted(name: &str) -> (PathBuf, PathBuf) {
+        let top = std::env::temp_dir().join(format!("studio-engine-test-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&top);
+        std::fs::create_dir_all(top.join("src").join("engine")).unwrap();
+        std::fs::write(top.join("src").join("engine").join("main.ts"), "").unwrap();
+        let program = top.join("Users").join("someone").join("OpenStage Studio").join("openstage-studio.exe");
+        std::fs::create_dir_all(program.parent().unwrap()).unwrap();
+        (top, program)
+    }
+
+    #[test]
+    fn a_release_build_never_takes_a_folder_above_it_for_the_repository() {
+        let (top, program) = planted("release");
+        assert_eq!(repository_from(Some(&program), None, false), None);
+        let _ = std::fs::remove_dir_all(&top);
+    }
+
+    #[test]
+    fn a_development_build_finds_the_repository_above_it() {
+        let (top, program) = planted("debug");
+        assert_eq!(repository_from(Some(&program), None, true), Some(top.clone()));
+        let _ = std::fs::remove_dir_all(&top);
+    }
+
+    #[test]
+    fn the_named_repository_is_used_only_if_it_is_one() {
+        let (top, program) = planted("named");
+        assert_eq!(repository_from(Some(&program), Some(&top), false), Some(top.clone()));
+        // A name that is not the repository is refused, and nothing else is looked for.
+        assert_eq!(repository_from(Some(&program), Some(&top.join("Users")), true), None);
+        assert_eq!(repository_from(Some(&program), Some(Path::new("src")), false), None);
+        let _ = std::fs::remove_dir_all(&top);
+    }
+
+    #[test]
+    fn a_drives_top_folder_is_never_the_repository() {
+        assert!(!is_repository(Path::new("C:\\")));
+        assert!(!is_repository(Path::new("\\")));
+    }
 }

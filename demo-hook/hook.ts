@@ -876,7 +876,7 @@ function textOnScreen({ doc, offset, clip: frameClip }: Surface): TextOnScreen[]
 
 /** Start the hook if the program was launched in demo mode. Returns null (and does nothing) otherwise. */
 export function startDemoHook(options: DemoHookOptions): DemoHook | null {
-  const settings = options.settings ?? readSettings(globalThis as unknown as Record<string, unknown>, location.search);
+  const settings = options.settings ?? readSettings(globalThis as unknown as Record<string, unknown>);
   if (!settings) return null;
   // The program's page now; each frame from the program as it is first seen (see perform).
   steady(document);

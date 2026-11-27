@@ -125,13 +125,12 @@ export function isLoopback(endpoint: string): boolean {
   }
 }
 
-/** The hook's settings, if the program was launched in demo mode: from the global its shell set, or from the page's
- * address (`?demo-hook=<endpoint>&demo-token=<token>`). Null means demo mode is off, which is the default. */
-export function readSettings(global: Record<string, unknown>, search: string): HookSettings | null {
+/** The hook's settings, if the program was launched in demo mode: from the global its shell set, and nowhere else (a page's
+ * address can come from a link). Null means demo mode is off, which is the default. */
+export function readSettings(global: Record<string, unknown>): HookSettings | null {
   const fromGlobal = global[SETTINGS_GLOBAL] as Partial<HookSettings> | undefined;
-  const params = new URLSearchParams(search);
-  const endpoint = fromGlobal?.endpoint ?? params.get("demo-hook") ?? "";
-  const token = fromGlobal?.token ?? params.get("demo-token") ?? "";
+  const endpoint = fromGlobal?.endpoint ?? "";
+  const token = fromGlobal?.token ?? "";
   const workspace = fromGlobal?.workspace;
   if (!endpoint || !token) return null;
   if (!isLoopback(endpoint)) return null;

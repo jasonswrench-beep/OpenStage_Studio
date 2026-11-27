@@ -10,15 +10,17 @@ The code is in `src/ai/` and `src/manual/`.
 ## Choosing the AI
 
 `Set Up AI.bat` asks which AI to use, then tries it with one small question. The choice is kept on this computer only, in
-`%APPDATA%\org.openstage.studio\ai.json`, never in a project or the repository.
+`%APPDATA%\org.openstage.studio\ai.json`, never in a project or the repository. A key is kept there encrypted by Windows
+for the person signed in (`src/ai/key-guard.ts`), so the file is no use to another account or on another computer; a key an
+earlier version kept in clear is encrypted the first time it is read. An earlier version cannot read the encrypted key and
+asks for it again. Uninstalling keeps the settings, with the key, unless "Delete app data" is ticked.
 
 | Choice | What it is |
 |---|---|
 | The built-in model | Qwen 3.5 with 4 billion parameters, run on this computer by llama.cpp's server. Downloaded once on request (2.8 GB), every file checked against `tools/local-ai.json`: the same pinned files the documentation tool uses. Nothing leaves the computer. It reads text only. |
-| Claude (Anthropic) | Your own key. Uses Anthropic's own library (`@anthropic-ai/sdk`); the model starts as `claude-opus-5-5`, and a refusal falls back on the service's own fallback model. Can be shown pictures. |
-| ChatGPT (OpenAI) | Your own key and the model's name. Uses the service's chat-completions request. Can be shown pictures. |
-| Gemini (Google) | Your own key and the model's name, through the service's chat-completions address. Can be shown pictures. |
-| Another service | Any service that accepts the chat-completions request: its address, the model's name and, if it needs one, a key. |
+| The first hosted service | Your own key. Uses the service's own library; a model is suggested, and a refusal falls back on the service's own fallback model. Can be shown pictures. |
+| Two more hosted services | Your own key and the model's name. Both use the chat-completions request. Can be shown pictures. |
+| Another service | Any service that accepts the chat-completions request: its address (https, or http for a service on this computer only), the model's name and, if it needs one, a key. |
 | No AI | Every stage by hand. |
 
 With a hosted service, the manual's text, the scripts and pictures of the demo workspace are sent to that service; Setup
