@@ -21,7 +21,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { makeCaptions, makeChapters, makeTranscript, toSrt, toVtt } from "../captions/captions.ts";
 import { descriptionCaptions, makeDescriptions } from "../captions/descriptions.ts";
-import { clipKey, DEFAULT_VOICE, narrationLines, type Pronunciations, type VoiceSettings } from "../narration/narration.ts";
+import { clipKey, DEFAULT_VOICE, KOKORO_WORDS, narrationLines, type Pronunciations, type VoiceSettings } from "../narration/narration.ts";
 import type { Script } from "../script/format.ts";
 import { describeProblems, validateScript } from "../script/validate.ts";
 import { buildTimeline, type Paces, type TakeLog, type Timeline } from "../timeline/build.ts";
@@ -154,7 +154,7 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
     const m = readManifest();
     modelDir = join(voicesRoot(), m.folder);
     if (!voiceReady(modelDir, m)) throw new Error("The voice is not downloaded yet. Run \"Get Voice.bat\" first (about 340 MB, once).");
-    settings.voice = { ...settings.voice, model: m.revision };
+    settings.voice = { ...settings.voice, model: m.revision, words: KOKORO_WORDS };
   }
   const lines = narrationLines(script, settings.pronunciations);
   const clipDir = options.clipDir ?? join(workspace(), "work", "narration");
@@ -165,7 +165,10 @@ export async function makeVideo(scriptPath: string, outFolder: string, options: 
     log(`Making ${missing.length} narration clip(s) of ${lines.length}.`);
     const jobsFile = join(outFolder, "narration-jobs.json");
     writeFileSync(jobsFile, JSON.stringify({ engine, ...(modelDir ? { modelDir } : {}), voice: settings.voice.voice, rate: settings.voice.rate, jobs: missing.map((l) => ({ text: l.spoken, out: clipFile.get(l.id) })) }, null, 2));
-    await runHelper(helper, ["speak", "--jobs", jobsFile], (e) => e.event === "voice" && log(`Voice: ${e.name}.`));
+    await runHelper(helper, ["speak", "--jobs", jobsFile], (e) => {
+      if (e.event === "voice") log(`Voice: ${e.name}${e.device ? `, on ${e.device}` : ""}.`);
+      else if (e.event === "note") log(`Note: ${e.message}`);
+    });
   } else log(`All ${lines.length} narration clips are already made.`);
   const clips: Record<string, number> = {};
   for (const l of lines) clips[l.id] = wavDurationMs(readFileSync(clipFile.get(l.id)!));

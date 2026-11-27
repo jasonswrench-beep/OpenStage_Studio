@@ -18,7 +18,15 @@ export interface VoiceSettings {
   rate: number;
   /** The model's pinned revision, so a new model makes new clips. Filled in by the pipeline. */
   model?: string;
+  /** For Kokoro, the version of how the helper turns words into sounds (`KOKORO_WORDS`), so a change there makes new
+   * clips. Filled in by the pipeline. */
+  words?: number;
 }
+
+/** The version of Kokoro's front end in the helper (studio-helper/src/kokoro.rs): raise it whenever a change there says some
+ * word another way, so clips made before are made again rather than reused with the old sound. 2 (2026-11-26): digits
+ * after letters are said (F6, INT-01), decimals keep every digit (51.50), names are sounded out rather than spelled. */
+export const KOKORO_WORDS = 2;
 
 export const DEFAULT_VOICE: VoiceSettings = { engine: "kokoro", voice: "af_heart", rate: 1 };
 
@@ -59,5 +67,5 @@ export function narrationLines(script: Script, pronunciations: Pronunciations = 
 
 /** What a clip's sound depends on, as one string to fingerprint for its file name. */
 export function clipKey(line: NarrationLine, voice: VoiceSettings): string {
-  return JSON.stringify({ engine: voice.engine, voice: voice.voice, rate: voice.rate, ...(voice.model ? { model: voice.model } : {}), text: line.spoken });
+  return JSON.stringify({ engine: voice.engine, voice: voice.voice, rate: voice.rate, ...(voice.model ? { model: voice.model } : {}), ...(voice.words ? { words: voice.words } : {}), text: line.spoken });
 }

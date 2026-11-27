@@ -64,4 +64,6 @@ test("a clip's key changes when its words or its voice change, and only then", (
   assert.equal(clipKey(line, voice), clipKey({ ...line, id: "step-9" }, voice), "moving a line does not remake it");
   assert.notEqual(clipKey(line, voice), clipKey({ ...line, spoken: "Hello." }, voice));
   assert.notEqual(clipKey(line, voice), clipKey(line, { ...voice, rate: 1.1 }));
+  const kokoro = { engine: "kokoro" as const, voice: "af_heart", rate: 1, model: "1939ad2" };
+  assert.notEqual(clipKey(line, kokoro), clipKey(line, { ...kokoro, words: 2 }), "a new way of saying words remakes the clip");
 });

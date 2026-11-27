@@ -15,8 +15,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # PNG files for the still pictures of the take. MIT OR Apache-2.0.
 png = "0.17"
-# Kokoro narration (src/kokoro.rs). ONNX Runtime through ort, MIT OR Apache-2.0; ONNX Runtime itself is MIT.
-ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "ndarray", "download-binaries", "tls-native", "api-31"] }
+# Kokoro narration (src/kokoro.rs). ONNX Runtime through ort, MIT OR Apache-2.0; ONNX Runtime itself is MIT. With `cuda`, ort
+# downloads ONNX Runtime's CUDA build (it has DirectML too) and copies its provider DLLs beside the helper; CUDA itself also
+# needs NVIDIA's runtime and cuDNN, which are not part of Studio (docs/voice-models.md).
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "ndarray", "download-binaries", "tls-native", "api-31", "directml", "cuda", "copy-dylibs"] }
 # Kokoro's dictionary front end, MIT, built WITHOUT its default espeak feature (espeak-ng is GPL). Do not turn it on.
 misaki-rs = { version = "0.9.0", default-features = false }
 
@@ -36,6 +38,7 @@ windows = { version = "0.62", features = [
     "Win32_Media_MediaFoundation",
     "Win32_System_Com",
     "Win32_System_Power",
+    "Win32_System_Threading",
     "Win32_System_Variant",
     "Win32_UI_Accessibility",
     "Win32_UI_WindowsAndMessaging",

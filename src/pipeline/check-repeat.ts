@@ -19,6 +19,10 @@ export async function checkRepeat(scriptPath: string, log: (s: string) => void =
   const name = basename(scriptPath, ".json");
   const base = resolve(ROOT, "renders", `${name}-repeat`);
   rmSync(base, { recursive: true, force: true });
+  // Both runs make their narration on the same device: by itself the helper moves the voice to the graphics card while the
+  // computer is busy, which sounds the same but is not the same to the sample. OPENSTAGE_VOICE_DEVICE=cuda checks the card.
+  process.env.OPENSTAGE_VOICE_DEVICE ||= "processor";
+  log(`The voice runs on: ${process.env.OPENSTAGE_VOICE_DEVICE}.`);
   const runs: MadeVideo[] = [];
   for (const run of ["first", "second"]) {
     log(`\n=== The ${run} run ===`);

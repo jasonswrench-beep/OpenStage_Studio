@@ -44,7 +44,7 @@ pub fn list_voices() -> Result<(), String> {
 pub fn phonemes(args: &[String]) -> Result<(), String> {
     let text = arg(args, "--text").ok_or("Give the words with --text.")?;
     let dir = arg(args, "--model").map(std::path::PathBuf::from).unwrap_or_else(crate::kokoro::default_dir);
-    let k = crate::kokoro::Kokoro::load(&dir, "af_heart")?;
+    let k = crate::kokoro::Kokoro::load_on_processor(&dir, "af_heart")?;
     say(json!({ "event": "phonemes", "text": text, "phonemes": k.phonemes(&text)? }));
     Ok(())
 }
@@ -78,9 +78,16 @@ fn run_kokoro(jobs: &Jobs) -> Result<(), String> {
     let voice = jobs.voice.clone().filter(|v| v != "default").unwrap_or_else(|| "af_heart".into());
     let speed = jobs.rate.unwrap_or(1.0).clamp(0.5, 2.0) as f32;
     let mut k = crate::kokoro::Kokoro::load(&dir, &voice)?;
-    say(json!({ "event": "voice", "name": format!("Kokoro {}", k.voice_name) }));
+    say(json!({ "event": "voice", "name": format!("Kokoro {}", k.voice_name), "device": k.device.describe() }));
+    if let Some(why) = &k.fallback {
+        say(json!({ "event": "note", "message": format!("The voice runs on the processor because {why}.") }));
+    }
     for job in &jobs.jobs {
+        let before = k.device;
         let samples = k.speak(&job.text, speed)?;
+        if k.device != before {
+            say(json!({ "event": "note", "message": format!("The voice moved to the processor: {}.", k.fallback.as_deref().unwrap_or("the graphics card stopped")) }));
+        }
         let wav = crate::wav::wav_bytes(&samples, crate::kokoro::SAMPLE_RATE);
         let out = std::path::Path::new(&job.out);
         if let Some(d) = out.parent() {
