@@ -159,7 +159,8 @@ Confirmed by Jason:
   installer's window does all the jobs. Node.js is carried in the installer (pinned in `tools/node-runtime.json`, v24.22.3,
   the 24 line Studio is developed on); the voice and the model still download on request. The first release,
   `0.1.0-alpha.1`, is published as a signed pre-release (2026-11-16, commit `fe2033b`; `docs/code-signing.md`). The first full
-  release is `1.0.0` (2026-11-27), made from `main` with the security fixes of 2026-11-24.
+  release, `1.0.0`, is published and signed (2026-11-27, commit `ef16e6a`), made from `main` with the security fixes
+  of 2026-11-24.
 
 1. **Default voice: Kokoro-82M, run natively in the helper** (2026-11-14). Downloaded once with `Get Voice.bat`
    (340 MB, every file checked), then offline. Voice `af_heart` by default; the Windows voices remain as a second engine.

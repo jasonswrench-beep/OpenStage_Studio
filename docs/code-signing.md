@@ -11,9 +11,11 @@ Every published release of OpenStage Studio is signed.
 | Release | Published | Commit | SHA-256 of the setup |
 |---|---|---|---|
 | [0.1.0 alpha 1](https://github.com/jasonswrench-beep/OpenStage_Studio/releases/tag/v0.1.0-alpha.1) (pre-release) | 2026-11-16 | `fe2033bc0da9ba6b2523da39e7a820d9bc04c088` | `88fc1850ab272b8bed9d6808e3c93609a9db8187011caec1361057819e67f159` |
+| [1.0.0](https://github.com/jasonswrench-beep/OpenStage_Studio/releases/tag/v1.0.0) | 2026-11-27 | `ef16e6a0d8ced0542b539b394627a546edc756da` | `9de9ec2655efe1157c5a3b94ebc489d00a8d89e964e6258eaecf89fb8b1dbfce` |
 
-0.1.0 alpha 1 was checked as step 6 below says: the tag points at the commit, GitHub's SHA-256 of the setup matches, the
-release holds exactly two files, and a downloaded copy is signed by Jason Wrench with a timestamp.
+Each release was checked as step 6 below says: the tag points at the commit, GitHub's SHA-256 of the setup matches, the
+release holds exactly two files, and a downloaded copy is signed by Jason Wrench with a timestamp. 1.0.0 is the latest
+release; it was also installed with a `src\engine\main.ts` planted in the folder above the install, which never ran.
 
 - **Who signs.** The setup file and every program in it (Studio itself, the helper, the installer's plugins and the
   uninstaller) are signed by the publisher, **Jason Wrench**, with a code-signing certificate in the publisher's own name

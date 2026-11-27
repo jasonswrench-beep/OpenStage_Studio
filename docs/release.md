@@ -117,7 +117,9 @@ interface; the take screen was set to display 2 on the Settings page; the exampl
 on display 2 and its review opened with its Approve button; the examples were in the work folder; after uninstalling, the
 work folder and the downloads were still there.
 
-On 2026-11-16 the same test passed on the signed setup of 0.1.0 alpha 1, the file that was published.
+On 2026-11-16 the same test passed on the signed setup of 0.1.0 alpha 1, the file that was published. On 2026-11-27
+it passed on the signed setup of 1.0.0, the file that was published, with a `src\engine\main.ts` planted in
+`%LOCALAPPDATA%` (the folder above the install); the planted file never ran.
 
 ## Not tried yet
 

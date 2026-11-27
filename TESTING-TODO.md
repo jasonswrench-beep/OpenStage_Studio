@@ -53,6 +53,9 @@ scripts now say so). Run them when you are happy to spend the credit.
 ### Installer and release
 
 - [x] **A signed build**, tested and published as the 0.1.0 alpha 1 pre-release (2026-11-16, `docs/code-signing.md`).
+- [x] **Release 1.0.0**, signed, tested and published as the first full release (2026-11-27, `docs/code-signing.md`).
+- [ ] **Decide what to do with 0.1.0 alpha 1**, which still has the flaw 1.0.0 fixes (an installed alpha runs a
+      `src\engine\main.ts` found in a folder above it): leave it, say in its notes to use 1.0.0, or delete it.
 - [ ] **Install the published release by hand** from its GitHub page: the download, SmartScreen, the installer's own
       wizard (the test used the silent install), and a first look at the window.
 - [ ] The installed-app test leaves its example video and the examples in your work folder (`Documents\OpenStage Studio`). Delete
