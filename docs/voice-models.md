@@ -64,7 +64,8 @@ Kitten ONNX files contain unseeded random steps, and whether the Rust front end 
 
 ## What was built (2026-11-14)
 
-- `studio-helper/src/kokoro.rs` runs the ONNX model with ONNX Runtime (linked in, on the processor, one thread) and turns
+- `studio-helper/src/kokoro.rs` runs the ONNX model with ONNX Runtime (linked in, one thread; on the graphics card since
+  2026-11-26, below) and turns
   words into sounds with misaki-rs built without its GPL fallback. Words its dictionary does not know go through Studio's
   own fallback: joined words are split where the case changes (OpenStage), two known words written as one are found, common
   endings are taken off, and anything left is spelled out letter by letter. Studio's pronunciation list comes first.
@@ -78,3 +79,36 @@ Kitten ONNX files contain unseeded random steps, and whether the Rust front end 
 - Licences: ONNX Runtime includes Eigen, under the Mozilla Public License 2.0 (file-level copyleft, not GPL), and misaki-rs
   uses language-tokenizer, under the WTFPL. Both were accepted on 2026-11-14: Eigen is used unchanged and NOTICE says where
   its source is; the WTFPL has no conditions.
+
+## The graphics card and the front end (2026-11-26)
+
+- Where the model runs (`OPENSTAGE_VOICE_DEVICE`, read by the helper): by default on the processor while the computer is
+  quiet, and on the graphics card through CUDA while other work uses a tenth of the processor or more (Jason, 2026-11-26:
+  "if there is any other work happening, go to the graphics card. It just sucks up too much of the CPU"). `processor`,
+  `cuda`, `directml` and `graphics-card` (CUDA, else DirectML) choose one. A card must take the model and say a test word;
+  if it does not, or fails part way, the voice is on the processor and the helper says why in a note. The `voice` event
+  names the device. `Check Same Video.bat` keeps both of its runs on the processor unless told otherwise.
+- CUDA needs NVIDIA's CUDA 13 runtime (cudart, cuBLAS, cuFFT) and cuDNN 9, which are under NVIDIA's own licences and are not
+  part of Studio or its installer: the helper looks for them in `OPENSTAGE_CUDA_DIR`, else
+  `%LOCALAPPDATA%\openstage-cuda-trial\bin`, else Windows' usual places. With ort's `cuda` and `copy-dylibs` features the
+  build downloads ONNX Runtime's CUDA build (89 MB, from the same place as before; it carries DirectML too) and puts
+  `onnxruntime_providers_cuda.dll` and `onnxruntime_providers_shared.dll` beside the helper. Without them, or without NVIDIA's
+  files, CUDA is simply not taken. Whether the installer may carry these, or point to NVIDIA's, is Jason's licence decision.
+- Measured on 2026-11-26 (RTX 3050, eight course lines, against the processor): CUDA, with full 32-bit sums (TF32 off) and
+  deterministic kernels, gives every line the same length to the sample, the same loudness (within 0.01 dB), the same pitch
+  (median difference 0 cents) and a spectrum within 0.06 dB in every band (log-spectral distance about 0.5 dB, where the
+  same recording shifted by 11 ms is about 3 dB): by every measure here the same voice, though not the same to the sample
+  (Jason's ears are the last check, TESTING-TODO.md). It is 4 to 10 times as
+  fast, and the same every run. DirectML on the same card is about 3 times as fast and the same every run, but its timbre is
+  not the processor's: 3.5 to 5 dB less between 1 and 4 kHz, about 2 dB more above 4 kHz and 1.5 dB quieter, whatever its
+  settings (graph optimisation, fusion, device). So it is never chosen by itself.
+- The fallback no longer spells out what it does not know. Letters and digits written together are said piece by piece
+  (F6 "F six", F10 "F ten", P07 and INT-01 "zero seven" and "zero one", H.264 "H two six four", Shift+F6 "Shift plus F
+  six"); a known word with an ending comes before splitting (copied is copy with -ed, not "co pied"); and a name is sounded
+  out from its spelling (Priya, Delgado, Theo, Mei, Kokoro), stressed on the first syllable or, in a word of three or more
+  that ends in a vowel, the last but one. Only initials (capitals) and what cannot be said as one word are spelled.
+- A number with a decimal point keeps every digit: "51.50" is "fifty one point five zero", "2.0" "two point zero" and
+  "1.1's" "one point one's" (the dictionary alone said "fifty one point five", "two" and only "s"). Other decimals, money and
+  numbers with more than one point are left to the dictionary, which says them right; "1's" is "ones" (it was "s").
+- A clip's key carries the front end's version (`KOKORO_WORDS` in `src/narration/narration.ts`), so clips made before a
+  change are made again. Raise it with any change that says a word another way.

@@ -3,6 +3,16 @@
 Things the build sessions cannot try themselves: a person's eyes and ears, real recordings, a screen reader, a hosted AI
 key's cost, and decisions. Newest round first. Tick or delete an item once done.
 
+## The voice on the graphics card, 2026-11-26
+
+- [ ] **Listen: CUDA against the processor, and DirectML.** Three course lines, each made three ways, are in
+      `%APPDATA%\Claude\side-session-notes\local_a49b6440-f81a-4034-9105-5a4e5c624dd5\voice-device-check`
+      (`line-N-processor.wav`, `line-N-cuda.wav`, `line-N-directml.wav`). Measured, CUDA is the processor's voice and
+      DirectML is duller and hissier (docs/voice-models.md). Do your ears agree?
+- [ ] **Decide: may the installer carry CUDA?** It needs NVIDIA's CUDA 13 runtime and cuDNN 9 (NVIDIA's licences, about
+      1.5 GB), now only in `%LOCALAPPDATA%\openstage-cuda-trial` on this computer. Without them the voice stays on the
+      processor, as before.
+
 ## Development list round of 2026-11-15/16
 
 ### Watch and listen
