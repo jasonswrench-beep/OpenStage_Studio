@@ -84,7 +84,12 @@ A release is signed on the publisher's computer and published only with the owne
   in software only, each let some takes differ from others by one to three levels of brightness on the rounded corners of
   a few controls, from run to run. An experiment of three takes per setting showed it in every setting but the shared
   folder, which gave the same pictures in six takes out of six and in every check since. The example's frame fingerprint
-  is 81d41989e3de3093.
+  is a142ffff977482cd (since 2026-11-27, with browser engine 158.0.4370.45; before that 81d41989e3de3093).
+- **A browser engine update can change the fingerprint.** After the engine updated (158.0.4370.33 on 2026-11-20, .45 on
+  2026-11-25) the example gave a new fingerprint, the same from the code before and after the security fixes of
+  2026-11-24, and every picture of the take alike in both. A new fingerprint with an engine update is expected; check that
+  the code before the change gives it too. Run the check when nothing else builds or records: under load the second run
+  of the old code came out a brightness level apart on some steps.
 - **A program built in the repository runs the repository's engine only when told to.** An installer build leaves a bundled
   engine beside `target\release\openstage-studio.exe`, with its own older code and the installed work folder. Set
   `OPENSTAGE_STUDIO_DEV_REPO` to the repository's folder (`Review Video.bat` does) and the shell uses the repository's engine

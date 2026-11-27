@@ -83,8 +83,10 @@ The installer and the window (`docs/release.md`, `docs/code-signing.md`):
   browser data folder with different settings, which the browser engine refuses. Studio's window now starts with exactly a
   take's settings (`BROWSER_SETTINGS` in `src-tauri/src/main.rs`, kept equal to `TAKE_BROWSER_SETTINGS` by a test). A
   separate data folder and software-only drawing were tried first and dropped: each let rounded corners differ by a
-  brightness level from run to run (docs/release.md). The example's frame fingerprint is 81d41989e3de3093 (before the
-  installer work: cffdaa5f8dc08793), the same from the repeat check and from the window.
+  brightness level from run to run (docs/release.md). The example's frame fingerprint is a142ffff977482cd since the
+  browser engine update of 2026-11-25 (docs/release.md). Before it the fingerprint was 81d41989e3de3093 (before the
+  installer work cffdaa5f8dc08793), the same from the repeat check and from the window; the new one is measured from the
+  repeat check only so far.
 - `check-repeat.ts` now compares an accessibility take's timeline with the pictures' names set aside: the timing must
   match, and the pictures need only be the same to the eye (as agreed), which the comparison of the finished videos judges.
   Before, one picture differing by one brightness level on a corner failed the timeline as well.
