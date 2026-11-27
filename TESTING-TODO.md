@@ -5,10 +5,11 @@ key's cost, and decisions. Newest round first. Tick or delete an item once done.
 
 ## The voice on the graphics card, 2026-11-26
 
-- [ ] **Listen: CUDA against the processor, and DirectML.** Three course lines, each made three ways, are in
-      `%APPDATA%\Claude\side-session-notes\local_a49b6440-f81a-4034-9105-5a4e5c624dd5\voice-device-check`
-      (`line-N-processor.wav`, `line-N-cuda.wav`, `line-N-directml.wav`). Measured, CUDA is the processor's voice and
-      DirectML is duller and hissier (docs/voice-models.md). Do your ears agree?
+- [x] **Listen: CUDA against the processor, and DirectML.** Three course lines, each made three ways, are in
+      `C:\Dev\Training Videos\PrismQDA\renders\voice-device-check` (`line-N-processor.wav`, `line-N-cuda.wav`,
+      `line-N-directml.wav`; made again on 2026-11-27 from 2b462cd, as the first set was deleted with its note folder).
+      Measured, CUDA is the processor's voice and DirectML is duller and hissier (docs/voice-models.md). Do your ears agree?
+      **Jason, 2026-11-27:** "I cannot tell the difference between processor and cuda. Directml just BARELY softer."
 - [ ] **Decide: may the installer carry CUDA?** It needs NVIDIA's CUDA 13 runtime and cuDNN 9 (NVIDIA's licences, about
       1.5 GB), now only in `%LOCALAPPDATA%\openstage-cuda-trial` on this computer. Without them the voice stays on the
       processor, as before.
